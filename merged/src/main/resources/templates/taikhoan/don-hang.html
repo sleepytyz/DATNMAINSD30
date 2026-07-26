@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/client-layout :: head('Đơn hàng của tôi')}"></head>
+<body>
+<header th:replace="~{fragments/client-layout :: header}"></header>
+<div class="fs-container">
+    <div class="fs-account-layout">
+        <aside th:replace="~{fragments/client-layout :: taikhoanMenu(${tabActive})}"></aside>
+        <main class="fs-account-main">
+            <div class="fs-alert fs-alert-success" th:if="${thongBao}">
+                <i class="bi bi-check-circle-fill"></i><span th:text="${thongBao}"></span></div>
+            <div class="fs-alert fs-alert-error" th:if="${loiDonHang}">
+                <i class="bi bi-x-circle-fill"></i><span th:text="${loiDonHang}"></span></div>
+
+            <div class="fs-panel">
+                <h2><i class="bi bi-receipt"></i> Đơn hàng của tôi</h2>
+                <p class="sub" th:text="'Tổng cộng ' + ${tongDon} + ' đơn hàng'">Tổng cộng 5 đơn hàng</p>
+
+                <div class="fs-order-tabs">
+                    <a th:href="@{/ca-nhan/don-hang}" th:classappend="${ttDangLoc == null} ? ' active'"
+                       th:text="'Tất cả (' + ${tongDon} + ')'">Tất cả</a>
+                    <a th:href="@{/ca-nhan/don-hang(tt='Chờ xác nhận')}" th:classappend="${ttDangLoc == 'Chờ xác nhận'} ? ' active'"
+                       th:text="'Chờ xác nhận (' + ${demTrangThai.getOrDefault('Chờ xác nhận', 0L)} + ')'">Chờ xác nhận</a>
+                    <a th:href="@{/ca-nhan/don-hang(tt='Đã xác nhận')}" th:classappend="${ttDangLoc == 'Đã xác nhận'} ? ' active'"
+                       th:text="'Đã xác nhận (' + ${demTrangThai.getOrDefault('Đã xác nhận', 0L)} + ')'">Đã xác nhận</a>
+                    <a th:href="@{/ca-nhan/don-hang(tt='Đang giao')}" th:classappend="${ttDangLoc == 'Đang giao'} ? ' active'"
+                       th:text="'Đang giao (' + ${demTrangThai.getOrDefault('Đang giao', 0L)} + ')'">Đang giao</a>
+                    <a th:href="@{/ca-nhan/don-hang(tt='Đã giao')}" th:classappend="${ttDangLoc == 'Đã giao'} ? ' active'"
+                       th:text="'Đã giao (' + ${demTrangThai.getOrDefault('Đã giao', 0L)} + ')'">Đã giao</a>
+                    <a th:href="@{/ca-nhan/don-hang(tt='Đã huỷ')}" th:classappend="${ttDangLoc == 'Đã huỷ'} ? ' active'"
+                       th:text="'Đã huỷ (' + ${demTrangThai.getOrDefault('Đã huỷ', 0L)} + ')'">Đã huỷ</a>
+                </div>
+
+                <div style="overflow-x:auto" th:if="${!dsDonHang.isEmpty()}">
+                    <table class="fs-table">
+                        <thead><tr>
+                            <th>Mã đơn</th><th>Ngày đặt</th><th>Loại</th><th>Tổng tiền</th><th>Trạng thái</th><th></th>
+                        </tr></thead>
+                        <tbody>
+                        <tr th:each="h : ${dsDonHang}">
+                            <td><a th:href="@{/ca-nhan/don-hang/{ma}(ma=${h.maHoaDon})}"
+                                   th:text="${h.maHoaDon}" style="font-weight:700;color:var(--fs-primary)">HD001</a></td>
+                            <td th:text="${h.ngayTao != null ? #temporals.format(h.ngayTao,'HH:mm dd/MM/yyyy') : '—'}">01/01</td>
+                            <td th:text="${h.loaiBan}">Online</td>
+                            <td style="font-weight:700"
+                                th:text="${h.tongTien != null ? #numbers.formatDecimal(h.tongTien,0,'POINT',0,'COMMA') + '₫' : '—'}">1.200.000₫</td>
+                            <td><span class="fs-tt"
+                                  th:classappend="${h.trangThai == 'Chờ xác nhận'} ? ' fs-tt-cho' :
+                                                  (${h.trangThai == 'Đã xác nhận'} ? ' fs-tt-xacnhan' :
+                                                  (${h.trangThai == 'Đang giao'} ? ' fs-tt-giao' :
+                                                  (${h.trangThai == 'Đã giao'} ? ' fs-tt-xong' : ' fs-tt-huy')))"
+                                  th:text="${h.trangThai}">Chờ xác nhận</span></td>
+                            <td style="white-space:nowrap">
+                                <a th:href="@{/ca-nhan/don-hang/{ma}(ma=${h.maHoaDon})}"
+                                   class="fs-btn fs-btn-outline fs-btn-sm">Xem</a>
+                                <a th:if="${h.trangThai == 'Chờ thanh toán'}"
+                                   th:href="@{/thanh-toan/thanh-cong/{ma}(ma=${h.maHoaDon})}"
+                                   class="fs-btn fs-btn-primary fs-btn-sm" style="margin-left:6px">
+                                    <i class="bi bi-credit-card"></i> Thanh toán</a></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="fs-empty" th:if="${dsDonHang.isEmpty()}" style="border:0">
+                    <i class="bi bi-receipt"></i>
+                    <h3>Chưa có đơn hàng nào</h3>
+                    <p>Đặt đơn đầu tiên để theo dõi tại đây nhé.</p>
+                    <a th:href="@{/cua-hang/san-pham}" class="fs-btn fs-btn-primary"><i class="bi bi-bag"></i> Mua sắm ngay</a>
+                </div>
+
+                <nav class="fs-pagination" th:if="${tongTrang > 1}">
+                    <a th:each="p : ${#numbers.sequence(0, tongTrang - 1)}"
+                       class="fs-page" th:classappend="${p == trangHienTai} ? ' active'"
+                       th:text="${p + 1}"
+                       th:href="@{/ca-nhan/don-hang(tt=${ttDangLoc},trang=${p})}">1</a>
+                </nav>
+            </div>
+        </main>
+    </div>
+</div>
+<footer th:replace="~{fragments/client-layout :: footer}"></footer>
+<div th:replace="~{fragments/client-layout :: toast}"></div>
+<th:block th:replace="~{fragments/client-layout :: scripts}"></th:block>
+</body>
+</html>

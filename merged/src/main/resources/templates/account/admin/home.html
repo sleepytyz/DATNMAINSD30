@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Trang chủ - Quản trị</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+
+    <style>
+        .stat-card {
+            background: #fff;
+            border: 1px solid #E5E7EB;
+            border-radius: 10px;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: box-shadow .2s, transform .2s;
+        }
+        .stat-card:hover {
+            box-shadow: 0 4px 20px rgba(0,0,0,.08);
+            transform: translateY(-2px);
+        }
+        .stat-label { font-size: 12.5px; color: #6B7280; font-weight: 500; margin-bottom: 4px; }
+        .stat-val   { font-size: 26px; font-weight: 800; color: #1A1A1A; line-height: 1; margin-bottom: 4px; }
+        .stat-trend { font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 3px; }
+        .trend-up   { color: #059669; }
+        .trend-down { color: #E53935; }
+        .stat-icon  {
+            width: 48px; height: 48px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 22px; flex-shrink: 0;
+        }
+        .icon-red   { background: #FEF2F2; color: #E53935; }
+        .icon-green { background: #ECFDF5; color: #059669; }
+        .icon-blue  { background: #EFF6FF; color: #2563EB; }
+        .icon-amber { background: #FFFBEB; color: #D97706; }
+
+        .welcome-banner {
+            background: #E53935;
+            border-radius: 12px;
+            padding: 24px 28px;
+            color: #fff;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .welcome-banner h3 { font-size: 20px; font-weight: 800; margin-bottom: 6px; }
+        .welcome-banner p  { font-size: 13px; margin: 0; opacity: .9; }
+        .welcome-badge {
+            display: inline-flex; align-items: center; gap: 5px;
+            background: rgba(255,255,255,.2); border-radius: 20px;
+            padding: 3px 12px; font-size: 12.5px; font-weight: 600; margin-top: 8px;
+        }
+        .welcome-icon { font-size: 64px; opacity: .2; }
+
+        .card-box {
+            background: #fff;
+            border: 1px solid #E5E7EB;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .card-box-header {
+            padding: 13px 18px;
+            border-bottom: 1px solid #E5E7EB;
+            display: flex; align-items: center; justify-content: space-between;
+            font-weight: 700; font-size: 14px;
+        }
+        .card-box-header a {
+            font-size: 12.5px; color: #E53935; font-weight: 500; text-decoration: none;
+        }
+        .card-box-header a:hover { text-decoration: underline; }
+
+        .mini-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .mini-table th {
+            padding: 9px 14px; background: #FAFAFA;
+            text-align: left; font-size: 12px; color: #6B7280; font-weight: 600;
+            border-bottom: 1px solid #E5E7EB;
+        }
+        .mini-table td {
+            padding: 10px 14px; border-bottom: 1px solid #E5E7EB; vertical-align: middle;
+        }
+        .mini-table tr:last-child td { border-bottom: none; }
+        .mini-table tbody tr:hover td { background: #FAFBFF; }
+        .code-red { color: #E53935; font-weight: 700; }
+
+        .tag-status {
+            display: inline-block; padding: 2px 9px; border-radius: 20px;
+            font-size: 11px; font-weight: 600; white-space: nowrap;
+        }
+        .tag-pending  { background: #FFF7ED; color: #C2410C; border: 1px solid #FED7AA; }
+        .tag-done     { background: #ECFDF5; color: #065F46; border: 1px solid #6EE7B7; }
+        .tag-process  { background: #EFF6FF; color: #1E40AF; border: 1px solid #BFDBFE; }
+        .tag-cancel   { background: #FEF2F2; color: #991B1B; border: 1px solid #FECACA; }
+
+        .quick-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; padding: 16px; }
+        .quick-item {
+            display: flex; flex-direction: column; align-items: center; gap: 7px;
+            padding: 16px 10px; border-radius: 8px;
+            border: 1.5px solid #E5E7EB; text-decoration: none;
+            color: #1A1A1A; font-size: 12px; font-weight: 600; text-align: center;
+            transition: border-color .15s, background .15s;
+        }
+        .quick-item:hover { border-color: #E53935; background: #FEF2F2; color: #E53935; }
+        .quick-item i { font-size: 22px; }
+
+        .top-item {
+            display: flex; align-items: center; gap: 12px;
+            padding: 10px 16px; border-bottom: 1px solid #E5E7EB;
+        }
+        .top-item:last-child { border-bottom: none; }
+        .top-rank {
+            width: 26px; height: 26px; border-radius: 50%;
+            background: #F5F6FA; border: 1.5px solid #E5E7EB;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: 800; color: #6B7280; flex-shrink: 0;
+        }
+        .top-rank.gold   { background: #FEF9C3; border-color: #FDE047; color: #92400E; }
+        .top-rank.silver { background: #F1F5F9; border-color: #CBD5E1; color: #475569; }
+        .top-rank.bronze { background: #FEF3C7; border-color: #FCD34D; color: #92400E; }
+        .top-name { font-weight: 600; font-size: 13px; flex: 1; }
+        .top-sold { font-size: 12px; color: #6B7280; white-space: nowrap; }
+
+        .chart-wrap { padding: 16px; height: 260px; position: relative; }
+
+        .sum-box {
+            padding: 12px 14px; border-radius: 8px; background: #F5F6FA;
+            text-align: center;
+        }
+        .sum-box .s-label { font-size: 11.5px; color: #6B7280; margin-bottom: 4px; }
+        .sum-box .s-val   { font-size: 18px; font-weight: 800; color: #1A1A1A; }
+    </style>
+</head>
+<body>
+<div class="wrapper">
+
+    <div th:replace="~{fragments/sidebaradmin :: sidebar-admin}"></div>
+
+    <div class="content-wrapper">
+
+        <div th:replace="~{fragments/header :: header('Tổng quan hệ thống', 'Dashboard')}"></div>
+
+        <div class="content-body">
+
+            <!-- Welcome banner -->
+            <div class="welcome-banner">
+                <div>
+                    <h3>
+                        <i class="bi bi-person-circle me-2"></i>
+                        Xin chào, <span sec:authentication="name">Admin</span>!
+                    </h3>
+                    <p>
+                        <i class="bi bi-calendar3 me-1"></i>
+                        Hôm nay là <span th:text="${#dates.format(#dates.createNow(), 'dd/MM/yyyy')}">01/01/2026</span>
+                        &nbsp;·&nbsp;
+                        <span id="clock"></span>
+                    </p>
+                    <span class="welcome-badge">
+                        <i class="bi bi-bell-fill"></i>
+                        <span id="fsTongDonMoi" th:text="${tongDonHangMoi != null ? tongDonHangMoi : 0}">5</span> đơn hàng mới hôm nay
+                    </span>
+                </div>
+                <i class="bi bi-graph-up-arrow welcome-icon d-none d-md-block"></i>
+            </div>
+
+            <!-- Stat cards -->
+            <div class="row g-3 mb-4">
+                <div class="col-md-3 col-6">
+                    <div class="stat-card">
+                        <div>
+                            <div class="stat-label">Tổng doanh thu</div>
+                            <div class="stat-val" th:text="${(tongQuan != null ? #numbers.formatDecimal(tongQuan.tongDoanhThu, 0, 'COMMA', 0, 'POINT') : '0') + ' ₫'}">48.500.000 ₫</div>
+                            <div class="stat-trend" th:if="${phanTramDoanhThu != null}"
+                                 th:classappend="${phanTramDoanhThu >= 0} ? 'trend-up' : 'trend-down'">
+                                <i th:class="${phanTramDoanhThu >= 0} ? 'bi bi-arrow-up-short' : 'bi bi-arrow-down-short'"></i>
+                                <span th:text="${(phanTramDoanhThu >= 0 ? '+' : '') + #numbers.formatDecimal(phanTramDoanhThu, 1, 1) + '% so với 7 ngày trước'}"></span>
+                            </div>
+                            <div class="stat-trend" style="color:#6B7280" th:if="${phanTramDoanhThu == null}">Chưa có dữ liệu để so sánh</div>
+                        </div>
+                        <div class="stat-icon icon-green"><i class="bi bi-wallet2"></i></div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6">
+                    <div class="stat-card">
+                        <div>
+                            <div class="stat-label">Tổng đơn hàng</div>
+                            <div class="stat-val" th:text="${tongQuan != null ? tongQuan.tongDonHang : '0'}">312</div>
+                            <div class="stat-trend" th:if="${phanTramDonHang != null}"
+                                 th:classappend="${phanTramDonHang >= 0} ? 'trend-up' : 'trend-down'">
+                                <i th:class="${phanTramDonHang >= 0} ? 'bi bi-arrow-up-short' : 'bi bi-arrow-down-short'"></i>
+                                <span th:text="${(phanTramDonHang >= 0 ? '+' : '') + #numbers.formatDecimal(phanTramDonHang, 1, 1) + '% so với 7 ngày trước'}"></span>
+                            </div>
+                            <div class="stat-trend" style="color:#6B7280" th:if="${phanTramDonHang == null}">Chưa có dữ liệu để so sánh</div>
+                        </div>
+                        <div class="stat-icon icon-blue"><i class="bi bi-cart-check"></i></div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6">
+                    <div class="stat-card">
+                        <div>
+                            <div class="stat-label">Khách hàng</div>
+                            <div class="stat-val" th:text="${tongKhachHang != null ? tongKhachHang : '0'}">342</div>
+                            <div class="stat-trend trend-up"><i class="bi bi-arrow-up-short"></i><span th:text="${khachMoi7Ngay != null ? khachMoi7Ngay : 0}"></span> khách mới / 7 ngày</div>
+                        </div>
+                        <div class="stat-icon icon-amber"><i class="bi bi-people"></i></div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6">
+                    <div class="stat-card">
+                        <div>
+                            <div class="stat-label">Sản phẩm</div>
+                            <div class="stat-val" th:text="${tongSanPham != null ? tongSanPham : '0'}">86</div>
+                            <div class="stat-trend" style="color:#D97706"><i class="bi bi-exclamation-triangle"></i><span th:text="${sanPhamSapHet != null ? sanPhamSapHet : '0'}"></span> sắp hết hàng</div>
+                        </div>
+                        <div class="stat-icon icon-red"><i class="bi bi-box-seam"></i></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 2: Chart + Quick actions -->
+            <div class="row g-3 mb-3">
+
+                <!-- Chart doanh thu -->
+                <div class="col-md-8">
+                    <div class="card-box">
+                        <div class="card-box-header">
+                            <span><i class="bi bi-bar-chart-line me-2" style="color:#E53935"></i>Doanh thu 7 ngày qua</span>
+                        </div>
+                        <div class="chart-wrap">
+                            <canvas id="revenueChart"></canvas>
+                        </div>
+                        <!-- Summary row - SỬA: bỏ doanhThuThang, donThang -->
+                        <div class="row g-2 p-3 border-top" style="border-color:#E5E7EB!important">
+                            <div class="col-6">
+                                <div class="sum-box">
+                                    <div class="s-label">Tổng doanh thu</div>
+                                    <div class="s-val" th:text="${(tongQuan != null ? #numbers.formatDecimal(tongQuan.tongDoanhThu, 0, 'COMMA', 0, 'POINT') : '0') + ' ₫'}">128.000.000 ₫</div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="sum-box">
+                                    <div class="s-label">Trung bình / đơn</div>
+                                    <div class="s-val" th:text="${(tongQuan != null ? #numbers.formatDecimal(tongQuan.trungBinhDon, 0, 'COMMA', 0, 'POINT') : '0') + ' ₫'}">1.300.000 ₫</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick actions -->
+                <div class="col-md-4">
+                    <div class="card-box h-100">
+                        <div class="card-box-header">
+                            <span><i class="bi bi-lightning me-2" style="color:#E53935"></i>Thao tác nhanh</span>
+                        </div>
+                        <div class="quick-grid">
+                            <a class="quick-item" href="/banhang/index">
+                                <i class="bi bi-cart-plus" style="color:#E53935"></i>Bán hàng
+                            </a>
+                            <a class="quick-item" href="/sanpham/index">
+                                <i class="bi bi-box-seam" style="color:#059669"></i>Sản phẩm
+                            </a>
+                            <a class="quick-item" href="/nhap-hang/index">
+                                <i class="bi bi-box-arrow-in-down" style="color:#2563EB"></i>Nhập hàng
+                            </a>
+                            <a class="quick-item" href="/khach-hang/hien-thi">
+                                <i class="bi bi-person-plus" style="color:#D97706"></i>Khách hàng
+                            </a>
+                            <a class="quick-item" href="/giamgia/index">
+                                <i class="bi bi-tags" style="color:#7C3AED"></i>Giảm giá
+                            </a>
+                            <a class="quick-item" href="/thong-ke/doanh-thu">
+                                <i class="bi bi-bar-chart-line" style="color:#E53935"></i>Thống kê
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 3: Recent orders + Top products -->
+            <div class="row g-3">
+
+                <!-- Đơn hàng gần đây -->
+                <div class="col-md-7">
+                    <div class="card-box">
+                        <div class="card-box-header">
+                            <span><i class="bi bi-receipt me-2" style="color:#E53935"></i>Đơn hàng gần đây</span>
+                            <a href="/hoa-don/index">Xem tất cả →</a>
+                        </div>
+                        <table class="mini-table">
+                            <thead>
+                            <tr>
+                                <th>Mã đơn</th>
+                                <th>Khách hàng</th>
+                                <th>Tổng tiền</th>
+                                <th>Trạng thái</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="hd : ${hoaDonGanDay}">
+                                <td class="code-red" th:text="${'#' + hd.maHoaDon}"></td>
+                                <td th:text="${hd.maKhachHang != null ? hd.maKhachHang.hoTen : 'Khách lẻ'}"></td>
+                                <td th:text="${#numbers.formatDecimal(hd.tongTien, 0, 'COMMA', 0, 'POINT') + ' ₫'}"></td>
+                                <td>
+                                    <span class="tag-status"
+                                          th:classappend="${hd.trangThai == 'Đã giao'} ? 'tag-done' : (${hd.trangThai == 'Đang xử lý'} ? 'tag-process' : (${hd.trangThai == 'Đã hủy'} ? 'tag-cancel' : 'tag-pending'))"
+                                          th:text="${hd.trangThai}"></span>
+                                </td>
+                            </tr>
+                            <tr th:if="${hoaDonGanDay == null or hoaDonGanDay.isEmpty()}">
+                                <td colspan="4" class="text-center text-muted py-3">Chưa có đơn hàng nào</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Top sản phẩm bán chạy - SỬA: dùng dữ liệu mẫu nếu chưa có -->
+                <div class="col-md-5">
+                    <div class="card-box">
+                        <div class="card-box-header">
+                            <span><i class="bi bi-trophy me-2" style="color:#E53935"></i>Sản phẩm bán chạy</span>
+                            <a href="/sanpham/index">Xem tất cả →</a>
+                        </div>
+                        <div th:each="sp, idx : ${topSanPham}">
+                            <div class="top-item">
+                                <div class="top-rank"
+                                     th:classappend="${idx.index == 0} ? 'gold' : (${idx.index == 1} ? 'silver' : (${idx.index == 2} ? 'bronze' : ''))"
+                                     th:text="${idx.index + 1}"></div>
+                                <div class="top-name" th:text="${sp.tenSanPham}"></div>
+                                <div class="top-sold" th:text="${sp.soLuongBan + ' đôi'}"></div>
+                            </div>
+                        </div>
+                        <!-- Hiển thị mẫu nếu chưa có dữ liệu -->
+                        <div th:if="${topSanPham == null or topSanPham.isEmpty()}">
+                            <div class="top-item">
+                                <div class="top-rank gold">1</div>
+                                <div class="top-name">Chưa có dữ liệu</div>
+                                <div class="top-sold">--</div>
+                            </div>
+                            <div class="top-item">
+                                <div class="top-rank silver">2</div>
+                                <div class="top-name">Chưa có dữ liệu</div>
+                                <div class="top-sold">--</div>
+                            </div>
+                            <div class="top-item">
+                                <div class="top-rank bronze">3</div>
+                                <div class="top-name">Chưa có dữ liệu</div>
+                                <div class="top-sold">--</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div><!-- /content-body -->
+    </div><!-- /content-wrapper -->
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    function updateClock() {
+        document.getElementById('clock').textContent =
+            new Date().toLocaleTimeString('vi-VN', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+    }
+    updateClock(); setInterval(updateClock, 1000);
+
+    const chartData = /*[[${thongKeNgay}]]*/ [];
+    const labels      = chartData.length > 0 ? chartData.map(d => d.ngay)      : ['T2','T3','T4','T5','T6','T7','CN'];
+    const revenueData = chartData.length > 0 ? chartData.map(d => d.doanhThu)  : [2500000,3800000,4200000,3100000,5600000,7200000,6800000];
+    const orderData   = chartData.length > 0 ? chartData.map(d => d.soDonHang) : [12,18,15,20,25,30,28];
+
+    new Chart(document.getElementById('revenueChart').getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [
+                {
+                    label: 'Doanh thu',
+                    data: revenueData,
+                    backgroundColor: 'rgba(229,57,53,.15)',
+                    borderColor: '#E53935',
+                    borderWidth: 2,
+                    borderRadius: 5,
+                    yAxisID: 'y', order: 1
+                },
+                {
+                    label: 'Số đơn',
+                    data: orderData,
+                    type: 'line',
+                    borderColor: '#2563EB',
+                    backgroundColor: 'rgba(37,99,235,.08)',
+                    borderWidth: 2,
+                    tension: .4, fill: true,
+                    pointBackgroundColor: '#2563EB', pointRadius: 4,
+                    yAxisID: 'y1', order: 0
+                }
+            ]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+                legend: { position:'top', labels:{ usePointStyle:true, padding:20, font:{size:12} } },
+                tooltip: { callbacks: { label: ctx => {
+                            if (ctx.dataset.label.includes('Doanh')) return ctx.dataset.label + ': ' + ctx.parsed.y.toLocaleString('vi-VN') + ' ₫';
+                            return ctx.dataset.label + ': ' + ctx.parsed.y;
+                        }}}
+            },
+            scales: {
+                y:  { type:'linear', position:'left',  beginAtZero:true, grid:{color:'#F3F4F6'},
+                    ticks:{callback: v => v>=1000000 ? (v/1000000).toFixed(1)+'M' : v} },
+                y1: { type:'linear', position:'right', beginAtZero:true, grid:{drawOnChartArea:false}, ticks:{stepSize:1} }
+            }
+        }
+    });
+    /*]]>*/
+</script>
+
+<!-- ===== REALTIME cho Dashboard: tăng bộ đếm "đơn hàng mới hôm nay" khi có đơn online ===== -->
+<script>
+(function () {
+    window.addEventListener('fs-don-hang', function (ev) {
+        if (!ev.detail || ev.detail.loai !== 'DON_HANG_MOI') return;
+        var e = document.getElementById('fsTongDonMoi');
+        if (e) e.textContent = (parseInt(e.textContent, 10) || 0) + 1;
+    });
+})();
+</script>
+</body>
+</html>

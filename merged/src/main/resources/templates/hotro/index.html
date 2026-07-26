@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Hỗ trợ trực tuyến - FS Shop</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <style>
+        .ht-wrap { display: grid; grid-template-columns: 340px 1fr; gap: 16px; height: calc(100vh - 130px); }
+        @media (max-width: 900px) { .ht-wrap { grid-template-columns: 1fr; height: auto; } }
+
+        .ht-list, .ht-chat { background: #fff; border: 1px solid #e9ecf2; border-radius: 14px; overflow: hidden;
+            display: flex; flex-direction: column; }
+        .ht-list-head { padding: 13px 15px; border-bottom: 1px solid #eef0f4; font-weight: 700;
+            display: flex; align-items: center; gap: 8px; }
+        .ht-list-head .badge { margin-left: auto; }
+        .ht-phien-list { flex: 1; overflow-y: auto; }
+        .ht-phien { padding: 12px 15px; border-bottom: 1px solid #f3f4f7; cursor: pointer; display: flex; gap: 11px;
+            transition: background .12s; }
+        .ht-phien:hover { background: #f8f9fb; }
+        .ht-phien.active { background: #fef3f2; box-shadow: inset 3px 0 0 #d92d20; }
+        .ht-phien .ava { width: 42px; height: 42px; border-radius: 999px; flex-shrink: 0; display: grid;
+            place-items: center; font-size: 18px; color: #fff; background: linear-gradient(135deg,#d92d20,#f04438); }
+        .ht-phien .ava.guest { background: linear-gradient(135deg,#98a2b3,#c3cad6); }
+        .ht-phien .ten { font-weight: 700; font-size: 13.5px; display: flex; align-items: center; gap: 6px; }
+        .ht-phien .last { font-size: 12.3px; color: #667085; overflow: hidden; text-overflow: ellipsis;
+            white-space: nowrap; max-width: 200px; margin-top: 2px; }
+        .ht-phien .khi { font-size: 10.5px; color: #98a2b3; margin-top: 2px; }
+        .ht-phien .cham-do { min-width: 20px; height: 20px; background: #f04438; color: #fff; border-radius: 999px;
+            font-size: 11px; font-weight: 800; display: grid; place-items: center; padding: 0 5px; align-self: center; }
+
+        .ht-chat-head { padding: 13px 16px; border-bottom: 1px solid #eef0f4; display: flex; align-items: center; gap: 11px; }
+        .ht-chat-head .ava { width: 40px; height: 40px; border-radius: 999px; display: grid; place-items: center;
+            font-size: 18px; color: #fff; background: linear-gradient(135deg,#d92d20,#f04438); }
+        .ht-chat-body { flex: 1; overflow-y: auto; padding: 16px; background: #f7f8fa; display: flex;
+            flex-direction: column; gap: 10px; }
+        .ht-msg { max-width: 74%; padding: 9px 13px; border-radius: 14px; font-size: 13.7px; line-height: 1.5;
+            white-space: pre-wrap; word-wrap: break-word; }
+        .ht-msg .who { display: block; font-size: 10.5px; font-weight: 800; opacity: .7; margin-bottom: 2px; }
+        .ht-msg .khi { display: block; font-size: 10px; opacity: .55; margin-top: 3px; }
+        .ht-msg.khach { align-self: flex-start; background: #fff; border: 1px solid #eaecf0; border-bottom-left-radius: 4px; }
+        .ht-msg.bot { align-self: flex-start; background: #f2f4f7; color: #475467; border-bottom-left-radius: 4px; }
+        .ht-msg.nhanvien { align-self: flex-end; background: linear-gradient(135deg,#d92d20,#f04438); color: #fff;
+            border-bottom-right-radius: 4px; }
+        .ht-chat-foot { padding: 12px; border-top: 1px solid #eef0f4; display: flex; gap: 9px; }
+        .ht-chat-foot textarea { flex: 1; resize: none; border: 1px solid #dfe3ea; border-radius: 11px;
+            padding: 10px 13px; font-size: 14px; max-height: 110px; outline: none; }
+        .ht-chat-foot textarea:focus { border-color: #d92d20; }
+        .ht-chat-foot button { padding: 0 20px; border: 0; border-radius: 11px;
+            background: linear-gradient(135deg,#d92d20,#f04438); color: #fff; font-weight: 700; cursor: pointer; }
+        .ht-chat-foot button:disabled { opacity: .5; cursor: not-allowed; }
+        .ht-empty { flex: 1; display: grid; place-items: center; color: #98a2b3; text-align: center; padding: 30px; }
+        .ht-empty i { font-size: 46px; display: block; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+<div class="wrapper">
+    <div sec:authorize="hasRole('ADMIN')"><div th:replace="~{fragments/sidebaradmin :: sidebar-admin}"></div></div>
+    <div sec:authorize="hasRole('STAFF')"><div th:replace="~{fragments/sidebarstaff :: sidebar-staff}"></div></div>
+
+    <div class="content-body px-3">
+        <div th:replace="~{fragments/header :: header('Hỗ trợ trực tuyến', 'Hỗ trợ trực tuyến')}"></div>
+
+        <div class="ht-wrap mt-3">
+            <!-- DANH SÁCH HỘI THOẠI -->
+            <div class="ht-list">
+                <div class="ht-list-head">
+                    <i class="bi bi-chat-left-dots-fill text-primary"></i> Cuộc trò chuyện
+                    <span class="badge rounded-pill text-bg-danger" id="htTongChuaDoc" style="display:none">0</span>
+                    <button class="btn btn-sm btn-light ms-2" id="htLamMoi" title="Làm mới"><i class="bi bi-arrow-clockwise"></i></button>
+                </div>
+                <div class="ht-phien-list" id="htPhienList">
+                    <div class="text-center text-muted py-4">Đang tải...</div>
+                </div>
+            </div>
+
+            <!-- KHUNG CHAT -->
+            <div class="ht-chat">
+                <div id="htChuaChon" class="ht-empty">
+                    <div>
+                        <i class="bi bi-chat-square-heart"></i>
+                        <div>Chọn một cuộc trò chuyện bên trái để xem lịch sử<br>
+                            và trả lời khách hàng theo thời gian thực.</div>
+                    </div>
+                </div>
+                <div id="htDaChon" style="display:none; flex:1; flex-direction:column; min-height:0">
+                    <div class="ht-chat-head">
+                        <div class="ava" id="htChatAva"><i class="bi bi-person"></i></div>
+                        <div>
+                            <b id="htChatTen">—</b>
+                            <small class="text-muted d-block" id="htChatPhien"></small>
+                        </div>
+                        <span class="badge rounded-pill text-bg-light border ms-auto"><i class="bi bi-broadcast"></i> Trực tuyến</span>
+                    </div>
+                    <div class="ht-chat-body" id="htChatBody"></div>
+                    <div class="ht-chat-foot">
+                        <textarea id="htChatInput" rows="1" placeholder="Nhập câu trả lời cho khách..."></textarea>
+                        <button type="button" id="htChatSend">Gửi</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+<script>
+    (function () {
+        var phienList = document.getElementById('htPhienList');
+        var chuaChon = document.getElementById('htChuaChon');
+        var daChon = document.getElementById('htDaChon');
+        var chatBody = document.getElementById('htChatBody');
+        var chatInput = document.getElementById('htChatInput');
+        var chatTen = document.getElementById('htChatTen');
+        var chatPhien = document.getElementById('htChatPhien');
+        var chatAva = document.getElementById('htChatAva');
+        var tongChuaDoc = document.getElementById('htTongChuaDoc');
+
+        var phienDangMo = null;
+        var idDaHien = {};
+        var subHienTai = null;
+        var stomp = null;
+
+        function esc(s) {
+            return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+            });
+        }
+        function linkify(s) {
+            var t = esc(s);
+            t = t.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
+            t = t.replace(/(^|[\s(])(\/[A-Za-z0-9\-_/?.=&#%]+)/g, '$1<a href="$2" target="_blank">$2</a>');
+            return t;
+        }
+
+        /* ---- danh sách phiên ---- */
+        function taiDanhSach() {
+            fetch('/api/quan-ly/ho-tro/phien').then(function (r) { return r.json(); }).then(function (ds) {
+                if (!ds || ds.length === 0) {
+                    phienList.innerHTML = '<div class="text-center text-muted py-4">Chưa có cuộc trò chuyện nào.</div>';
+                    return;
+                }
+                phienList.innerHTML = ds.map(function (p) {
+                    var guest = (p.maPhien || '').indexOf('GUEST-') === 0;
+                    var chuaDoc = p.chuaDoc > 0
+                        ? '<div class="cham-do">' + (p.chuaDoc > 9 ? '9+' : p.chuaDoc) + '</div>' : '';
+                    var nhan = p.nguoiGuiCuoi === 'BOT' ? '🤖 ' : (p.nguoiGuiCuoi === 'NHANVIEN' ? '↩ ' : '');
+                    return '<div class="ht-phien" data-phien="' + esc(p.maPhien) + '" data-ten="' + esc(p.tenHienThi) + '">' +
+                        '<div class="ava ' + (guest ? 'guest' : '') + '"><i class="bi bi-' +
+                        (guest ? 'incognito' : 'person-fill') + '"></i></div>' +
+                        '<div style="flex:1;min-width:0">' +
+                        '<div class="ten">' + esc(p.tenHienThi) + '</div>' +
+                        '<div class="last">' + nhan + esc(p.tinCuoi) + '</div>' +
+                        '<div class="khi">' + esc(p.thoiGian) + '</div>' +
+                        '</div>' + chuaDoc + '</div>';
+                }).join('');
+                Array.prototype.forEach.call(phienList.querySelectorAll('.ht-phien'), function (el) {
+                    el.addEventListener('click', function () { moPhien(el.dataset.phien, el.dataset.ten); });
+                    if (el.dataset.phien === phienDangMo) el.classList.add('active');
+                });
+            });
+            capNhatBadge();
+        }
+
+        function capNhatBadge() {
+            fetch('/api/quan-ly/ho-tro/chua-doc').then(function (r) { return r.json(); }).then(function (d) {
+                if (d.tong > 0) { tongChuaDoc.textContent = d.tong; tongChuaDoc.style.display = ''; }
+                else tongChuaDoc.style.display = 'none';
+            });
+        }
+
+        /* ---- mở 1 phiên ---- */
+        function moPhien(maPhien, ten) {
+            phienDangMo = maPhien;
+            idDaHien = {};
+            chuaChon.style.display = 'none';
+            daChon.style.display = 'flex';
+            chatTen.textContent = ten || maPhien;
+            chatPhien.textContent = 'Mã phiên: ' + maPhien;
+            var guest = maPhien.indexOf('GUEST-') === 0;
+            chatAva.innerHTML = '<i class="bi bi-' + (guest ? 'incognito' : 'person-fill') + '"></i>';
+            chatAva.style.background = guest
+                ? 'linear-gradient(135deg,#98a2b3,#c3cad6)' : 'linear-gradient(135deg,#d92d20,#f04438)';
+            chatBody.innerHTML = '<div class="text-center text-muted py-3">Đang tải lịch sử...</div>';
+
+            Array.prototype.forEach.call(phienList.querySelectorAll('.ht-phien'), function (el) {
+                el.classList.toggle('active', el.dataset.phien === maPhien);
+            });
+
+            fetch('/api/quan-ly/ho-tro/phien/' + encodeURIComponent(maPhien))
+                .then(function (r) { return r.json(); }).then(function (d) {
+                chatBody.innerHTML = '';
+                (d.tinNhans || []).forEach(themTin);
+                capNhatBadge();
+                taiDanhSach();          // refresh để xoá chấm đỏ phiên vừa đọc
+                dangKyRealtime(maPhien);
+            });
+        }
+
+        function themTin(m) {
+            if (m.maTinNhan && idDaHien[m.maTinNhan]) return;
+            if (m.maTinNhan) idDaHien[m.maTinNhan] = true;
+            var el = document.createElement('div');
+            var loai = m.nguoiGui === 'KHACH' ? 'khach' : (m.nguoiGui === 'NHANVIEN' ? 'nhanvien' : 'bot');
+            el.className = 'ht-msg ' + loai;
+            var who = m.nguoiGui === 'BOT' ? '<span class="who">🤖 Chatbot</span>'
+                : (m.nguoiGui === 'NHANVIEN' ? '<span class="who">👩‍💼 ' + esc(m.tenHienThi || 'Nhân viên') + '</span>'
+                    : '<span class="who">👤 ' + esc(m.tenHienThi || 'Khách') + '</span>');
+            el.innerHTML = who + linkify(m.noiDung) +
+                (m.thoiGian ? '<span class="khi">' + esc(m.thoiGian) + '</span>' : '');
+            chatBody.appendChild(el);
+            chatBody.scrollTop = chatBody.scrollHeight;
+        }
+
+        /* ---- gửi trả lời ---- */
+        function gui() {
+            var noiDung = chatInput.value.trim();
+            if (!noiDung || !phienDangMo) return;
+            chatInput.value = ''; chatInput.style.height = 'auto';
+            fetch('/api/quan-ly/ho-tro/tra-loi', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ maPhien: phienDangMo, noiDung: noiDung })
+            }).then(function (r) { return r.json(); }).then(function (d) {
+                if (d.tin) themTin(d.tin);   // realtime cũng đẩy về; chống trùng theo id
+            });
+        }
+
+        /* ---- realtime cho phiên đang mở ---- */
+        function dangKyRealtime(maPhien) {
+            if (!stomp || !stomp.connected) return;
+            if (subHienTai) { try { subHienTai.unsubscribe(); } catch (e) {} subHienTai = null; }
+            subHienTai = stomp.subscribe('/topic/hotro/phien/' + maPhien, function (f) {
+                try {
+                    var m = JSON.parse(f.body);
+                    if (m.maPhien === phienDangMo) themTin(m);
+                } catch (e) {}
+            });
+        }
+
+        function ketNoi() {
+            var sock = new SockJS('/ws');
+            stomp = Stomp.over(sock);
+            stomp.debug = null;
+            stomp.connect({}, function () {
+                // kênh tổng: có tin mới ở bất kỳ phiên nào → cập nhật danh sách + badge
+                stomp.subscribe('/topic/hotro/quanly', function () { taiDanhSach(); });
+                if (phienDangMo) dangKyRealtime(phienDangMo);
+            }, function () { setTimeout(ketNoi, 5000); });
+        }
+
+        document.getElementById('htChatSend').addEventListener('click', gui);
+        document.getElementById('htLamMoi').addEventListener('click', taiDanhSach);
+        chatInput.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); gui(); }
+        });
+        chatInput.addEventListener('input', function () {
+            chatInput.style.height = 'auto';
+            chatInput.style.height = Math.min(chatInput.scrollHeight, 110) + 'px';
+        });
+
+        taiDanhSach();
+        ketNoi();
+        setInterval(capNhatBadge, 30000);
+    })();
+</script>
+</body>
+</html>

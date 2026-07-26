@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/client-layout :: head('Đánh giá sản phẩm')}"></head>
+<body>
+<header th:replace="~{fragments/client-layout :: header}"></header>
+
+<section class="fs-page-hero">
+    <div class="fs-container">
+        <h1>Đánh giá từ <em>khách hàng thật</em></h1>
+        <p>Chỉ khách đã mua và nhận hàng thành công mới có thể đánh giá — nên mỗi ngôi sao ở đây đều là trải nghiệm thật.</p>
+    </div>
+</section>
+
+<div class="fs-container">
+    <!-- Đánh giá mới nhất -->
+    <section class="fs-section" th:if="${danhGiaMoiNhat != null && !danhGiaMoiNhat.isEmpty()}">
+        <div class="fs-section-head">
+            <div><h2><i class="bi bi-chat-square-heart"></i> Đánh giá mới nhất</h2>
+                <p>Khách hàng vừa chia sẻ về sản phẩm</p></div>
+        </div>
+        <div class="fs-value-grid">
+            <div class="fs-value-card reveal" th:each="d : ${danhGiaMoiNhat}">
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+                    <div class="fs-review-ava"
+                         th:text="${d.khachHang != null && d.khachHang.hoTen != null ? #strings.substring(d.khachHang.hoTen,0,1) : '?'}">A</div>
+                    <div>
+                        <b th:text="${d.khachHang != null ? d.khachHang.hoTen : 'Khách hàng'}">Nguyễn Văn A</b>
+                        <div><span th:replace="~{fragments/client-layout :: sao(${d.soSao})}"></span></div>
+                    </div>
+                </div>
+                <p th:if="${d.noiDung != null && !#strings.isEmpty(d.noiDung)}" th:text="'“' + ${d.noiDung} + '”'">“Giày đẹp”</p>
+                <p style="margin-top:8px">
+                    <a th:if="${d.sanPham != null}"
+                       th:href="@{/cua-hang/san-pham/{id}(id=${d.sanPham.maSanPham})} + '#danh-gia'"
+                       style="color:var(--fs-primary);font-weight:700"
+                       th:text="'» ' + ${d.sanPham.tenSanPham}">» Sản phẩm</a>
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sản phẩm được chấm cao -->
+    <section class="fs-section" th:if="${coDanhGia != null && !coDanhGia.isEmpty()}">
+        <div class="fs-section-head">
+            <div><h2><i class="bi bi-star-fill"></i> Sản phẩm được chấm điểm cao</h2>
+                <p>Bấm vào sản phẩm để đọc toàn bộ đánh giá</p></div>
+        </div>
+        <div class="fs-grid">
+            <th:block th:each="c : ${coDanhGia}">
+                <div th:replace="~{fragments/client-layout :: card(${c}, false)}"></div>
+            </th:block>
+        </div>
+    </section>
+
+    <div class="fs-empty" th:if="${coDanhGia == null || coDanhGia.isEmpty()}" style="margin:20px 0">
+        <i class="bi bi-stars"></i>
+        <h3>Chưa có sản phẩm nào được đánh giá</h3>
+        <p>Mua hàng, nhận giày và trở thành người đánh giá đầu tiên nhé!</p>
+        <a th:href="@{/cua-hang/san-pham}" class="fs-btn fs-btn-primary"><i class="bi bi-bag"></i> Mua sắm ngay</a>
+    </div>
+
+    <!-- Mời đánh giá -->
+    <section class="fs-section" th:if="${chuaCoDanhGia != null && !chuaCoDanhGia.isEmpty()}" style="padding-bottom:44px">
+        <div class="fs-section-head">
+            <div><h2><i class="bi bi-pencil-square"></i> Chờ đánh giá đầu tiên</h2>
+                <p>Bạn đã mua những mẫu này? Hãy là người đầu tiên chia sẻ!</p></div>
+        </div>
+        <div class="fs-grid">
+            <th:block th:each="c : ${chuaCoDanhGia}">
+                <div th:replace="~{fragments/client-layout :: card(${c}, false)}"></div>
+            </th:block>
+        </div>
+    </section>
+</div>
+
+<footer th:replace="~{fragments/client-layout :: footer}"></footer>
+<div th:replace="~{fragments/client-layout :: toast}"></div>
+<th:block th:replace="~{fragments/client-layout :: scripts}"></th:block>
+</body>
+</html>

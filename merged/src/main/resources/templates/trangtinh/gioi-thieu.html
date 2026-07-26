@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/client-layout :: head('Giới thiệu')}"></head>
+<body>
+<header th:replace="~{fragments/client-layout :: header}"></header>
+
+<section class="fs-page-hero">
+    <div class="fs-container">
+        <h1>Về <em>FS Shoes</em> — đam mê từng bước chân</h1>
+        <p>FS Shoes ra đời với một mục tiêu đơn giản: mang giày thể thao nam <b>chính hãng</b>
+            đến gần hơn với người Việt — giá hợp lý, trải nghiệm mua sắm hiện đại và minh bạch.</p>
+    </div>
+</section>
+
+<div class="fs-container">
+    <section class="fs-section">
+        <div class="fs-stat-grid">
+            <div class="fs-stat-card reveal"><b>5+</b><span>Năm phục vụ khách hàng</span></div>
+            <div class="fs-stat-card reveal"><b>10.000+</b><span>Đơn hàng đã giao</span></div>
+            <div class="fs-stat-card reveal"><b>100%</b><span>Sản phẩm chính hãng</span></div>
+            <div class="fs-stat-card reveal"><b>4.8/5</b><span>Điểm hài lòng trung bình</span></div>
+        </div>
+    </section>
+
+    <section class="fs-section">
+        <div class="fs-section-head">
+            <div><h2><i class="bi bi-gem"></i> Giá trị cốt lõi</h2>
+                <p>Những điều FS Shoes cam kết trong từng đơn hàng</p></div>
+        </div>
+        <div class="fs-value-grid">
+            <div class="fs-value-card reveal">
+                <i class="bi bi-shield-check"></i>
+                <b>Chính hãng tuyệt đối</b>
+                <p>Nhập trực tiếp từ thương hiệu và nhà phân phối uỷ quyền. Sản phẩm nào không đạt chuẩn
+                    — hoàn tiền gấp đôi.</p>
+            </div>
+            <div class="fs-value-card reveal">
+                <i class="bi bi-broadcast"></i>
+                <b>Minh bạch thời gian thực</b>
+                <p>Đơn đặt online được đẩy thẳng vào hệ thống quản lý bán hàng. Mỗi lần cửa hàng thao tác,
+                    trạng thái đơn của bạn cập nhật ngay lập tức.</p>
+            </div>
+            <div class="fs-value-card reveal">
+                <i class="bi bi-people"></i>
+                <b>Khách hàng là trung tâm</b>
+                <p>Đổi size trong 7 ngày, huỷ đơn dễ dàng khi chưa xác nhận, đánh giá thật từ người mua thật.</p>
+            </div>
+            <div class="fs-value-card reveal">
+                <i class="bi bi-truck"></i>
+                <b>Giao nhanh toàn quốc</b>
+                <p>Miễn phí vận chuyển cho đơn từ 500.000₫. Đóng gói cẩn thận, kiểm tra hàng trước khi thanh toán (COD).</p>
+            </div>
+            <div class="fs-value-card reveal">
+                <i class="bi bi-tags"></i>
+                <b>Giá tốt mỗi ngày</b>
+                <p>Đợt khuyến mãi và voucher được đồng bộ trực tiếp từ hệ thống quản lý — không giá ảo,
+                    không khuyến mãi mập mờ.</p>
+            </div>
+            <div class="fs-value-card reveal">
+                <i class="bi bi-arrow-repeat"></i>
+                <b>Hậu mãi tận tâm</b>
+                <p>Đội ngũ hỗ trợ 8:00–21:30 mỗi ngày, sẵn sàng tư vấn size và xử lý mọi vấn đề của đơn hàng.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="fs-section" style="padding-bottom:44px">
+        <div class="fs-panel" style="text-align:center;padding:34px">
+            <h2 style="font-size:22px;font-weight:800">Sẵn sàng tìm đôi giày của bạn?</h2>
+            <p style="color:var(--fs-muted);margin:8px 0 18px">Hàng trăm mẫu giày thể thao nam đang chờ bạn khám phá.</p>
+            <a th:href="@{/cua-hang/san-pham}" class="fs-btn fs-btn-primary fs-btn-lg">
+                <i class="bi bi-bag"></i> Mua sắm ngay</a>
+        </div>
+    </section>
+</div>
+
+<footer th:replace="~{fragments/client-layout :: footer}"></footer>
+<div th:replace="~{fragments/client-layout :: toast}"></div>
+<th:block th:replace="~{fragments/client-layout :: scripts}"></th:block>
+</body>
+</html>

@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Trang chủ - Nhân viên</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+
+    <style>
+        .stat-card {
+            background: #fff;
+            border: 1px solid #E5E7EB;
+            border-radius: 10px;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: box-shadow .2s, transform .2s;
+        }
+        .stat-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,.08); transform: translateY(-2px); }
+        .stat-label { font-size: 12.5px; color: #6B7280; font-weight: 500; margin-bottom: 4px; }
+        .stat-val   { font-size: 26px; font-weight: 800; color: #1A1A1A; line-height: 1; margin-bottom: 4px; }
+        .stat-trend { font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 3px; }
+        .trend-up   { color: #059669; }
+        .trend-down { color: #E53935; }
+        .stat-icon  { width: 48px; height: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+        .icon-red   { background: #FEF2F2; color: #E53935; }
+        .icon-green { background: #ECFDF5; color: #059669; }
+        .icon-blue  { background: #EFF6FF; color: #2563EB; }
+        .icon-amber { background: #FFFBEB; color: #D97706; }
+
+        .welcome-banner {
+            background: #E53935;
+            border-radius: 12px;
+            padding: 24px 28px;
+            color: #fff;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .welcome-banner h3 { font-size: 20px; font-weight: 800; margin-bottom: 6px; }
+        .welcome-banner p  { font-size: 13px; margin: 0; opacity: .9; }
+        .welcome-badge {
+            display: inline-flex; align-items: center; gap: 5px;
+            background: rgba(255,255,255,.2); border-radius: 20px;
+            padding: 3px 12px; font-size: 12.5px; font-weight: 600; margin-top: 8px;
+        }
+        .welcome-icon { font-size: 64px; opacity: .2; }
+
+        .card-box { background: #fff; border: 1px solid #E5E7EB; border-radius: 10px; overflow: hidden; }
+        .card-box-header {
+            padding: 13px 18px;
+            border-bottom: 1px solid #E5E7EB;
+            display: flex; align-items: center; justify-content: space-between;
+            font-weight: 700; font-size: 14px;
+        }
+        .card-box-header a { font-size: 12.5px; color: #E53935; font-weight: 500; text-decoration: none; }
+        .card-box-header a:hover { text-decoration: underline; }
+
+        .order-item {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 11px 16px; border-bottom: 1px solid #E5E7EB;
+            transition: background .12s;
+        }
+        .order-item:last-child { border-bottom: none; }
+        .order-item:hover { background: #FAFBFF; }
+        .order-code { color: #E53935; font-weight: 700; font-size: 13px; }
+        .order-name { font-size: 12.5px; color: #6B7280; margin-top: 2px; }
+        .order-time { font-size: 11.5px; color: #9CA3AF; }
+
+        .tag-status {
+            display: inline-block; padding: 2px 9px; border-radius: 20px;
+            font-size: 11px; font-weight: 600; white-space: nowrap;
+        }
+        .tag-pending { background: #FFF7ED; color: #C2410C; border: 1px solid #FED7AA; }
+        .tag-done    { background: #ECFDF5; color: #065F46; border: 1px solid #6EE7B7; }
+        .tag-process { background: #EFF6FF; color: #1E40AF; border: 1px solid #BFDBFE; }
+        .tag-cancel  { background: #FEF2F2; color: #991B1B; border: 1px solid #FECACA; }
+
+        .quick-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; padding: 16px; }
+        .quick-item {
+            display: flex; flex-direction: column; align-items: center; gap: 7px;
+            padding: 16px 10px; border-radius: 8px;
+            border: 1.5px solid #E5E7EB; text-decoration: none;
+            color: #1A1A1A; font-size: 12px; font-weight: 600; text-align: center;
+            transition: border-color .15s, background .15s;
+        }
+        .quick-item:hover { border-color: #E53935; background: #FEF2F2; color: #E53935; }
+        .quick-item i { font-size: 22px; }
+
+        .task-item {
+            display: flex; align-items: flex-start; gap: 12px;
+            padding: 11px 16px; border-bottom: 1px solid #E5E7EB;
+        }
+        .task-item:last-child { border-bottom: none; }
+        .task-dot {
+            width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 5px;
+        }
+        .dot-red  { background: #E53935; }
+        .dot-amber{ background: #D97706; }
+        .dot-blue { background: #2563EB; }
+        .task-title { font-size: 13px; font-weight: 600; }
+        .task-sub   { font-size: 11.5px; color: #6B7280; margin-top: 1px; }
+
+        .chart-wrap { padding: 16px; height: 220px; position: relative; }
+    </style>
+</head>
+<body>
+<div class="wrapper">
+
+    <div th:replace="~{fragments/sidebarstaff :: sidebar-staff}"></div>
+
+    <div class="content-wrapper">
+
+        <div th:replace="~{fragments/header :: header('Tổng quan công việc', 'Dashboard')}"></div>
+
+        <div class="content-body">
+
+            <!-- Welcome banner -->
+            <div class="welcome-banner">
+                <div>
+                    <h3>
+                        <i class="bi bi-person-badge me-2"></i>
+                        Chào mừng, <span sec:authentication="name">Nhân viên</span>!
+                    </h3>
+                    <p>
+                        <i class="bi bi-calendar3 me-1"></i>
+                        Hôm nay là <span th:text="${#dates.format(#dates.createNow(), 'dd/MM/yyyy')}">01/01/2026</span>
+                        &nbsp;·&nbsp;
+                        <span id="clock"></span>
+                    </p>
+                    <span class="welcome-badge">
+                        <i class="bi bi-bell-fill"></i>
+                        <span th:text="${donHangMoi != null ? donHangMoi : '0'}">3</span> đơn mới cần xử lý
+                    </span>
+                </div>
+                <i class="bi bi-check2-circle welcome-icon d-none d-md-block"></i>
+            </div>
+
+            <!-- Stat cards - SỬA: đổi donChoXuLy thành donDangXuLy, khachHomNay thành khachMoiHomNay -->
+            <div class="row g-3 mb-4">
+                <div class="col-md-3 col-6">
+                    <div class="stat-card">
+                        <div>
+                            <div class="stat-label">Đơn hôm nay</div>
+                            <div class="stat-val" th:text="${donHomNay != null ? donHomNay : '0'}">24</div>
+                            <div class="stat-trend" th:classappend="${soSanhDonHomQua != null and soSanhDonHomQua >= 0} ? 'trend-up' : 'trend-down'">
+                                <i th:class="${soSanhDonHomQua != null and soSanhDonHomQua >= 0} ? 'bi bi-arrow-up-short' : 'bi bi-arrow-down-short'"></i>
+                                <span th:text="${(soSanhDonHomQua != null and soSanhDonHomQua >= 0 ? '+' : '') + (soSanhDonHomQua != null ? soSanhDonHomQua : 0) + ' so với hôm qua'}"></span>
+                            </div>
+                        </div>
+                        <div class="stat-icon icon-blue"><i class="bi bi-cart-check"></i></div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6">
+                    <div class="stat-card">
+                        <div>
+                            <div class="stat-label">Doanh thu hôm nay</div>
+                            <div class="stat-val" th:text="${(doanhThuHomNay != null ? #numbers.formatDecimal(doanhThuHomNay, 0, 'COMMA', 0, 'POINT') : '0') + ' ₫'}">18.500.000 ₫</div>
+                            <div class="stat-trend" th:if="${phanTramDoanhThuHomQua != null}"
+                                 th:classappend="${phanTramDoanhThuHomQua >= 0} ? 'trend-up' : 'trend-down'">
+                                <i th:class="${phanTramDoanhThuHomQua >= 0} ? 'bi bi-arrow-up-short' : 'bi bi-arrow-down-short'"></i>
+                                <span th:text="${(phanTramDoanhThuHomQua >= 0 ? '+' : '') + #numbers.formatDecimal(phanTramDoanhThuHomQua, 1, 1) + '% so với hôm qua'}"></span>
+                            </div>
+                            <div class="stat-trend" style="color:#6B7280" th:if="${phanTramDoanhThuHomQua == null}">Chưa có dữ liệu hôm qua</div>
+                        </div>
+                        <div class="stat-icon icon-green"><i class="bi bi-cash-stack"></i></div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6">
+                    <div class="stat-card">
+                        <div>
+                            <div class="stat-label">Đơn đang xử lý</div>
+                            <div class="stat-val" th:text="${donDangXuLy != null ? donDangXuLy : '0'}">7</div>
+                            <div class="stat-trend trend-down"><i class="bi bi-arrow-down-short"></i>Cần xử lý ngay</div>
+                        </div>
+                        <div class="stat-icon icon-amber"><i class="bi bi-hourglass-split"></i></div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6">
+                    <div class="stat-card">
+                        <div>
+                            <div class="stat-label">KH mới hôm nay</div>
+                            <div class="stat-val" th:text="${khachMoiHomNay != null ? khachMoiHomNay : '0'}">19</div>
+                            <div class="stat-trend" th:classappend="${soSanhKhachHomQua != null and soSanhKhachHomQua >= 0} ? 'trend-up' : 'trend-down'">
+                                <i th:class="${soSanhKhachHomQua != null and soSanhKhachHomQua >= 0} ? 'bi bi-arrow-up-short' : 'bi bi-arrow-down-short'"></i>
+                                <span th:text="${(soSanhKhachHomQua != null and soSanhKhachHomQua >= 0 ? '+' : '') + (soSanhKhachHomQua != null ? soSanhKhachHomQua : 0) + ' so với hôm qua'}"></span>
+                            </div>
+                        </div>
+                        <div class="stat-icon icon-red"><i class="bi bi-people"></i></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 2: Chart + Công việc -->
+            <div class="row g-3 mb-3">
+
+                <!-- Chart doanh thu 7 ngày -->
+                <div class="col-md-8">
+                    <div class="card-box">
+                        <div class="card-box-header">
+                            <span><i class="bi bi-bar-chart-line me-2" style="color:#E53935"></i>Doanh thu 7 ngày qua</span>
+                        </div>
+                        <div class="chart-wrap">
+                            <canvas id="revenueChartStaff"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Công việc cần làm -->
+                <div class="col-md-4">
+                    <div class="card-box">
+                        <div class="card-box-header">
+                            <span><i class="bi bi-list-check me-2" style="color:#E53935"></i>Cần xử lý</span>
+                        </div>
+                        <div class="task-item">
+                            <div class="task-dot dot-red"></div>
+                            <div>
+                                <div class="task-title"><span th:text="${donDangXuLy != null ? donDangXuLy : '0'}"></span> đơn hàng chờ xác nhận</div>
+                                <div class="task-sub">Cần xử lý trước 17:00 hôm nay</div>
+                            </div>
+                        </div>
+                        <div class="task-item">
+                            <div class="task-dot dot-amber"></div>
+                            <div>
+                                <div class="task-title"><span th:text="${donDangGiao != null ? donDangGiao : '0'}"></span> đơn hàng đang giao</div>
+                                <div class="task-sub">Theo dõi tình trạng giao hàng</div>
+                            </div>
+                        </div>
+                        <div class="task-item">
+                            <div class="task-dot dot-blue"></div>
+                            <div>
+                                <div class="task-title"><span th:text="${khachMoiHomNay != null ? khachMoiHomNay : '0'}"></span> khách hàng mới đăng ký</div>
+                                <div class="task-sub">Kiểm tra và kích hoạt tài khoản</div>
+                            </div>
+                        </div>
+                        <div style="padding:12px 16px">
+                            <div class="quick-grid" style="padding:0">
+                                <a class="quick-item" href="/banhang/index">
+                                    <i class="bi bi-cart-plus" style="color:#E53935"></i>Bán hàng
+                                </a>
+                                <a class="quick-item" href="/donhang/index">
+                                    <i class="bi bi-truck" style="color:#2563EB"></i>Đơn hàng
+                                </a>
+                                <a class="quick-item" href="/khach-hang/hien-thi">
+                                    <i class="bi bi-person-plus" style="color:#D97706"></i>Khách hàng
+                                </a>
+                                <a class="quick-item" href="/hoa-don/index">
+                                    <i class="bi bi-receipt" style="color:#059669"></i>Hóa đơn
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 3: Đơn hàng gần đây -->
+            <div class="row g-3">
+                <div class="col-12">
+                    <div class="card-box">
+                        <div class="card-box-header">
+                            <span><i class="bi bi-receipt me-2" style="color:#E53935"></i>Đơn hàng gần đây</span>
+                            <a href="/hoa-don/index">Xem tất cả →</a>
+                        </div>
+                        <div th:each="hd : ${hoaDonGanDay}" class="order-item">
+                            <div>
+                                <div class="order-code" th:text="${'#' + hd.maHoaDon}"></div>
+                                <div class="order-name"
+                                     th:text="${hd.maKhachHang != null ? hd.maKhachHang.hoTen : 'Khách lẻ'}"></div>
+                            </div>
+                            <div class="text-center">
+                                <div style="font-size:13px;font-weight:700" th:text="${#numbers.formatDecimal(hd.tongTien, 0, 'COMMA', 0, 'POINT') + ' ₫'}"></div>
+                                <div class="order-time" th:text="${#temporals.format(hd.ngayTao, 'dd/MM HH:mm')}"></div>
+                            </div>
+                            <div>
+                                <span class="tag-status"
+                                      th:classappend="${hd.trangThai == 'Đã giao'} ? 'tag-done' : (${hd.trangThai == 'Đang xử lý'} ? 'tag-process' : (${hd.trangThai == 'Đã hủy'} ? 'tag-cancel' : 'tag-pending'))"
+                                      th:text="${hd.trangThai}"></span>
+                            </div>
+                        </div>
+
+                        <div th:if="${hoaDonGanDay == null or hoaDonGanDay.isEmpty()}">
+                            <div class="text-center text-muted py-4">
+                                <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+                                Chưa có đơn hàng nào
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div><!-- /content-body -->
+    </div><!-- /content-wrapper -->
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    function updateClock() {
+        document.getElementById('clock').textContent =
+            new Date().toLocaleTimeString('vi-VN', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+    }
+    updateClock(); setInterval(updateClock, 1000);
+
+    const chartData   = /*[[${thongKeNgay}]]*/ [];
+    const labels      = chartData.length > 0 ? chartData.map(d => d.ngay)     : ['T2','T3','T4','T5','T6','T7','CN'];
+    const revenueData = chartData.length > 0 ? chartData.map(d => d.doanhThu) : [2500000,3800000,4200000,3100000,5600000,7200000,6800000];
+
+    new Chart(document.getElementById('revenueChartStaff').getContext('2d'), {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [{
+                label: 'Doanh thu',
+                data: revenueData,
+                borderColor: '#E53935',
+                backgroundColor: 'rgba(229,57,53,.08)',
+                borderWidth: 2.5,
+                tension: .4, fill: true,
+                pointBackgroundColor: '#E53935', pointRadius: 4, pointHoverRadius: 7
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: { callbacks: { label: ctx => 'Doanh thu: ' + ctx.parsed.y.toLocaleString('vi-VN') + ' ₫' } }
+            },
+            scales: {
+                y: { beginAtZero:true, grid:{color:'#F3F4F6'},
+                    ticks:{callback: v => v>=1000000 ? (v/1000000).toFixed(1)+'M' : v} },
+                x: { grid:{display:false} }
+            }
+        }
+    });
+    /*]]>*/
+</script>
+</body>
+</html>

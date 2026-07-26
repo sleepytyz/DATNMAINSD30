@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+  <meta name="_csrf" th:content="${_csrf.token}">
+  <meta name="_csrf_header" th:content="${_csrf.headerName}">
+  <meta charset="UTF-8">
+  <title>Thêm Khách Hàng</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
+  <link rel="stylesheet" th:href="@{/css/style.css}">
+
+  <!-- Meta tags để truyền thông báo -->
+  <meta name="successMess" th:content="${successMess}">
+  <meta name="errorMess" th:content="${errorMess}">
+
+  <style>
+    .toast-container-custom {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 9999;
+      max-width: 420px;
+      width: 100%;
+    }
+    .toast-custom {
+      background: #fff;
+      border-radius: 12px;
+      padding: 16px 20px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+      border-left: 5px solid #dc3545;
+      animation: slideInRight 0.4s ease;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .toast-custom.success { border-left-color: #28a745; }
+    .toast-custom.warning { border-left-color: #ffc107; }
+    .toast-custom.error { border-left-color: #dc3545; }
+    .toast-custom .toast-content { flex: 1; }
+    .toast-custom .toast-title { font-weight: 700; font-size: 0.95rem; color: #2d3748; }
+    .toast-custom .toast-message { font-size: 0.85rem; color: #6c757d; margin-top: 2px; white-space: pre-line; }
+    .toast-custom .toast-close {
+      background: none;
+      border: none;
+      font-size: 1.2rem;
+      color: #adb5bd;
+      cursor: pointer;
+      padding: 0 4px;
+      transition: color 0.2s;
+    }
+    .toast-custom .toast-close:hover { color: #dc3545; }
+    @keyframes slideInRight {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes slideOutRight {
+      from { transform: translateX(0); opacity: 1; }
+      to { transform: translateX(100%); opacity: 0; }
+    }
+
+    .card-custom { border: none; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+    .form-label { font-weight: 600; color: #374151; }
+    .btn-custom-red { background: #c92327; color: white; border-radius: 8px; padding: 10px 25px; }
+    .btn-custom-red:hover { background: #a51c20; color: white; }
+    .error-message { color: red; }
+    .highlight-field {
+      animation: highlightPulse 1s ease 3;
+    }
+    @keyframes highlightPulse {
+      0% { background-color: #fff3cd; }
+      50% { background-color: #ffc107; }
+      100% { background-color: #fff3cd; }
+    }
+
+    input[type="date"]::-webkit-calendar-picker-indicator {
+      cursor: pointer;
+    }
+    input[type="date"] {
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+<div class="wrapper">
+  <div sec:authorize="hasRole('ADMIN')">
+    <div th:replace="fragments/sidebaradmin :: sidebar-admin"></div>
+  </div>
+
+  <div sec:authorize="hasRole('STAFF')">
+    <div th:replace="fragments/sidebarstaff :: sidebar-staff"></div>
+  </div>
+
+  <div class="content-body">
+    <div th:replace="~{fragments/header :: header('Thêm khách hàng mới', 'Khách hàng')}"></div>
+
+    <div class="toast-container-custom" id="toastContainer"></div>
+
+    <div class="card card-custom p-4 mt-3">
+      <input type="hidden" id="editIndex" value="-1">
+      <h5 class="mb-4 text-danger border-bottom pb-3">
+        <i class="bi bi-person-plus-fill me-2"></i>
+        <span th:text="${isEdit} ? 'Cập nhật khách hàng' : 'Thêm khách hàng mới'"></span>
+      </h5>
+
+      <form th:action="@{/khach-hang/add}" th:object="${kh}" method="post" id="khachHangForm">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Mã khách hàng</label>
+            <input type="text" th:field="*{maKH}" class="form-control bg-light fw-bold text-danger" readonly>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Họ tên <span class="text-danger">*</span></label>
+            <input type="text" th:field="*{hoTen}" class="form-control"
+                   th:classappend="${#fields.hasErrors('hoTen')} ? 'is-invalid'">
+            <div class="invalid-feedback" th:if="${#fields.hasErrors('hoTen')}" th:errors="*{hoTen}"></div>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Số điện thoại <span class="text-danger">*</span></label>
+            <input type="text" th:field="*{sdt}" class="form-control" id="sdtInput"
+                   th:classappend="${#fields.hasErrors('sdt')} ? 'is-invalid'">
+            <div class="invalid-feedback" th:if="${#fields.hasErrors('sdt')}" th:errors="*{sdt}"></div>
+            <div class="text-danger small" id="sdtError"></div>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Email <span class="text-danger">*</span></label>
+            <input type="email" th:field="*{email}" class="form-control" id="emailInput"
+                   th:classappend="${#fields.hasErrors('email')} ? 'is-invalid'">
+            <div class="invalid-feedback" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></div>
+            <div class="text-danger small" id="emailError"></div>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Ngày sinh</label>
+            <input type="date" th:field="*{ngaySinh}" class="form-control" id="ngaySinhInput"
+                   th:classappend="${#fields.hasErrors('ngaySinh')} ? 'is-invalid'"
+                   min="1900-01-01">
+            <div class="invalid-feedback" th:if="${#fields.hasErrors('ngaySinh')}" th:errors="*{ngaySinh}"></div>
+<!--            <div class="text-danger small" id="ageError"></div>-->
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label d-block">Giới tính</label>
+            <div class="p-2 border rounded bg-light">
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" th:field="*{gioiTinh}" value="true" id="nam">
+                <label class="form-check-label" for="nam">Nam</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" th:field="*{gioiTinh}" value="false" id="nu">
+                <label class="form-check-label" for="nu">Nữ</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-12">
+            <label class="form-label">Ghi chú</label>
+            <textarea th:field="*{ghiChu}" class="form-control" rows="3" placeholder="Nhập ghi chú (nếu có)..."></textarea>
+          </div>
+        </div>
+
+        <div class="mt-4">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h5 class="text-danger">Danh sách địa chỉ</h5>
+            <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#modalThemDiaChi">
+              <i class="bi bi-plus-circle"></i> Thêm địa chỉ
+            </button>
+          </div>
+          <table class="table table-bordered">
+            <thead>
+            <tr>
+              <th>Người nhận</th>
+              <th>Địa chỉ cụ thể</th>
+              <th>Mặc định</th>
+              <th>Thao tác</th>
+            </tr>
+            </thead>
+            <tbody id="bodyDiaChi">
+            <tr th:each="dc, iterStat : *{danhSachDiaChi}">
+              <td>
+                <strong th:text="${dc.tenNguoiNhan}"></strong><br>
+                <small th:text="${dc.soDienThoaiNguoiNhan}"></small>
+                <input type="hidden" class="dia-chi-id" th:value="${dc.maDiaChi}">
+                <input type="hidden" th:field="*{danhSachDiaChi[__${iterStat.index}__].tenNguoiNhan}">
+                <input type="hidden" th:field="*{danhSachDiaChi[__${iterStat.index}__].soDienThoaiNguoiNhan}">
+                <input type="hidden" th:field="*{danhSachDiaChi[__${iterStat.index}__].tinhThanh}">
+                <input type="hidden" th:field="*{danhSachDiaChi[__${iterStat.index}__].quanHuyen}">
+                <input type="hidden" th:field="*{danhSachDiaChi[__${iterStat.index}__].phuongXa}">
+                <input type="hidden" th:field="*{danhSachDiaChi[__${iterStat.index}__].diaChiCuThe}">
+              </td>
+              <td>
+                <span th:text="${dc.diaChiCuThe + ', ' + dc.phuongXa + ', ' + dc.quanHuyen + ', ' + dc.tinhThanh}"></span>
+              </td>
+              <td>
+                <input type="radio" name="diaChiMacDinh" th:value="${iterStat.index}"
+                       th:checked="${dc.diaChiMacDinh == true}">
+              </td>
+              <td>
+                <button type="button" class="btn btn-sm btn-outline-primary" onclick="editRow(this)">Sửa</button>
+                <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteRowFromServer(this)">Xóa</button>
+              </td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="mt-4 pt-3 border-top">
+          <button type="submit" class="btn btn-custom-red" id="submitBtn">
+            <span th:text="${isEdit} ? 'Cập nhật' : 'Lưu khách hàng'"></span>
+          </button>
+          <a th:href="@{/khach-hang/hien-thi}" class="btn btn-secondary">Hủy</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="modalThemDiaChi" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header"><h5>Thêm địa chỉ mới</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <div class="row g-2">
+          <div class="col-md-6">
+            <label class="form-label">Tên người nhận</label>
+            <input type="text" id="inputTen" class="form-control" placeholder="Tên người nhận">
+            <small class="error-message" id="errorTen" style="display:none;">Tên người nhận không hợp lệ!</small>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Số điện thoại</label>
+            <input type="text" id="inputSdt" class="form-control" placeholder="Số điện thoại">
+            <small class="error-message" id="errorSdt" style="display:none;">SĐT không hợp lệ!</small>
+
+            <small class="error-message" id="errorSdtTrung" style="display:none;">⚠️ SĐT này đã được sử dụng trong địa chỉ khác!</small>
+          </div>
+
+          <div class="col-md-4">
+            <select id="province" class="form-select" onchange="getDistricts()"><option value="">Chọn Tỉnh/Thành</option></select>
+            <small class="error-message" id="errorProvince" style="display:none;">Chọn Tỉnh!</small>
+          </div>
+          <div class="col-md-4">
+            <select id="district" class="form-select" onchange="getWards()"><option value="">Chọn Quận/Huyện</option></select>
+          </div>
+          <div class="col-md-4">
+            <select id="ward" class="form-select"><option value="">Chọn Phường/Xã</option></select>
+          </div>
+          <div class="col-md-12">
+            <input type="text" id="inputCuThe" class="form-control" placeholder="Số nhà, tên đường...">
+            <small class="error-message" id="errorCuThe" style="display:none;">Vui lòng nhập địa chỉ cụ thể!</small>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="btnXacNhan" class="btn btn-custom-red" onclick="xuLyDiaChi()">Xác nhận</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+  // =============================================
+  // TOAST
+  // =============================================
+  function showToast(message, type, title) {
+    var container = document.getElementById('toastContainer');
+    if (!container) return;
+
+    var titles = {
+      error: 'Lỗi!',
+      success: 'Thành công!',
+      warning: 'Cảnh báo!',
+      info: 'Thông tin'
+    };
+
+    var toast = document.createElement('div');
+    toast.className = 'toast-custom ' + type;
+    toast.innerHTML = `
+            <div class="toast-content">
+                <div class="toast-title">${title || titles[type] || 'Thông báo'}</div>
+                <div class="toast-message">${message}</div>
+            </div>
+            <button class="toast-close" onclick="this.closest('.toast-custom').remove()">
+                ×
+            </button>
+        `;
+    container.appendChild(toast);
+
+    setTimeout(function() {
+      if (toast.parentNode) {
+        toast.style.animation = 'slideOutRight 0.3s ease forwards';
+        setTimeout(function() { toast.remove(); }, 300);
+      }
+    }, 5000);
+  }
+
+  function validateAge(input) {
+    const dateStr = input.value;
+    const ageError = document.getElementById('ageError');
+    if (!dateStr) {
+      ageError.textContent = '';
+      return true;
+    }
+    const birthDate = new Date(dateStr);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
+    if (age < 18) {
+      ageError.textContent = 'Khách hàng phải đủ 18 tuổi trở lên!';
+      ageError.style.color = '#dc3545';
+      input.classList.add('is-invalid');
+      return false;
+    } else {
+      ageError.textContent = 'Đủ 18 tuổi';
+      ageError.style.color = '#28a745';
+      input.classList.remove('is-invalid');
+      return true;
+    }
+  }
+
+  // =============================================
+  // TRIM DỮ LIỆU TRƯỚC KHI SUBMIT
+  // =============================================
+  function trimFormData() {
+    const inputs = document.querySelectorAll('#khachHangForm input, #khachHangForm textarea');
+    inputs.forEach(input => {
+      if (input.type !== 'hidden' && input.type !== 'submit' && input.type !== 'button' && input.type !== 'radio') {
+        if (input.value && typeof input.value === 'string') {
+          input.value = input.value.trim();
+        }
+      }
+    });
+  }
+
+  // =============================================
+  // DOM READY
+  // =============================================
+  document.addEventListener("DOMContentLoaded", function() {
+    // Set max date cho ngày sinh (18 tuổi)
+    const ngaySinhInput = document.getElementById('ngaySinhInput');
+    if (ngaySinhInput) {
+      const today = new Date();
+      const maxDate = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
+      const maxDateStr = maxDate.toISOString().split('T')[0];
+      ngaySinhInput.setAttribute('max', maxDateStr);
+      console.log('Max date set to:', maxDateStr);
+    }
+
+    // Validate age khi thay đổi
+    if (ngaySinhInput) {
+      ngaySinhInput.addEventListener('change', function() {
+        validateAge(this);
+      });
+    }
+
+    // Trim dữ liệu trước khi submit
+    document.getElementById('khachHangForm').addEventListener('submit', function(event) {
+      trimFormData();
+
+      // Validate age
+      const ngaySinhInput = document.getElementById('ngaySinhInput');
+      if (!validateAge(ngaySinhInput)) {
+        event.preventDefault();
+        showToast('Khách hàng phải đủ 18 tuổi trở lên!', 'warning');
+        return;
+      }
+    });
+
+    // Lấy thông báo từ meta tags
+    var successMsg = document.querySelector('meta[name="successMess"]')?.getAttribute('content') || '';
+    var errorMsg = document.querySelector('meta[name="errorMess"]')?.getAttribute('content') || '';
+
+    if (successMsg && successMsg !== '' && successMsg !== 'null' && successMsg !== 'undefined') {
+      showToast(successMsg, 'success');
+    }
+    if (errorMsg && errorMsg !== '' && errorMsg !== 'null' && errorMsg !== 'undefined') {
+      showToast(errorMsg, 'error');
+    }
+  });
+
+  var index = document.querySelectorAll('#bodyDiaChi tr').length;
+
+  function xuLyDiaChi() {
+    document.querySelectorAll('.error-message').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.form-control, .form-select').forEach(el => el.classList.remove('is-invalid'));
+
+    let ten = document.getElementById('inputTen').value.trim();
+    let sdt = document.getElementById('inputSdt').value.trim();
+    let cuThe = document.getElementById('inputCuThe').value.trim();
+    let p = $('#province').find(':selected');
+    let d = $('#district').find(':selected');
+    let w = $('#ward').find(':selected');
+    let editIndex = document.getElementById('editIndex').value;
+
+    let isValid = true;
+    let sdtRegex = /^(0[3|5|7|8|9])+([0-9]{8})$/;
+    let tenRegex = /^[a-zA-ZÀ-ỹ\s]+$/u;
+
+    if (!ten) {
+      showError('inputTen', 'errorTen');
+      isValid = false;
+    } else if (!tenRegex.test(ten)) {
+      showError('inputTen', 'errorTen');
+      document.getElementById('errorTen').innerText = "Tên không được chứa số hoặc ký tự đặc biệt";
+      isValid = false;
+    }
+
+    if (!sdtRegex.test(sdt)) {
+      showError('inputSdt', 'errorSdt');
+      isValid = false;
+    }
+
+    if (!p.val()) { showError('province', 'errorProvince'); isValid = false; }
+    if (!cuThe) { showError('inputCuThe', 'errorCuThe'); isValid = false; }
+    if (!d.val()) { document.getElementById('district').classList.add('is-invalid'); isValid = false; }
+    if (!w.val()) { document.getElementById('ward').classList.add('is-invalid'); isValid = false; }
+
+    if (!isValid) return;
+
+    // ===== CHECK TRÙNG SĐT TRONG ĐỊA CHỈ =====
+    if (sdtRegex.test(sdt) && sdt) {
+      var maKH = document.querySelector('input[name="maKH"]').value || '';
+
+      // Disable button
+      document.getElementById('btnXacNhan').disabled = true;
+      document.getElementById('btnXacNhan').innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Đang kiểm tra...';
+
+      fetch('/khach-hang/check-sdt-dia-chi?maKH=' + maKH + '&sdt=' + encodeURIComponent(sdt))
+              .then(response => response.json())
+              .then(data => {
+                if (data.exists) {
+                  document.getElementById('inputSdt').classList.add('is-invalid');
+                  document.getElementById('errorSdtTrung').style.display = 'block';
+                  document.getElementById('btnXacNhan').disabled = false;
+                  document.getElementById('btnXacNhan').innerHTML = 'Xác nhận';
+                  return;
+                } else {
+                  document.getElementById('inputSdt').classList.remove('is-invalid');
+                  document.getElementById('errorSdtTrung').style.display = 'none';
+                  themDiaChi();
+                }
+              })
+              .catch(error => {
+                console.error('Error:', error);
+                showToast('Lỗi kiểm tra SĐT!', 'error');
+                document.getElementById('btnXacNhan').disabled = false;
+                document.getElementById('btnXacNhan').innerHTML = 'Xác nhận';
+              });
+    } else {
+      themDiaChi();
+    }
+  }
+
+  function themDiaChi() {
+    let ten = document.getElementById('inputTen').value.trim();
+    let sdt = document.getElementById('inputSdt').value.trim();
+    let cuThe = document.getElementById('inputCuThe').value.trim();
+    let p = $('#province').find(':selected');
+    let d = $('#district').find(':selected');
+    let w = $('#ward').find(':selected');
+    let editIndex = document.getElementById('editIndex').value;
+
+    let tbody = document.getElementById('bodyDiaChi');
+    if (editIndex == -1) {
+      let row = tbody.insertRow();
+      row.innerHTML = generateRowHTML(index, ten, sdt, p.text(), d.text(), w.text(), cuThe);
+      index++;
+    } else {
+      let row = tbody.rows[parseInt(editIndex)];
+      row.innerHTML = generateRowHTML(editIndex, ten, sdt, p.text(), d.text(), w.text(), cuThe);
+    }
+
+    let modalEl = document.getElementById('modalThemDiaChi');
+    let modal = bootstrap.Modal.getInstance(modalEl);
+    if (modal) modal.hide();
+
+    resetModal();
+    document.getElementById('btnXacNhan').disabled = false;
+    document.getElementById('btnXacNhan').innerHTML = 'Xác nhận';
+    showToast('Thêm địa chỉ thành công!', 'success');
+  }
+
+  function generateRowHTML(idx, ten, sdt, pName, dName, wName, cuThe, maDiaChi = "") {
+    let pCode = $('#province').val();
+    let dCode = $('#district').val();
+    let wCode = $('#ward').val();
+
+    return `
+        <td>
+            <strong>${ten}</strong><br>
+            <small>${sdt}</small>
+            <input type="hidden" class="dia-chi-id" name="danhSachDiaChi[${idx}].maDiaChi" value="${maDiaChi}">
+            <input type="hidden" name="danhSachDiaChi[${idx}].tenNguoiNhan" value="${ten}">
+            <input type="hidden" name="danhSachDiaChi[${idx}].soDienThoaiNguoiNhan" value="${sdt}">
+            <input type="hidden" name="danhSachDiaChi[${idx}].tinhThanh" value="${pName}">
+            <input type="hidden" name="danhSachDiaChi[${idx}].quanHuyen" value="${dName}">
+            <input type="hidden" name="danhSachDiaChi[${idx}].phuongXa" value="${wName}">
+            <input type="hidden" name="danhSachDiaChi[${idx}].diaChiCuThe" value="${cuThe}">
+            <input type="hidden" class="province-code" value="${pCode}">
+            <input type="hidden" class="district-code" value="${dCode}">
+            <input type="hidden" class="ward-code" value="${wCode}">
+        </td>
+        <td>${cuThe}, ${wName}, ${dName}, ${pName}</td>
+        <td>
+            <input type="radio" name="diaChiMacDinh" value="${idx}">
+        </td>
+        <td>
+            <button type="button" class="btn btn-sm btn-outline-primary" onclick="editRow(this)">Sửa</button>
+            <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteRowFromServer(this)">Xóa</button>
+        </td>
+        `;
+  }
+
+  function resetModal() {
+    document.getElementById('editIndex').value = -1;
+    document.getElementById('btnXacNhan').innerText = "Xác nhận";
+    document.getElementById('inputTen').value = '';
+    document.getElementById('inputSdt').value = '';
+    document.getElementById('inputCuThe').value = '';
+    $('#province').val(null).trigger('change');
+    $('#district').val(null).trigger('change');
+    $('#ward').val(null).trigger('change');
+    document.getElementById('errorSdtTrung').style.display = 'none';
+    document.getElementById('btnXacNhan').disabled = false;
+    document.getElementById('btnXacNhan').innerHTML = 'Xác nhận';
+  }
+
+  function showError(inputId, errorId) {
+    document.getElementById(inputId).classList.add('is-invalid');
+    document.getElementById(errorId).style.display = 'block';
+  }
+
+  fetch('https://provinces.open-api.vn/api/p/')
+          .then(res => res.json())
+          .then(data => {
+            let select = document.getElementById('province');
+            data.forEach(p => select.innerHTML += `<option value="${p.code}" data-name="${p.name}">${p.name}</option>`);
+          });
+
+  $(document).ready(function() {
+    $('#province, #district, #ward').select2({
+      theme: 'bootstrap-5',
+      dropdownParent: $('#modalThemDiaChi'),
+      width: '100%'
+    });
+  });
+
+  function getDistricts() {
+    let pCode = $('#province').val();
+    if (!pCode) return;
+
+    fetch(`https://provinces.open-api.vn/api/p/${pCode}?depth=2`)
+            .then(res => res.json())
+            .then(data => {
+              let select = $('#district');
+              select.empty().append('<option value="">Chọn Quận/Huyện</option>');
+              data.districts.forEach(d => {
+                let newOption = new Option(d.name, d.code, false, false);
+                select.append(newOption);
+              });
+              select.trigger('change');
+              $('#ward').empty().append('<option value="">Chọn Phường/Xã</option>').trigger('change');
+            });
+  }
+
+  function getWards() {
+    let dCode = $('#district').val();
+    if (!dCode) return;
+
+    fetch(`https://provinces.open-api.vn/api/d/${dCode}?depth=2`)
+            .then(res => res.json())
+            .then(data => {
+              let select = $('#ward');
+              select.empty().append('<option value="">Chọn Phường/Xã</option>');
+              data.wards.forEach(w => {
+                let newOption = new Option(w.name, w.code, false, false);
+                select.append(newOption);
+              });
+              select.trigger('change');
+            });
+  }
+
+  function deleteRowFromServer(btn) {
+    let row = btn.closest('tr');
+    let idInput = row.querySelector('.dia-chi-id');
+    let id = idInput ? idInput.value : '';
+
+    if (!confirm("Bạn có chắc muốn xóa địa chỉ này?")) {
+      return;
+    }
+
+    if (!id || id === "null") {
+      row.remove();
+      reindexRows();
+      showToast('Đã xóa địa chỉ thành công!', 'success');
+      return;
+    }
+
+    fetch('/khach-hang/xoa-dia-chi/' + id, {
+      method: 'DELETE'
+    })
+            .then(res => {
+              if (res.ok) {
+                row.remove();
+                reindexRows();
+                showToast('Đã xóa địa chỉ thành công!', 'success');
+              } else {
+                alert("Xóa thất bại!");
+              }
+            })
+            .catch(err => {
+              console.error(err);
+              alert("Có lỗi xảy ra!");
+            });
+  }
+
+  function reindexRows() {
+    let rows = document.querySelectorAll('#bodyDiaChi tr');
+    rows.forEach((row, index) => {
+      row.querySelectorAll('input[name]').forEach(input => {
+        input.name = input.name.replace(/danhSachDiaChi\[\d+\]/, `danhSachDiaChi[${index}]`);
+      });
+      let radio = row.querySelector('input[type="radio"][name="diaChiMacDinh"]');
+      if (radio) {
+        radio.value = index;
+      }
+    });
+  }
+
+  async function loadAddressForEdit(tinh, quan, phuong) {
+    $('#province option').each(function () {
+      if ($(this).text().trim() === tinh) {
+        $('#province').val($(this).val()).trigger('change');
+      }
+    });
+
+    let provinceCode = $('#province').val();
+    if (!provinceCode) return;
+
+    let districtRes = await fetch(`https://provinces.open-api.vn/api/p/${provinceCode}?depth=2`);
+    let districtData = await districtRes.json();
+    let districtSelect = $('#district');
+    districtSelect.empty().append('<option value="">Chọn Quận/Huyện</option>');
+    let districtCode = null;
+    districtData.districts.forEach(d => {
+      districtSelect.append(new Option(d.name, d.code));
+      if (d.name === quan) {
+        districtCode = d.code;
+      }
+    });
+    districtSelect.val(districtCode).trigger('change');
+
+    let wardRes = await fetch(`https://provinces.open-api.vn/api/d/${districtCode}?depth=2`);
+    let wardData = await wardRes.json();
+    let wardSelect = $('#ward');
+    wardSelect.empty().append('<option value="">Chọn Phường/Xã</option>');
+    let wardCode = null;
+    wardData.wards.forEach(w => {
+      wardSelect.append(new Option(w.name, w.code));
+      if (w.name === phuong) {
+        wardCode = w.code;
+      }
+    });
+    wardSelect.val(wardCode).trigger('change');
+  }
+
+  async function editRow(btn) {
+    let row = btn.closest('tr');
+    let idx = row.rowIndex - 1;
+    document.getElementById('editIndex').value = idx;
+
+    document.getElementById('inputTen').value = row.querySelector('input[name*="tenNguoiNhan"]').value;
+    document.getElementById('inputSdt').value = row.querySelector('input[name*="soDienThoaiNguoiNhan"]').value;
+    document.getElementById('inputCuThe').value = row.querySelector('input[name*="diaChiCuThe"]').value;
+
+    let tinh = row.querySelector('input[name*="tinhThanh"]').value;
+    let quan = row.querySelector('input[name*="quanHuyen"]').value;
+    let phuong = row.querySelector('input[name*="phuongXa"]').value;
+
+    await loadAddressForEdit(tinh, quan, phuong);
+    document.getElementById('btnXacNhan').innerText = "Cập nhật";
+    new bootstrap.Modal(document.getElementById('modalThemDiaChi')).show();
+  }
+</script>
+
+</body>
+</html>

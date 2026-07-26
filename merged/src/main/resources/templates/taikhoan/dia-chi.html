@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/client-layout :: head('Sổ địa chỉ')}"></head>
+<body>
+<header th:replace="~{fragments/client-layout :: header}"></header>
+<div class="fs-container">
+    <div class="fs-account-layout">
+        <aside th:replace="~{fragments/client-layout :: taikhoanMenu(${tabActive})}"></aside>
+        <main class="fs-account-main">
+            <div class="fs-alert fs-alert-success" th:if="${thongBao}">
+                <i class="bi bi-check-circle-fill"></i><span th:text="${thongBao}"></span></div>
+            <div class="fs-alert fs-alert-error" th:if="${loiDiaChi}">
+                <i class="bi bi-x-circle-fill"></i><span th:text="${loiDiaChi}"></span></div>
+
+            <div class="fs-panel">
+                <h2><i class="bi bi-geo-alt"></i> Sổ địa chỉ</h2>
+                <p class="sub">Địa chỉ mặc định sẽ được chọn sẵn khi thanh toán.</p>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px" th:if="${!diaChis.isEmpty()}">
+                    <div class="fs-address-card" th:each="d : ${diaChis}"
+                         th:classappend="${d.diaChiMacDinh == true} ? ' macdinh'">
+                        <span class="tag" th:if="${d.diaChiMacDinh == true}">Mặc định</span>
+                        <b th:text="${d.tenNguoiNhan}">Nguyễn Văn A</b>
+                        <p><i class="bi bi-telephone"></i> <span th:text="${d.soDienThoaiNguoiNhan}">0912345678</span></p>
+                        <p><i class="bi bi-geo-alt"></i>
+                            <span th:text="${d.diaChiCuThe} + ', ' + ${d.phuongXa} + ', ' + ${d.quanHuyen} + ', ' + ${d.tinhThanh}">Địa chỉ</span></p>
+                        <div class="fs-address-actions">
+                            <button type="button" class="js-sua-dia-chi"
+                                    th:attr="data-ma=${d.maDiaChi},data-ten=${d.tenNguoiNhan},data-sdt=${d.soDienThoaiNguoiNhan},data-tinh=${d.tinhThanh},data-quan=${d.quanHuyen},data-phuong=${d.phuongXa},data-cuthe=${d.diaChiCuThe}">
+                                <i class="bi bi-pencil"></i> Sửa</button>
+                            <form th:action="@{/ca-nhan/dia-chi/mac-dinh/{id}(id=${d.maDiaChi})}" method="post"
+                                  th:if="${d.diaChiMacDinh != true}" style="display:inline">
+                                <button type="submit"><i class="bi bi-star"></i> Đặt mặc định</button>
+                            </form>
+                            <form th:action="@{/ca-nhan/dia-chi/xoa/{id}(id=${d.maDiaChi})}" method="post"
+                                  style="display:inline" onsubmit="return confirm('Xoá địa chỉ này?')">
+                                <button type="submit" class="xoa"><i class="bi bi-trash3"></i> Xoá</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div class="fs-empty" th:if="${diaChis.isEmpty()}" style="border:0;padding:26px">
+                    <i class="bi bi-geo"></i>
+                    <h3>Chưa có địa chỉ nào</h3>
+                    <p>Thêm địa chỉ bên dưới để đặt hàng nhanh hơn.</p>
+                </div>
+            </div>
+
+            <div class="fs-panel">
+                <h3 id="fsTieuDeFormDiaChi"><i class="bi bi-plus-circle"></i> Thêm địa chỉ mới</h3>
+                <form th:action="@{/ca-nhan/dia-chi/luu}" method="post" id="fsFormDiaChi">
+                    <input type="hidden" name="maDiaChi" id="dcMa">
+                    <div class="fs-form-grid">
+                        <div class="fs-field"><label>Họ tên người nhận *</label>
+                            <input type="text" name="tenNguoiNhan" id="dcTen" required></div>
+                        <div class="fs-field"><label>Số điện thoại *</label>
+                            <input type="text" name="soDienThoaiNguoiNhan" id="dcSdt" required placeholder="09xxxxxxxx"></div>
+                        <div class="fs-field"><label>Tỉnh / Thành phố *</label>
+                            <input type="text" name="tinhThanh" id="dcTinh" required></div>
+                        <div class="fs-field"><label>Quận / Huyện *</label>
+                            <input type="text" name="quanHuyen" id="dcQuan" required></div>
+                        <div class="fs-field"><label>Phường / Xã *</label>
+                            <input type="text" name="phuongXa" id="dcPhuong" required></div>
+                        <div class="fs-field"><label>Địa chỉ cụ thể *</label>
+                            <input type="text" name="diaChiCuThe" id="dcCuThe" required></div>
+                    </div>
+                    <label class="fs-check"><input type="checkbox" name="datMacDinh" value="true">
+                        Đặt làm địa chỉ mặc định</label>
+                    <div style="display:flex;gap:10px;margin-top:8px">
+                        <button type="submit" class="fs-btn fs-btn-primary" id="fsNutLuuDiaChi">
+                            <i class="bi bi-check2-circle"></i> Lưu địa chỉ</button>
+                        <button type="button" class="fs-btn fs-btn-outline" id="fsHuySua" style="display:none">
+                            Huỷ sửa</button>
+                    </div>
+                </form>
+            </div>
+        </main>
+    </div>
+</div>
+<footer th:replace="~{fragments/client-layout :: footer}"></footer>
+<div th:replace="~{fragments/client-layout :: toast}"></div>
+<th:block th:replace="~{fragments/client-layout :: scripts}"></th:block>
+<script>
+    // Bấm "Sửa" trên thẻ địa chỉ → đổ dữ liệu vào form bên dưới
+    (function () {
+        var tieuDe = document.getElementById('fsTieuDeFormDiaChi');
+        var huySua = document.getElementById('fsHuySua');
+        function dat(id, v) { document.getElementById(id).value = v || ''; }
+        document.querySelectorAll('.js-sua-dia-chi').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                dat('dcMa', btn.dataset.ma); dat('dcTen', btn.dataset.ten); dat('dcSdt', btn.dataset.sdt);
+                dat('dcTinh', btn.dataset.tinh); dat('dcQuan', btn.dataset.quan);
+                dat('dcPhuong', btn.dataset.phuong); dat('dcCuThe', btn.dataset.cuthe);
+                tieuDe.innerHTML = '<i class="bi bi-pencil-square"></i> Cập nhật địa chỉ';
+                huySua.style.display = '';
+                document.getElementById('fsFormDiaChi').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            });
+        });
+        huySua.addEventListener('click', function () {
+            ['dcMa','dcTen','dcSdt','dcTinh','dcQuan','dcPhuong','dcCuThe'].forEach(function (id) { dat(id, ''); });
+            tieuDe.innerHTML = '<i class="bi bi-plus-circle"></i> Thêm địa chỉ mới';
+            huySua.style.display = 'none';
+        });
+    })();
+</script>
+</body>
+</html>

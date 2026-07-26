@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 930" font-family="Arial, Helvetica, sans-serif">
+  <rect width="1200" height="930" fill="#101014"/>
+  <polygon points="760,0 1200,0 1200,930 520,930" fill="#1a1a20"/>
+  <polygon points="880,0 1200,0 1200,560" fill="#d92d20" opacity="0.92"/>
+  <text x="1195" y="905" text-anchor="end" font-size="360" font-weight="900" fill="none" stroke="#2c2c34" stroke-width="3">26</text>
+  <text x="80" y="150" font-size="34" font-weight="900" letter-spacing="10" fill="#fda29b">FS SHOES • 2026</text>
+  <text x="74" y="268" font-size="104" font-weight="900" fill="#ffffff">BỘ SƯU TẬP</text>
+  <text x="78" y="336" font-size="40" font-weight="700" letter-spacing="4" fill="#d0d5dd">BỨT PHÁ MỌI BƯỚC CHẠY</text>
+  <g transform="translate(120,300) scale(1.02)"><path d="M60,392 Q48,340 118,330 L860,296 Q952,294 962,352 Q968,408 886,420 L150,462 Q66,458 60,392 Z" fill="#ffffff"/><path d="M118,330 Q128,214 250,164 Q360,120 468,122 Q516,124 560,148 L610,176 Q676,210 762,232 Q880,262 940,330 L118,332 Z" fill="#f2f3f5"/><path d="M468,122 Q516,124 560,148 L610,176 Q560,236 470,250 Q380,262 320,230 Q380,150 468,122 Z" fill="#ffffff"/><path d="M250,164 Q360,120 468,122 L455,168 Q370,170 300,204 Z" fill="#d92d20"/><path d="M940,330 Q880,262 762,232 L742,300 Q850,312 905,352 Z" fill="#d92d20"/><g stroke="#101014" stroke-width="14" stroke-linecap="round"><line x1="360" y1="206" x2="430" y2="188"/><line x1="392" y1="238" x2="466" y2="218"/><line x1="424" y1="270" x2="502" y2="248"/></g><path d="M60,392 Q48,340 118,330 L886,296 Q952,296 962,352 L60,392 Z" fill="none"/><path d="M64,376 L956,338" stroke="#e4e7ec" stroke-width="10"/></g>
+  <rect x="80" y="806" rx="26" width="330" height="56" fill="#d92d20"/>
+  <text x="245" y="844" text-anchor="middle" font-size="28" font-weight="900" fill="#fff">HÀNG MỚI VỀ</text>
+</svg>

@@ -1,0 +1,1355 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+  <meta charset="UTF-8">
+  <title th:text="${isEdit} ? 'Cập Nhật Giảm Giá' : 'Thêm Mới Giảm Giá'">Giảm Giá</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" th:href="@{/css/style.css}">
+
+  <meta name="successMess" th:content="${successMess}">
+  <meta name="errorMess" th:content="${errorMess}">
+
+  <style>
+    .toast-container-custom {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 9999;
+      max-width: 420px;
+      width: 100%;
+    }
+    .toast-custom {
+      background: #fff;
+      border-radius: 12px;
+      padding: 16px 20px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+      border-left: 5px solid #dc3545;
+      animation: slideInRight 0.4s ease;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .toast-custom.success { border-left-color: #28a745; }
+    .toast-custom.warning { border-left-color: #ffc107; }
+    .toast-custom.error { border-left-color: #dc3545; }
+    .toast-custom .toast-icon { font-size: 1.5rem; flex-shrink: 0; margin-top: 2px; }
+    .toast-custom .toast-content { flex: 1; }
+    .toast-custom .toast-title { font-weight: 700; font-size: 0.95rem; color: #2d3748; }
+    .toast-custom .toast-message { font-size: 0.85rem; color: #6c757d; margin-top: 2px; white-space: pre-line; }
+    .toast-custom .toast-close {
+      background: none;
+      border: none;
+      font-size: 1.2rem;
+      color: #adb5bd;
+      cursor: pointer;
+      padding: 0 4px;
+      transition: color 0.2s;
+    }
+    .toast-custom .toast-close:hover { color: #dc3545; }
+    @keyframes slideInRight {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes slideOutRight {
+      from { transform: translateX(0); opacity: 1; }
+      to { transform: translateX(100%); opacity: 0; }
+    }
+
+    .content-body { padding: 20px; }
+    .form-label-custom { font-weight: 600; color: #495057; }
+    .card-custom {
+      border: none;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    }
+    .section-title {
+      color: #c92327;
+      font-weight: 700;
+      border-bottom: 2px solid #c92327;
+      padding-bottom: 10px;
+      margin-bottom: 20px;
+    }
+    .form-control:focus, .form-select:focus {
+      border-color: #c92327 !important;
+      box-shadow: 0 0 0 0.25rem rgba(201, 35, 39, 0.15) !important;
+    }
+    .btn-custom-red {
+      background: #c92327;
+      color: white;
+      border: none;
+      padding: 10px 30px;
+      border-radius: 8px;
+      transition: all 0.3s;
+    }
+    .btn-custom-red:hover {
+      background: #a01a1e;
+      color: white;
+      transform: scale(1.02);
+    }
+    .badge-sap-hoat-dong { background: #fff3cd; color: #856404; padding: 6px 14px; border-radius: 20px; font-weight: 600; font-size: 0.8rem; }
+    .badge-hoat-dong { background: #d4edda; color: #155724; padding: 6px 14px; border-radius: 20px; font-weight: 600; font-size: 0.8rem; }
+    .badge-ngung-hoat-dong { background: #f8d7da; color: #721c24; padding: 6px 14px; border-radius: 20px; font-weight: 600; font-size: 0.8rem; }
+    .badge-da-huy { background: #e2e3e5; color: #383d41; padding: 6px 14px; border-radius: 20px; font-weight: 600; font-size: 0.8rem; }
+
+    .customer-table-wrapper {
+      max-height: 400px;
+      overflow-y: auto;
+      border: 1px solid #dee2e6;
+      border-radius: 8px;
+    }
+    .customer-table-wrapper table {
+      margin-bottom: 0;
+    }
+    .customer-table-wrapper thead {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .quantity-section {
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 8px;
+      border: 1px solid #e9ecef;
+    }
+    .switch-vohan {
+      width: 4em;
+      height: 2em;
+      cursor: pointer;
+    }
+    .switch-vohan:checked {
+      background-color: #c92327 !important;
+      border-color: #c92327 !important;
+    }
+    .switch-vohan:focus {
+      box-shadow: 0 0 0 0.25rem rgba(201, 35, 39, 0.25) !important;
+    }
+    .form-check-label-vohan {
+      font-weight: 600;
+      color: #495057;
+    }
+
+    .pagination-custom {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      flex-wrap: wrap;
+    }
+    .pagination-custom .page-item {
+      display: inline-block;
+    }
+    .pagination-custom .page-item .page-link {
+      border: none;
+      border-radius: 8px;
+      padding: 6px 14px;
+      color: #495057;
+      font-weight: 600;
+      font-size: 0.85rem;
+      transition: all 0.3s ease;
+      background: transparent;
+      min-width: 36px;
+      text-align: center;
+      text-decoration: none;
+      display: block;
+      cursor: pointer;
+    }
+    .pagination-custom .page-item .page-link:hover {
+      background: #fff5f5;
+      color: #c92327;
+    }
+    .pagination-custom .page-item.active .page-link {
+      background: linear-gradient(135deg, #c92327, #a01a1e);
+      color: white;
+      box-shadow: 0 2px 8px rgba(201, 35, 39, 0.3);
+    }
+    .pagination-custom .page-item.disabled .page-link {
+      color: #adb5bd;
+      cursor: not-allowed;
+      pointer-events: none;
+      opacity: 0.5;
+    }
+
+    .table-footer {
+      background: #f8f9fa;
+      padding: 12px 16px;
+      border-top: 1px solid #e9ecef;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      border-radius: 0 0 8px 8px;
+    }
+    .table-footer .info-text {
+      font-size: 0.85rem;
+      color: #6c757d;
+    }
+    .table-footer .info-text strong {
+      color: #2d3748;
+    }
+
+    #loadingOverlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 99999;
+      justify-content: center;
+      align-items: center;
+    }
+    #loadingOverlay .spinner {
+      width: 50px;
+      height: 50px;
+      border: 5px solid #f3f3f3;
+      border-top: 5px solid #c92327;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+
+<div id="loadingOverlay">
+  <div class="spinner"></div>
+</div>
+
+<div class="wrapper">
+  <div sec:authorize="hasRole('ADMIN')">
+    <div th:replace="fragments/sidebaradmin :: sidebar-admin"></div>
+  </div>
+
+  <div sec:authorize="hasRole('STAFF')">
+    <div th:replace="fragments/sidebarstaff :: sidebar-staff"></div>
+  </div>
+
+  <div class="content-body">
+    <div th:replace="~{fragments/header :: header('Quản lý giảm giá', 'Giảm giá')}"></div>
+
+    <div class="page-content">
+      <div class="toast-container-custom" id="toastContainer"></div>
+
+      <div class="card card-custom p-4 mt-3">
+        <h5 class="section-title">
+          <i class="bi bi-tags-fill me-2"></i>
+          <span th:text="${isEdit} ? 'Cập Nhật Chương Trình Giảm Giá' : 'Thêm Mới Chương Trình Giảm Giá'"></span>
+        </h5>
+
+        <form th:action="${isEdit} ? '/giamgia/update' : '/giamgia/add'"
+              th:object="${giamGia}" method="post" id="giamGiaForm">
+          <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+          <input type="hidden" name="maGiamGia" th:value="${giamGia.maGiamGia}" id="maGiamGia">
+          <input type="hidden" th:field="*{ngayTao}">
+          <input type="hidden" name="selectedKhachHangIds" id="selectedKhachHangIds" value="">
+
+          <div class="row g-4">
+            <!-- Cột trái -->
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label-custom">Mã giảm giá</label>
+                <input type="text" th:field="*{maGiamGia}"
+                       class="form-control bg-light fw-bold text-danger" readonly>
+                <div class="text-muted small mt-1" th:if="${!isEdit}">
+                  <i class="bi bi-info-circle"></i> Mã được tạo tự động
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label-custom">Tên chương trình <span class="text-danger">*</span></label>
+                <input type="text" th:field="*{tenGiamGia}" class="form-control"
+                       placeholder="Nhập tên chương trình giảm giá"
+                       th:classappend="${#fields.hasErrors('tenGiamGia')} ? 'is-invalid'">
+                <div class="invalid-feedback" th:if="${#fields.hasErrors('tenGiamGia')}"
+                     th:errors="*{tenGiamGia}"></div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label-custom">Loại áp dụng <span class="text-danger">*</span></label>
+                <select th:field="*{loaiApDung}" class="form-select" id="loaiApDung"
+                        onchange="toggleLoaiApDung()"
+                        th:classappend="${#fields.hasErrors('loaiApDung')} ? 'is-invalid'">
+                  <option value="1">Công khai</option>
+                  <option value="2">Cá nhân</option>
+                </select>
+                <div class="invalid-feedback" th:if="${#fields.hasErrors('loaiApDung')}"
+                     th:errors="*{loaiApDung}"></div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label-custom">Hình thức giảm <span class="text-danger">*</span></label>
+                <select th:field="*{loaiGiamGia}" class="form-select" id="loaiGiamGia"
+                        onchange="toggleLoaiGiamGia()"
+                        th:classappend="${#fields.hasErrors('loaiGiamGia')} ? 'is-invalid'">
+                  <option value="PhanTram">Phần trăm (%)</option>
+                  <option value="SoTien">Số tiền cụ thể (₫)</option>
+                </select>
+                <div class="invalid-feedback" th:if="${#fields.hasErrors('loaiGiamGia')}"
+                     th:errors="*{loaiGiamGia}"></div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label-custom">Giá trị giảm <span class="text-danger">*</span></label>
+                <div class="input-group">
+                  <input type="text" id="giaTriGiamInput" name="giaTriGiam" class="form-control currency-input"
+                         placeholder="Nhập giá trị giảm"
+                         th:value="${giamGia.giaTriGiam != null ?
+                                             (giamGia.loaiGiamGia == 'PhanTram' ?
+                                               giamGia.giaTriGiam.toString() :
+                                               #strings.replace(giamGia.giaTriGiam.toString(), '.', '')) : ''}"
+                         th:classappend="${#fields.hasErrors('giaTriGiam')} ? 'is-invalid'">
+                  <span class="input-group-text" id="giaTriGiamUnit" th:text="${giamGia.loaiGiamGia == 'PhanTram' ? '%' : 'VNĐ'}"></span>
+                </div>
+                <div class="invalid-feedback" th:if="${#fields.hasErrors('giaTriGiam')}"
+                     th:errors="*{giaTriGiam}"></div>
+                <div class="text-danger small" th:if="${#fields.hasErrors('giaTriGiamValid')}"
+                     th:errors="*{giaTriGiamValid}"></div>
+              </div>
+            </div>
+
+            <!-- Cột phải -->
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label-custom">Đơn tối thiểu <span class="text-danger">*</span></label>
+                <div class="input-group">
+                  <span class="input-group-text">VNĐ</span>
+                  <input type="text" id="donToiThieuInput" name="donToiThieu" class="form-control currency-input"
+                         placeholder="Nhập đơn tối thiểu"
+                         th:value="${giamGia.donToiThieu != null ?
+                                             #numbers.formatDecimal(giamGia.donToiThieu, 0, 'COMMA', 0, 'POINT') : ''}"
+                         th:classappend="${#fields.hasErrors('donToiThieu')} ? 'is-invalid'">
+                </div>
+                <div class="invalid-feedback" th:if="${#fields.hasErrors('donToiThieu')}"
+                     th:errors="*{donToiThieu}"></div>
+              </div>
+
+              <div class="mb-3" id="giamToiDaSection">
+                <label class="form-label-custom">Giảm tối đa</label>
+                <div class="input-group">
+                  <span class="input-group-text">VNĐ</span>
+                  <input type="text" id="giamToiDaInput" name="giamToiDa" class="form-control currency-input"
+                         placeholder="Nhập số tiền giảm tối đa"
+                         th:value="${giamGia.giamToiDa != null ?
+                                             #numbers.formatDecimal(giamGia.giamToiDa, 0, 'COMMA', 0, 'POINT') : ''}">
+                </div>
+                <div class="text-muted small">Để trống nếu không giới hạn (chỉ áp dụng cho giảm theo %)</div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label-custom">Ngày bắt đầu <span class="text-danger">*</span></label>
+                <input type="datetime-local" th:field="*{ngayBatDau}" class="form-control"
+                       th:classappend="${#fields.hasErrors('ngayBatDau')} ? 'is-invalid'">
+                <div class="invalid-feedback" th:if="${#fields.hasErrors('ngayBatDau')}"
+                     th:errors="*{ngayBatDau}"></div>
+                <div class="text-danger small" th:if="${#fields.hasErrors('ngayBatDauValid')}"
+                     th:errors="*{ngayBatDauValid}"></div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label-custom">Ngày kết thúc <span class="text-danger">*</span></label>
+                <input type="datetime-local" th:field="*{ngayKetThuc}" class="form-control"
+                       th:classappend="${#fields.hasErrors('ngayKetThuc')} ? 'is-invalid'">
+                <div class="invalid-feedback" th:if="${#fields.hasErrors('ngayKetThuc')}"
+                     th:errors="*{ngayKetThuc}"></div>
+                <div class="text-danger small" th:if="${#fields.hasErrors('ngayKetThucValid')}"
+                     th:errors="*{ngayKetThucValid}"></div>
+              </div>
+
+              <div class="mb-3 quantity-section" id="quantitySection">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <label class="form-label-custom mb-0">Số lượng <span class="text-danger">*</span></label>
+                  <div class="form-check form-switch">
+                    <input class="form-check-input switch-vohan" type="checkbox"
+                           id="isVoHan" th:field="*{isVoHan}"
+                           onchange="toggleVoHan()">
+                    <label class="form-check-label-vohan small" for="isVoHan">
+                      Không giới hạn
+                    </label>
+                  </div>
+                </div>
+                <input type="number" th:field="*{soLuong}" class="form-control"
+                       id="soLuongInput" placeholder="Nhập số lượng voucher" min="0"
+                       th:disabled="${(giamGia.isVoHan != null and giamGia.isVoHan) or (giamGia.loaiApDung == 2)}"
+                       th:classappend="${#fields.hasErrors('soLuong')} ? 'is-invalid'">
+                <div class="invalid-feedback" th:if="${#fields.hasErrors('soLuong')}"
+                     th:errors="*{soLuong}"></div>
+                <div class="text-danger small" th:if="${#fields.hasErrors('soLuongValid')}"
+                     th:errors="*{soLuongValid}"></div>
+                <div class="text-muted small mt-1" id="soLuongNote">
+                  <i class="bi bi-info-circle"></i>
+                  <span th:if="${giamGia.loaiApDung == 2}">Số lượng = số khách hàng đã chọn</span>
+                  <span th:unless="${giamGia.loaiApDung == 2}">
+                                      <span th:if="${giamGia.isVoHan != null and giamGia.isVoHan}">Đang ở chế độ vô hạn</span>
+                                      <span th:unless="${giamGia.isVoHan != null and giamGia.isVoHan}">Nhập số lượng voucher có sẵn</span>
+                                    </span>
+                </div>
+              </div>
+
+              <div class="mb-3" th:if="${isEdit}">
+                <label class="form-label-custom">Trạng thái</label>
+                <div>
+                                    <span class="badge"
+                                          th:classappend="
+                                            ${giamGia.trangThai == 'Sắp hoạt động'} ? 'badge-sap-hoat-dong' :
+                                            (${giamGia.trangThai == 'Hoạt động'} ? 'badge-hoat-dong' :
+                                            (${giamGia.trangThai == 'Đã huỷ'} ? 'badge-da-huy' : 'badge-ngung-hoat-dong'))"
+                                          th:text="${giamGia.trangThai}">
+                                    </span>
+                  <small class="text-muted d-block mt-1">
+                    <i class="bi bi-info-circle"></i> Trạng thái được tự động cập nhật
+                  </small>
+                </div>
+              </div>
+              <input type="hidden" th:field="*{trangThai}" th:if="${!isEdit}">
+            </div>
+          </div>
+
+          <div id="customerListSection" class="mt-4" style="display: none;">
+            <div class="card">
+              <div class="card-header bg-danger text-white py-2">
+                <h6 class="mb-0"><i class="bi bi-person-check me-2"></i>Danh sách khách hàng nhận voucher</h6>
+              </div>
+              <div class="card-body">
+                <div class="alert alert-info small">
+                  <i class="bi bi-info-circle me-2"></i>
+                  Chọn khách hàng để gửi voucher. Mỗi khách hàng chỉ được sử dụng voucher này 1 lần.
+                </div>
+
+                <div class="row g-2 mb-3">
+                  <div class="col-md-4">
+                    <div class="input-group">
+                      <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
+                      <input type="text" id="searchSdtInput" class="form-control"
+                             placeholder="Tìm theo SĐT..." th:value="${sdt}"
+                             onkeypress="if(event.key==='Enter') searchCustomer()">
+                    </div>
+                  </div>
+                  <div class="col-md-2">
+                    <button type="button" class="btn btn-danger w-100" onclick="searchCustomer()">
+                      <i class="bi bi-funnel"></i> Lọc
+                    </button>
+                  </div>
+                  <div class="col-md-2">
+                    <button type="button" class="btn btn-outline-secondary w-100" onclick="resetSearch()">
+                      <i class="bi bi-arrow-clockwise"></i> Reset
+                    </button>
+                  </div>
+                  <div class="col-md-4 text-end">
+                                        <span class="badge bg-danger" id="countSelected">
+                                            <span id="selectedCount">0</span> đã chọn trên trang này
+                                        </span>
+                    <span class="badge bg-success ms-2" id="countTotalSelected">
+                                            Tổng: <span id="totalSelectedDisplay">0</span> khách hàng
+                                        </span>
+                  </div>
+                </div>
+
+                <div class="customer-table-wrapper" id="customerTableWrapper">
+                  <table class="table table-hover align-middle mb-0" id="customerTable">
+                    <thead class="table-light sticky-top">
+                    <tr>
+                      <th width="50"><input type="checkbox" id="selectAll" onchange="toggleAllCheckbox(this)"></th>
+                      <th>Họ tên</th>
+                      <th>SĐT</th>
+                      <th>Email</th>
+                      <th>Ngày sinh</th>
+                    </tr>
+                    </thead>
+                    <tbody id="customerTableBody">
+                    <tr th:each="kh : ${listKhachHang}">
+                      <td class="text-center">
+                        <input type="checkbox"
+                               class="customer-checkbox"
+                               name="selectedKhachHang"
+                               th:value="${kh.maKH}"
+                               th:checked="${allSelectedIds != null and allSelectedIds.contains(kh.maKH)}"
+                               onchange="updateSelectedCount()">
+                      </td>
+                      <td th:text="${kh.hoTen}"></td>
+                      <td th:text="${kh.sdt}"></td>
+                      <td th:text="${kh.email}"></td>
+                      <td th:text="${kh.ngaySinh}"></td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(listKhachHang)}">
+                      <td colspan="5" class="text-center text-muted py-3">
+                        Không tìm thấy khách hàng
+                      </td>
+                    </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <div class="table-footer" id="paginationContainer" th:if="${totalPages > 0}">
+                  <div class="info-text">
+                    <i class="bi bi-database me-1"></i>
+                    Tổng: <strong id="totalItemsDisplay" th:text="${totalItems}">0</strong> khách hàng
+                    <span class="mx-1">|</span>
+                    Trang <strong id="currentPageDisplay" th:text="${currentPage + 1}">1</strong>
+                    / <strong id="totalPagesDisplay" th:text="${totalPages}">1</strong>
+                  </div>
+
+                  <nav aria-label="Page navigation">
+                    <ul class="pagination-custom" id="paginationList">
+                      <li class="page-item" id="firstPage">
+                        <a class="page-link" th:data-page="0" onclick="goToPage(this.dataset.page)">
+                          <i class="bi bi-chevron-double-left"></i>
+                        </a>
+                      </li>
+                      <li class="page-item" id="prevPage">
+                        <a class="page-link" th:data-page="${currentPage - 1}" onclick="goToPage(this.dataset.page)">
+                          <i class="bi bi-chevron-left"></i>
+                        </a>
+                      </li>
+                      <li class="page-item" th:each="i : ${#numbers.sequence(0, totalPages - 1)}"
+                          th:if="${i >= 0 && i < totalPages && ((i >= currentPage - 2 && i <= currentPage + 2) || i == 0 || i == totalPages - 1)}"
+                          th:classappend="${currentPage == i} ? 'active' : ''"
+                          th:id="${'page_' + i}">
+                        <span class="page-link" th:if="${i == 2 && currentPage > 3}" style="border: none; background: transparent; cursor: default;">...</span>
+                        <a class="page-link" th:unless="${i == 2 && currentPage > 3}"
+                           th:data-page="${i}"
+                           onclick="goToPage(this.dataset.page)"
+                           th:text="${i + 1}">
+                        </a>
+                        <span class="page-link" th:if="${i == totalPages - 3 && currentPage < totalPages - 4}" style="border: none; background: transparent; cursor: default;">...</span>
+                      </li>
+                      <li class="page-item" id="nextPage">
+                        <a class="page-link" th:data-page="${currentPage + 1}" onclick="goToPage(this.dataset.page)">
+                          <i class="bi bi-chevron-right"></i>
+                        </a>
+                      </li>
+                      <li class="page-item" id="lastPage">
+                        <a class="page-link" th:data-page="${totalPages - 1}" onclick="goToPage(this.dataset.page)">
+                          <i class="bi bi-chevron-double-right"></i>
+                        </a>
+                      </li>
+                    </ul>
+                  </nav>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ===== NÚT HÀNH ĐỘNG ===== -->
+          <div class="mt-4 pt-3 border-top d-flex gap-2">
+            <button type="submit" class="btn btn-custom-red" id="submitBtn">
+              <i class="bi bi-save me-1"></i>
+              <span th:text="${isEdit} ? 'Cập Nhật' : 'Lưu'"></span>
+            </button>
+            <a th:href="@{/giamgia/index}" class="btn btn-secondary">
+              <i class="bi bi-arrow-left me-1"></i> Quay lại
+            </a>
+
+            <a th:if="${isEdit && giamGia.trangThai == 'Sắp hoạt động'}"
+               th:href="@{/giamgia/cancel/{id}(id=${giamGia.maGiamGia})}"
+               class="btn btn-warning"
+               onclick="return confirm('Bạn có chắc chắn muốn huỷ đợt giảm giá này?')">
+              <i class="bi bi-x-circle me-1"></i> Huỷ
+            </a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script th:inline="javascript">
+  /*<![CDATA[*/
+  console.log('=== INIT DATA FROM SERVER ===');
+
+  var serverData = /*[[${selectedKhachHangIds}]]*/ [];
+  console.log('selectedKhachHangIds from server:', serverData);
+  console.log('totalSelectedCount from server:', /*[[${totalSelectedCount}]]*/ 0);
+  console.log('isEdit:', /*[[${isEdit}]]*/ false);
+  console.log('isView:', /*[[${isView != null ? isView : false}]]*/ false);
+
+  var allSelectedIds = [];
+  if (Array.isArray(serverData)) {
+    allSelectedIds = serverData;
+  } else if (typeof serverData === 'string' && serverData.includes(',')) {
+    allSelectedIds = serverData.split(',').filter(function(id) { return id.trim() !== ''; });
+  } else if (serverData) {
+    allSelectedIds = [serverData];
+  }
+
+  console.log('allSelectedIds after processing:', allSelectedIds);
+
+  var isEdit = /*[[${isEdit}]]*/ false;
+  var isView = /*[[${isView != null ? isView : false}]]*/ false;
+  var maGiamGia = /*[[${giamGia != null ? giamGia.maGiamGia : ''}]]*/ '';
+  var currentPageServer = /*[[${currentPage != null ? currentPage : 0}]]*/ 0;
+  var totalPagesServer = /*[[${totalPages != null ? totalPages : 0}]]*/ 0;
+  var totalItemsServer = /*[[${totalItems != null ? totalItems : 0}]]*/ 0;
+  var sdtServer = /*[[${sdt != null ? sdt : ''}]]*/ '';
+  var totalSelectedCount = /*[[${totalSelectedCount != null ? totalSelectedCount : 0}]]*/ 0;
+  var isSubmitting = false;
+
+  console.log('Final allSelectedIds:', allSelectedIds);
+  console.log('Final totalSelectedCount:', totalSelectedCount);
+  console.log('isView:', isView);
+  /*]]>*/
+</script>
+
+<script>
+  function showToast(message, type, title) {
+    var container = document.getElementById('toastContainer');
+    if (!container) return;
+
+    var icons = {
+      error: 'bi bi-x-circle-fill text-danger',
+      success: 'bi bi-check-circle-fill text-success',
+      warning: 'bi bi-exclamation-triangle-fill text-warning',
+      info: 'bi bi-info-circle-fill text-info'
+    };
+
+    var titles = {
+      error: 'Lỗi!',
+      success: 'Thành công!',
+      warning: 'Cảnh báo!',
+      info: 'Thông tin'
+    };
+
+    var toast = document.createElement('div');
+    toast.className = 'toast-custom ' + type;
+    toast.innerHTML = `
+            <div class="toast-icon"><i class="${icons[type] || icons.success}"></i></div>
+            <div class="toast-content">
+                <div class="toast-title">${title || titles[type] || 'Thông báo'}</div>
+                <div class="toast-message">${message}</div>
+            </div>
+            <button class="toast-close" onclick="this.closest('.toast-custom').remove()">
+                <i class="bi bi-x"></i>
+            </button>
+        `;
+    container.appendChild(toast);
+
+    setTimeout(function() {
+      if (toast.parentNode) {
+        toast.style.animation = 'slideOutRight 0.3s ease forwards';
+        setTimeout(function() { toast.remove(); }, 300);
+      }
+    }, 5000);
+  }
+
+  var CurrencyHelper = {
+    format: function(value) {
+      if (!value || value === '') return '';
+      var numStr = value.toString().replace(/[^0-9]/g, '');
+      if (!numStr || numStr === '') return '';
+      var num = parseInt(numStr, 10);
+      if (isNaN(num) || num === 0) return '';
+      return num.toLocaleString('vi-VN').replace(/,/g, '.');
+    },
+
+    parse: function(value) {
+      if (!value || value === '') return '';
+      return value.toString().replace(/[^0-9]/g, '');
+    },
+
+    formatAll: function() {
+      console.log('=== Formatting all currency inputs ===');
+      var loaiGiamGia = document.getElementById('loaiGiamGia')?.value || 'PhanTram';
+
+      document.querySelectorAll('.currency-input').forEach(function(input) {
+        if (input.value && input.value !== '') {
+          if (input.id === 'giaTriGiamInput' && loaiGiamGia === 'PhanTram') {
+            return;
+          }
+          var raw = input.value.replace(/[^0-9]/g, '');
+          if (raw && raw.length > 0) {
+            var formatted = CurrencyHelper.format(raw);
+            input.value = formatted;
+            console.log('Formatted:', input.id, '->', formatted);
+          }
+        }
+      });
+    },
+
+    formatFromDatabase: function() {
+      console.log('=== Formatting data from database ===');
+      var loaiGiamGia = document.getElementById('loaiGiamGia')?.value || 'PhanTram';
+
+      var donToiThieuInput = document.getElementById('donToiThieuInput');
+      if (donToiThieuInput && donToiThieuInput.value && donToiThieuInput.value !== '') {
+        var raw = donToiThieuInput.value.replace(/[^0-9]/g, '');
+        if (raw && raw.length > 0) {
+          donToiThieuInput.value = CurrencyHelper.format(raw);
+          console.log('donToiThieu formatted:', raw, '->', donToiThieuInput.value);
+        }
+      }
+
+      var giamToiDaInput = document.getElementById('giamToiDaInput');
+      if (giamToiDaInput && giamToiDaInput.value && giamToiDaInput.value !== '') {
+        var raw = giamToiDaInput.value.replace(/[^0-9]/g, '');
+        if (raw && raw.length > 0) {
+          giamToiDaInput.value = CurrencyHelper.format(raw);
+          console.log('giamToiDa formatted:', raw, '->', giamToiDaInput.value);
+        }
+      }
+    }
+  };
+
+  function handleCurrencyInput(event) {
+    var input = event.target;
+    var cursorPosition = input.selectionStart;
+    var loaiGiamGia = document.getElementById('loaiGiamGia')?.value || 'PhanTram';
+
+    if (input.id === 'giaTriGiamInput' && loaiGiamGia === 'PhanTram') {
+      var rawValue = input.value.replace(/[^0-9.]/g, '');
+      input.value = rawValue;
+      return;
+    }
+
+    var rawValue = input.value.replace(/[^0-9]/g, '');
+
+    if (rawValue && rawValue.length > 0) {
+      var formatted = CurrencyHelper.format(rawValue);
+      input.value = formatted;
+      var newCursorPosition = Math.min(cursorPosition + (formatted.length - rawValue.length), formatted.length);
+      input.setSelectionRange(newCursorPosition, newCursorPosition);
+    } else {
+      input.value = '';
+    }
+  }
+
+  function toggleLoaiGiamGia() {
+    var loaiGiamGia = document.getElementById('loaiGiamGia').value;
+    var giamToiDaSection = document.getElementById('giamToiDaSection');
+    var unitSpan = document.getElementById('giaTriGiamUnit');
+    var giaTriInput = document.getElementById('giaTriGiamInput');
+
+    if (loaiGiamGia === 'SoTien') {
+      giamToiDaSection.style.display = 'none';
+      unitSpan.textContent = 'VNĐ';
+      if (giaTriInput) {
+        giaTriInput.placeholder = 'Nhập số tiền giảm (VNĐ)';
+        var raw = giaTriInput.value.replace(/[^0-9]/g, '');
+        if (raw && raw.length > 0) {
+          giaTriInput.value = CurrencyHelper.format(raw);
+        }
+      }
+    } else {
+      giamToiDaSection.style.display = 'block';
+      unitSpan.textContent = '%';
+      if (giaTriInput) {
+        giaTriInput.placeholder = 'Nhập phần trăm giảm (%)';
+        var raw = giaTriInput.value.replace(/[^0-9.]/g, '');
+        if (raw) {
+          giaTriInput.value = raw;
+        }
+      }
+    }
+  }
+
+  function updateHiddenSelectedIds() {
+    var hiddenInput = document.getElementById('selectedKhachHangIds');
+    if (hiddenInput) {
+      hiddenInput.value = allSelectedIds.join(',');
+      console.log('Updated hidden input with allSelectedIds:', allSelectedIds);
+    }
+  }
+
+  function toggleLoaiApDung() {
+    console.log('toggleLoaiApDung called');
+    var loaiApDung = document.getElementById('loaiApDung').value;
+    var customerSection = document.getElementById('customerListSection');
+    var soLuongInput = document.getElementById('soLuongInput');
+    var isVoHan = document.getElementById('isVoHan');
+
+    if (loaiApDung == '2') {
+      console.log('Switch to PERSONAL mode');
+      customerSection.style.display = 'block';
+      soLuongInput.disabled = true;
+      soLuongInput.placeholder = 'Tự động = số khách hàng chọn';
+      isVoHan.checked = false;
+      isVoHan.disabled = true;
+      updateSoLuongFromSelected();
+
+      setTimeout(function() {
+        currentPage = 0;
+        loadCustomerList(0);
+      }, 300);
+    } else {
+      console.log('Switch to PUBLIC mode');
+      customerSection.style.display = 'none';
+      soLuongInput.disabled = isVoHan.checked;
+      soLuongInput.placeholder = 'Nhập số lượng voucher';
+      isVoHan.disabled = false;
+    }
+  }
+
+  function toggleVoHan() {
+    var isVoHan = document.getElementById('isVoHan').checked;
+    var soLuongInput = document.getElementById('soLuongInput');
+    var note = document.getElementById('soLuongNote');
+    var loaiApDung = document.getElementById('loaiApDung').value;
+
+    if (loaiApDung == '2') {
+      return;
+    }
+
+    if (isVoHan) {
+      soLuongInput.value = '';
+      soLuongInput.disabled = true;
+      soLuongInput.placeholder = 'Đang ở chế độ vô hạn';
+      note.innerHTML = '<i class="bi bi-infinity"></i> Đang ở chế độ vô hạn, không giới hạn số lượng voucher';
+    } else {
+      soLuongInput.disabled = false;
+      soLuongInput.placeholder = 'Nhập số lượng voucher';
+      note.innerHTML = '<i class="bi bi-info-circle"></i> Nhập số lượng voucher có sẵn';
+    }
+  }
+
+  function updateSoLuongFromSelected() {
+    var loaiApDung = document.getElementById('loaiApDung').value;
+    if (loaiApDung == '2') {
+      var count = allSelectedIds.length;
+      var soLuongInput = document.getElementById('soLuongInput');
+      soLuongInput.value = count;
+      soLuongInput.placeholder = count > 0 ? count + ' khách hàng' : 'Chọn khách hàng';
+      var note = document.getElementById('soLuongNote');
+      note.innerHTML = '<i class="bi bi-person-check"></i> Số lượng = ' + count + ' khách hàng đã chọn';
+      soLuongInput.classList.remove('is-invalid');
+      console.log('Updated soLuong to:', count);
+    }
+  }
+
+  function updateSelectedCount() {
+    console.log('updateSelectedCount called');
+    var checkboxes = document.querySelectorAll('.customer-checkbox:checked');
+    var pageSelectedCount = checkboxes.length;
+    document.getElementById('selectedCount').textContent = pageSelectedCount;
+
+    var allCheckboxes = document.querySelectorAll('.customer-checkbox');
+    var beforeCount = allSelectedIds.length;
+    console.log('Before update - allSelectedIds count:', beforeCount);
+
+    allCheckboxes.forEach(function(cb) {
+      var id = cb.value;
+      if (cb.checked) {
+        if (!allSelectedIds.includes(id)) {
+          allSelectedIds.push(id);
+          console.log('Added ID:', id);
+        }
+      } else {
+        var index = allSelectedIds.indexOf(id);
+        if (index > -1) {
+          allSelectedIds.splice(index, 1);
+          console.log('Removed ID:', id);
+        }
+      }
+    });
+
+    console.log('After update - allSelectedIds count:', allSelectedIds.length);
+    console.log('allSelectedIds:', allSelectedIds);
+
+    document.getElementById('totalSelectedDisplay').textContent = allSelectedIds.length;
+    updateSoLuongFromSelected();
+    updateHiddenSelectedIds();
+  }
+
+  function toggleAllCheckbox(source) {
+    console.log('toggleAllCheckbox called, checked:', source.checked);
+    document.querySelectorAll('.customer-checkbox').forEach(function(cb) {
+      cb.checked = source.checked;
+      var id = cb.value;
+      if (source.checked) {
+        if (!allSelectedIds.includes(id)) {
+          allSelectedIds.push(id);
+        }
+      } else {
+        var index = allSelectedIds.indexOf(id);
+        if (index > -1) {
+          allSelectedIds.splice(index, 1);
+        }
+      }
+    });
+    updateSelectedCount();
+  }
+
+  function setViewMode() {
+    if (isView) {
+      console.log('=== VIEW MODE ACTIVE ===');
+
+      var submitBtn = document.getElementById('submitBtn');
+      if (submitBtn) {
+        submitBtn.style.display = 'none';
+      }
+      var cancelBtn = document.querySelector('a.btn-warning');
+      if (cancelBtn) {
+        cancelBtn.style.display = 'none';
+      }
+      document.querySelectorAll('#giamGiaForm input:not([type="hidden"]), #giamGiaForm select, #giamGiaForm textarea').forEach(function(element) {
+        element.disabled = true;
+        element.readOnly = true;
+      });
+      document.querySelectorAll('.customer-checkbox').forEach(function(cb) {
+        cb.disabled = true;
+      });
+
+      var selectAll = document.getElementById('selectAll');
+      if (selectAll) {
+        selectAll.disabled = true;
+      }
+
+      document.querySelectorAll('#customerListSection .btn-danger, #customerListSection .btn-outline-secondary').forEach(function(btn) {
+        if (btn.textContent.trim() === 'Lọc' || btn.textContent.trim() === 'Reset') {
+          btn.disabled = true;
+        }
+      });
+      var titleSpan = document.querySelector('.section-title span');
+      if (titleSpan) {
+        titleSpan.textContent = 'Xem Chi Tiết Chương Trình Giảm Giá';
+      }
+    }
+  }
+
+  var currentPage = currentPageServer || 0;
+  var totalPages = totalPagesServer || 0;
+  var currentSdt = sdtServer || '';
+
+  function searchCustomer() {
+    var sdt = document.getElementById('searchSdtInput').value;
+    currentSdt = sdt;
+    loadCustomerList(0);
+  }
+
+  function resetSearch() {
+    document.getElementById('searchSdtInput').value = '';
+    currentSdt = '';
+    loadCustomerList(0);
+  }
+
+  function goToPage(page) {
+    page = parseInt(page);
+    console.log('goToPage called, page:', page, 'totalPages:', totalPages);
+    if (!isNaN(page) && page >= 0 && page < totalPages) {
+      loadCustomerList(page);
+    }
+  }
+
+  function loadCustomerList(page) {
+    console.log('loadCustomerList called, page:', page);
+    var sdt = currentSdt || document.getElementById('searchSdtInput').value || '';
+    var size = 5;
+
+    var tbody = document.getElementById('customerTableBody');
+    tbody.innerHTML = '<tr><td colspan="5" class="text-center py-3"><div class="spinner-border spinner-border-sm text-danger" role="status"></div> Đang tải...</td></tr>';
+
+    var url = '/giamgia/search-customer?page=' + page + '&size=' + size;
+    if (sdt) {
+      url += '&sdt=' + encodeURIComponent(sdt);
+    }
+    if (maGiamGia) {
+      url += '&maGiamGia=' + maGiamGia;
+      if (isEdit) {
+        url += '&isEdit=true';
+      }
+      if (isView) {
+        url += '&isView=true';
+      }
+    }
+
+    console.log('Fetching URL:', url);
+
+    fetch(url)
+            .then(response => {
+              if (!response.ok) {
+                throw new Error('Server error: ' + response.status);
+              }
+              return response.json();
+            })
+            .then(data => {
+              console.log('Data received from server:', data);
+
+              if (data.error) {
+                throw new Error(data.error);
+              }
+
+              currentPage = data.currentPage || 0;
+              totalPages = data.totalPages || 0;
+              currentSdt = data.sdt || '';
+
+              if (data.selectedIds && data.selectedIds.length > 0 && allSelectedIds.length === 0) {
+                allSelectedIds = data.selectedIds;
+                document.getElementById('totalSelectedDisplay').textContent = allSelectedIds.length;
+                updateHiddenSelectedIds();
+              }
+
+              var customers = data.content || [];
+              var selectedCustomers = [];
+              var unselectedCustomers = [];
+
+              customers.forEach(function(kh) {
+                if (allSelectedIds.includes(kh.maKH)) {
+                  selectedCustomers.push(kh);
+                } else {
+                  unselectedCustomers.push(kh);
+                }
+              });
+
+              var sortedCustomers = selectedCustomers.concat(unselectedCustomers);
+              console.log('Sorted - selected:', selectedCustomers.length, 'unselected:', unselectedCustomers.length);
+
+              var html = '';
+              if (sortedCustomers.length > 0) {
+                sortedCustomers.forEach(function(kh) {
+                  var checked = allSelectedIds.includes(kh.maKH) ? 'checked' : '';
+                  var highlightClass = allSelectedIds.includes(kh.maKH) ? 'table-success' : '';
+                  html += `
+                            <tr class="${highlightClass}">
+                                <td class="text-center">
+                                    <input type="checkbox"
+                                           class="customer-checkbox"
+                                           name="selectedKhachHang"
+                                           value="${kh.maKH}"
+                                           ${checked}
+                                           onchange="updateSelectedCount()">
+                                </td>
+                                <td>${kh.hoTen || ''}</td>
+                                <td>${kh.sdt || ''}</td>
+                                <td>${kh.email || ''}</td>
+                                <td>${kh.ngaySinh || ''}</td>
+                            </tr>
+                        `;
+                });
+              } else {
+                html = '<tr><td colspan="5" class="text-center text-muted py-3">Không tìm thấy khách hàng</td></tr>';
+              }
+              tbody.innerHTML = html;
+
+              updateSelectedCount();
+              updatePagination(data);
+
+              document.getElementById('totalItemsDisplay').textContent = data.totalItems || 0;
+              document.getElementById('currentPageDisplay').textContent = (data.currentPage || 0) + 1;
+              document.getElementById('totalPagesDisplay').textContent = data.totalPages || 1;
+
+              updateSelectAllState();
+              console.log('Page loaded, allSelectedIds:', allSelectedIds);
+            })
+            .catch(error => {
+              console.error('Error loading customer list:', error);
+              tbody.innerHTML = '<tr><td colspan="5" class="text-center text-danger py-3">Lỗi tải dữ liệu: ' + error.message + '</td></tr>';
+              showToast('Lỗi tải danh sách khách hàng!', 'error');
+            });
+  }
+
+  function updateSelectAllState() {
+    var checkboxes = document.querySelectorAll('.customer-checkbox');
+    var checkedCheckboxes = document.querySelectorAll('.customer-checkbox:checked');
+    var selectAll = document.getElementById('selectAll');
+    if (selectAll) {
+      selectAll.checked = checkboxes.length > 0 && checkedCheckboxes.length === checkboxes.length;
+    }
+  }
+
+  function updatePagination(data) {
+    var pagination = document.getElementById('paginationList');
+    if (!pagination) return;
+
+    var current = data.currentPage || 0;
+    var total = data.totalPages || 0;
+
+    var container = document.getElementById('paginationContainer');
+    if (total <= 0 || !container) {
+      if (container) container.style.display = 'none';
+      return;
+    }
+    container.style.display = 'flex';
+
+    document.getElementById('firstPage').className = 'page-item' + (current == 0 ? ' disabled' : '');
+    document.getElementById('prevPage').className = 'page-item' + (current == 0 ? ' disabled' : '');
+    document.getElementById('nextPage').className = 'page-item' + (current + 1 >= total ? ' disabled' : '');
+    document.getElementById('lastPage').className = 'page-item' + (current + 1 >= total ? ' disabled' : '');
+
+    var pageItems = pagination.querySelectorAll('.page-item:not(#firstPage):not(#prevPage):not(#nextPage):not(#lastPage)');
+    pageItems.forEach(function(item) {
+      if (item.id !== 'firstPage' && item.id !== 'prevPage' && item.id !== 'nextPage' && item.id !== 'lastPage') {
+        item.remove();
+      }
+    });
+
+    var firstPage = document.getElementById('firstPage');
+    var lastPage = document.getElementById('lastPage');
+
+    var start = Math.max(0, current - 2);
+    var end = Math.min(total - 1, current + 2);
+
+    if (start > 0) {
+      var ellipsisItem = createPageItem('...', null, true);
+      firstPage.parentNode.insertBefore(ellipsisItem, firstPage.nextSibling);
+    }
+
+    for (var i = start; i <= end; i++) {
+      var li = createPageItem(i + 1, i, i === current);
+      lastPage.parentNode.insertBefore(li, lastPage);
+    }
+
+    if (end < total - 1) {
+      var ellipsisItem2 = createPageItem('...', null, true);
+      lastPage.parentNode.insertBefore(ellipsisItem2, lastPage);
+    }
+  }
+
+  function createPageItem(text, pageIndex, isActive) {
+    var li = document.createElement('li');
+    li.className = 'page-item' + (isActive ? ' active' : '');
+
+    var a = document.createElement('a');
+    a.className = 'page-link';
+    a.textContent = text;
+    if (pageIndex !== null) {
+      a.onclick = function(e) {
+        e.preventDefault();
+        goToPage(pageIndex);
+      };
+      a.href = '#';
+    } else {
+      a.style.cssText = 'border: none; background: transparent; cursor: default;';
+    }
+
+    li.appendChild(a);
+    return li;
+  }
+
+  function trimFormData() {
+    document.querySelectorAll('#giamGiaForm input:not([type="hidden"]):not([type="number"]), #giamGiaForm textarea').forEach(function(input) {
+      if (input.value && typeof input.value === 'string') {
+        input.value = input.value.trim().replace(/\s+/g, ' ');
+      }
+    });
+
+    document.querySelectorAll('.currency-input').forEach(function(input) {
+      if (input.value && input.value !== '') {
+        var loaiGiamGia = document.getElementById('loaiGiamGia')?.value || 'PhanTram';
+
+        if (input.id === 'giaTriGiamInput' && loaiGiamGia === 'PhanTram') {
+          input.value = input.value.replace(/\s/g, '').replace(/[^0-9.]/g, '');
+          console.log('Percent value cleaned:', input.id, '->', input.value);
+          return;
+        }
+
+        var realValue = CurrencyHelper.parse(input.value);
+        input.value = realValue;
+        console.log('Currency parsed on submit:', input.id, '->', realValue);
+      }
+    });
+
+    var soLuongInput = document.getElementById('soLuongInput');
+    if (soLuongInput && soLuongInput.value) {
+      soLuongInput.value = soLuongInput.value.replace(/[^0-9]/g, '');
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", function() {
+    console.log('=== DOM CONTENT LOADED ===');
+    console.log('isView:', isView);
+    console.log('isEdit:', isEdit);
+    console.log('allSelectedIds initial:', allSelectedIds);
+
+    document.querySelectorAll('.currency-input').forEach(function(input) {
+      input.addEventListener('input', handleCurrencyInput);
+      input.addEventListener('blur', function() {
+        if (this.value && this.value !== '') {
+          var loaiGiamGia = document.getElementById('loaiGiamGia')?.value || 'PhanTram';
+
+          if (this.id === 'giaTriGiamInput' && loaiGiamGia === 'PhanTram') {
+            var rawValue = this.value.replace(/[^0-9.]/g, '');
+            this.value = rawValue;
+            return;
+          }
+
+          var rawValue = this.value.replace(/[^0-9]/g, '');
+          if (rawValue && rawValue.length > 0) {
+            this.value = CurrencyHelper.format(rawValue);
+          } else {
+            this.value = '';
+          }
+        }
+      });
+    });
+
+    setTimeout(function() {
+      console.log('=== Formatting data from database ===');
+      var loaiGiamGia = document.getElementById('loaiGiamGia')?.value || 'PhanTram';
+
+      var donToiThieuInput = document.getElementById('donToiThieuInput');
+      if (donToiThieuInput && donToiThieuInput.value && donToiThieuInput.value !== '') {
+        var raw = donToiThieuInput.value.replace(/[^0-9]/g, '');
+        if (raw && raw.length > 0) {
+          donToiThieuInput.value = CurrencyHelper.format(raw);
+          console.log('donToiThieu formatted:', raw, '->', donToiThieuInput.value);
+        }
+      }
+
+      var giamToiDaInput = document.getElementById('giamToiDaInput');
+      if (giamToiDaInput && giamToiDaInput.value && giamToiDaInput.value !== '') {
+        var raw = giamToiDaInput.value.replace(/[^0-9]/g, '');
+        if (raw && raw.length > 0) {
+          giamToiDaInput.value = CurrencyHelper.format(raw);
+          console.log('giamToiDa formatted:', raw, '->', giamToiDaInput.value);
+        }
+      }
+
+      var giaTriGiamInput = document.getElementById('giaTriGiamInput');
+      if (giaTriGiamInput && giaTriGiamInput.value && giaTriGiamInput.value !== '') {
+        if (loaiGiamGia === 'SoTien') {
+          var raw = giaTriGiamInput.value.replace(/[^0-9]/g, '');
+          if (raw && raw.length > 0) {
+            giaTriGiamInput.value = CurrencyHelper.format(raw);
+            console.log('giaTriGiam formatted:', raw, '->', giaTriGiamInput.value);
+          }
+        } else {
+          var raw = giaTriGiamInput.value.replace(/[^0-9.]/g, '');
+          if (raw) {
+            giaTriGiamInput.value = raw;
+          }
+        }
+      }
+
+      console.log('Formatted all currency inputs from database');
+    }, 100);
+
+    if (!Array.isArray(allSelectedIds)) {
+      allSelectedIds = [];
+    }
+
+    if (isEdit && totalSelectedCount > 0) {
+      document.getElementById('totalSelectedDisplay').textContent = totalSelectedCount;
+    }
+
+    toggleLoaiApDung();
+    toggleVoHan();
+    toggleLoaiGiamGia();
+
+    document.getElementById('totalSelectedDisplay').textContent = allSelectedIds.length;
+    updateHiddenSelectedIds();
+
+    if (document.getElementById('loaiApDung').value == '2') {
+      updateSoLuongFromSelected();
+      setTimeout(function() {
+        currentPage = 0;
+        loadCustomerList(0);
+      }, 500);
+    }
+
+    if (isView) {
+      setViewMode();
+      setTimeout(function() {
+        if (document.getElementById('loaiApDung').value == '2') {
+          document.getElementById('customerListSection').style.display = 'block';
+          loadCustomerList(0);
+        }
+      }, 300);
+    } else {
+      setViewMode();
+    }
+
+    document.getElementById('giamGiaForm').addEventListener('submit', function(event) {
+      console.log('=== FORM SUBMIT EVENT ===');
+      console.log('allSelectedIds before submit:', allSelectedIds);
+
+      updateHiddenSelectedIds();
+      trimFormData();
+
+      var isVoHan = document.getElementById('isVoHan').checked;
+      var soLuong = document.getElementById('soLuongInput').value;
+      var loaiApDung = document.getElementById('loaiApDung').value;
+
+      console.log('loaiApDung:', loaiApDung);
+      console.log('isVoHan:', isVoHan);
+      console.log('soLuong:', soLuong);
+      console.log('allSelectedIds length:', allSelectedIds.length);
+
+      var hasError = false;
+
+      if (loaiApDung == '1' && !isVoHan && (!soLuong || parseInt(soLuong) <= 0)) {
+        console.log('ERROR: SoLuong is required for PUBLIC mode');
+        event.preventDefault();
+        showToast('Vui lòng nhập số lượng voucher (hoặc chọn vô hạn)!', 'warning');
+        document.getElementById('soLuongInput').classList.add('is-invalid');
+        hasError = true;
+      }
+
+      if (loaiApDung == '2') {
+        if (allSelectedIds.length === 0) {
+          console.log('ERROR: No customers selected for PERSONAL mode');
+          event.preventDefault();
+          showToast('Vui lòng chọn ít nhất một khách hàng!', 'warning');
+          hasError = true;
+        } else {
+          console.log('Setting soLuong to:', allSelectedIds.length);
+          document.getElementById('soLuongInput').value = allSelectedIds.length;
+          document.getElementById('soLuongInput').classList.remove('is-invalid');
+        }
+      }
+
+      var maGiamGiaInput = document.getElementById('maGiamGia');
+      if (maGiamGiaInput && maGiamGiaInput.value && maGiamGiaInput.value.includes(',')) {
+        console.log('ERROR: MaGiamGia contains comma:', maGiamGiaInput.value);
+        event.preventDefault();
+        showToast('Lỗi: Mã giảm giá không hợp lệ! Vui lòng tải lại trang.', 'error');
+        hasError = true;
+      }
+
+      if (!hasError) {
+        console.log('No errors, submitting form...');
+        document.getElementById('loadingOverlay').style.display = 'flex';
+        document.getElementById('submitBtn').disabled = true;
+        return true;
+      } else {
+        console.log('Form has errors, submission prevented');
+        setTimeout(function() {
+          var loaiGiamGia = document.getElementById('loaiGiamGia')?.value || 'PhanTram';
+          document.querySelectorAll('.currency-input').forEach(function(input) {
+            if (input.value && input.value !== '') {
+              if (input.id === 'giaTriGiamInput' && loaiGiamGia === 'PhanTram') {
+                var raw = input.value.replace(/[^0-9.]/g, '');
+                if (raw) {
+                  input.value = raw;
+                }
+              } else {
+                var raw = input.value.replace(/[^0-9]/g, '');
+                if (raw && raw.length > 0) {
+                  var formatted = CurrencyHelper.format(raw);
+                  input.value = formatted;
+                }
+              }
+            }
+          });
+          console.log('Re-formatted currency inputs after error');
+        }, 50);
+        return false;
+      }
+    });
+
+    var successMsg = document.querySelector('meta[name="successMess"]')?.getAttribute('content') || '';
+    var errorMsg = document.querySelector('meta[name="errorMess"]')?.getAttribute('content') || '';
+
+    console.log('successMsg:', successMsg);
+    console.log('errorMsg:', errorMsg);
+
+    if (successMsg && successMsg !== '' && successMsg !== 'null' && successMsg !== 'undefined') {
+      showToast(successMsg, 'success');
+    }
+    if (errorMsg && errorMsg !== '' && errorMsg !== 'null' && errorMsg !== 'undefined') {
+      showToast(errorMsg, 'error');
+    }
+
+    console.log('=== DOM CONTENT LOADED COMPLETE ===');
+  });
+</script>
+
+</body>
+</html>

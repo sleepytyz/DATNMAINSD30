@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/client-layout :: head('Liên hệ')}"></head>
+<body>
+<header th:replace="~{fragments/client-layout :: header}"></header>
+
+<section class="fs-page-hero">
+    <div class="fs-container">
+        <h1>Liên hệ <em>FS Shoes</em></h1>
+        <p>Cần tư vấn size, kiểm tra đơn hàng hay góp ý? Chúng tôi luôn sẵn sàng lắng nghe.</p>
+    </div>
+</section>
+
+<div class="fs-container">
+    <div class="fs-alert fs-alert-success" th:if="${thongBaoLienHe}">
+        <i class="bi bi-check-circle-fill"></i><span th:text="${thongBaoLienHe}"></span></div>
+    <div class="fs-alert fs-alert-error" th:if="${loiLienHe}">
+        <i class="bi bi-x-circle-fill"></i><span th:text="${loiLienHe}"></span></div>
+
+    <div class="fs-section" style="display:grid;grid-template-columns:1fr 1.2fr;gap:20px;align-items:start">
+        <div>
+            <div class="fs-value-card" style="margin-bottom:14px">
+                <i class="bi bi-geo-alt"></i><b>Cửa hàng</b>
+                <p>13 Trịnh Văn Bô, Nam Từ Liêm, Hà Nội<br>Mở cửa 8:00 – 21:30 (T2 – CN)</p>
+            </div>
+            <div class="fs-value-card" style="margin-bottom:14px">
+                <i class="bi bi-telephone"></i><b>Hotline</b>
+                <p>0344 552 008 (gọi/Zalo)<br>Hỗ trợ đặt hàng & tra cứu đơn</p>
+            </div>
+            <div class="fs-value-card">
+                <i class="bi bi-envelope"></i><b>Email</b>
+                <p>hotro@fsshoes.vn<br>Phản hồi trong vòng 24 giờ làm việc</p>
+            </div>
+        </div>
+
+        <div class="fs-panel">
+            <h3><i class="bi bi-chat-left-text"></i> Gửi tin nhắn cho chúng tôi</h3>
+            <form th:action="@{/lien-he}" method="post">
+                <div class="fs-form-grid">
+                    <div class="fs-field"><label>Họ và tên *</label>
+                        <input type="text" name="hoTen" required placeholder="Nguyễn Văn A"></div>
+                    <div class="fs-field"><label>Email *</label>
+                        <input type="email" name="email" required placeholder="ban@email.com"></div>
+                </div>
+                <div class="fs-field"><label>Nội dung *</label>
+                    <textarea name="noiDung" rows="5" required
+                              placeholder="VD: Mình cao 1m75 nặng 70kg thì nên chọn size nào cho mẫu ABC?"></textarea></div>
+                <button type="submit" class="fs-btn fs-btn-primary"><i class="bi bi-send"></i> Gửi tin nhắn</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<footer th:replace="~{fragments/client-layout :: footer}"></footer>
+<div th:replace="~{fragments/client-layout :: toast}"></div>
+<th:block th:replace="~{fragments/client-layout :: scripts}"></th:block>
+</body>
+</html>

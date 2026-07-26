@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Quản Lý Tài Khoản Hệ Thống - FS Shop</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+
+<div class="wrapper">
+
+    <div sec:authorize="hasRole('ADMIN')">
+        <div th:replace="fragments/sidebaradmin :: sidebar-admin"></div>
+    </div>
+
+    <div sec:authorize="hasRole('STAFF')">
+        <div th:replace="fragments/sidebarstaff :: sidebar-staff"></div>
+    </div>
+
+    <div class="content-body">
+
+        <div th:replace="fragments/header :: header('Quản lý tài khoản', 'Tài khoản')"></div>
+
+
+
+        <div class="card card-custom mb-4">
+
+            <div class="card-header text-white"
+                 style="background:#c92327;">
+                <h5 class="mb-0">
+                    <i class="bi bi-pencil-square me-2"></i>
+                    Bộ lọc tìm kiếm
+                </h5>
+            </div>
+
+            <form onsubmit="return false;" class="card-body">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-4">
+                        <label class="filter-label">Tìm theo tên / SĐT / Email</label>
+                        <div class="input-group search-input-group">
+                            <span class="input-group-text"><i class="bi bi-search"></i></span>
+                            <input type="text" id="mainSearchKeyword" oninput="filterMainTable()" class="form-control" placeholder="Nhập từ khóa...">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="filter-label">Vai trò (Role)</label>
+                        <select id="mainFilterRole" onchange="filterMainTable()" class="form-select">
+                            <option value="">Tất cả vai trò</option>
+                            <option value="Quản lý">Quản lý</option>
+                            <option value="Bán hàng">Bán hàng</option>
+                            <option value="Thu ngân">Thu ngân</option>
+                            <option value="Nhân viên kho">Nhân viên kho</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="filter-label">Trạng thái</label>
+                        <select id="mainFilterStatus" onchange="filterMainTable()" class="form-select">
+                            <option value="">Tất cả trạng thái</option>
+                            <option value="true">Hoạt động</option>
+                            <option value="false">Bị khóa</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="button" class="btn-reset-filter" onclick="clearMainTableFilter()" style="background:#c92327;">
+                            <i class="bi bi-arrow-clockwise"></i> Đặt lại bộ lọc
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="table-card">
+            <table class="table-custom">
+                <thead>
+                <tr>
+                    <th style="width: 50px;">STT</th>
+                    <th>Mã TK</th>
+                    <th>Mã NV</th>
+                    <th>Tên đăng nhập</th>
+                    <th>Email</th>
+                    <th>Vai trò</th>
+                    <th>Trạng thái</th>
+                    <th>Hành động</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="acc, iter : ${list}" class="main-account-row">
+                    <td th:text="${iter.index + 1}"></td>
+                    <td th:text="${acc.maTaiKhoan}" ></td>
+                    <td th:text="${acc.maNhanVien.maNhanVien + '-' + acc.maNhanVien.hoTen}"></td>
+                    <td th:text="${acc.tenDangNhap}" ></td>
+                    <td th:text="${acc.email}"></td>
+                    <td th:text="${acc.vaiTro}"></td>
+                    <td>
+                        <span th:if="${acc.trangThai}" class="badge-active">Hoạt động</span>
+                        <span th:if="${!acc.trangThai}" class="badge-locked">Bị khóa</span>
+                    </td>
+                    <td>
+                        <a th:if="${acc.trangThai}" th:href="@{/tai-khoan/lock/{id}(id=${acc.maTaiKhoan})}" class="btn-action-lock">Khóa</a>
+                        <a th:if="${!acc.trangThai}" th:href="@{/tai-khoan/unlock/{id}(id=${acc.maTaiKhoan})}" class="btn-action-unlock">Kích hoạt</a>
+                        <a th:href="@{/tai-khoan/delete/{id}(id=${acc.maTaiKhoan})}" class="btn-trash ms-2" onclick="return confirm('Xóa tài khoản này?');"><i class="bi bi-trash3"></i></a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+
+            <button type="button" class="btn-add-account" data-bs-toggle="modal" data-bs-target="#modalMainAccount">
+                <i class="bi bi-plus-lg"></i> Thêm tài khoản mới
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalMainAccount" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content modal-custom-content">
+            <div class="modal-custom-header">
+                <h5 class="modal-custom-title">Thêm tài khoản</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form th:action="@{/tai-khoan/add}" th:object="${account}" method="post">
+                <div class="modal-custom-body">
+                    <div class="row g-3">
+
+                        <div id="leftColumn" class="col-md-6 d-flex flex-column gap-3">
+                            <div>
+                                <label>Mã tài khoản</label>
+                                <input type="text" class="form-control bg-light fw-bold" value="Tự động tăng" readonly style="color: #4a5568;">
+                            </div>
+                            <div>
+                                <label>Mã nhân viên</label>
+                                <div class="input-group">
+                                    <input type="text" id="mainFormMaNVDisplay" class="form-control fw-bold bg-light" placeholder="Chưa chọn" readonly>
+                                    <input type="hidden" id="mainFormMaNVValue" th:field="*{maNhanVien}" required>
+                                    <button type="button" id="btnTriggerSelect" class="btn btn-custom-red px-3" onclick="openEmployeeSearchPanel(event)">Chọn</button>
+                                </div>
+                            </div>
+                            <div>
+                                <label>Tên đăng nhập</label>
+                                <input type="text" th:field="*{tenDangNhap}" class="form-control" placeholder="Tên tài khoản..." required>
+                            </div>
+                            <div>
+                                <label>Mật khẩu</label>
+                                <input type="password" th:field="*{matKhau}" class="form-control" placeholder="Mật khẩu bảo mật..." required>
+                            </div>
+                        </div>
+
+                        <div id="arrowColumn" class="col-md-1 d-none d-flex align-items-center justify-content-center">
+                            <i class="bi bi-arrow-right fs-4 text-danger fw-bold"></i>
+                        </div>
+
+                        <div id="rightColumnNormal" class="col-md-6 d-flex flex-column gap-3">
+                            <div>
+                                <label>Vai trò</label>
+                                <select th:field="*{vaiTro}" class="form-select" required>
+                                    <option value="Bán hàng">Bán hàng</option>
+                                    <option value="Quản lý">Quản lý</option>
+                                    <option value="Thu ngân">Thu ngân</option>
+                                    <option value="Nhân viên kho">Nhân viên kho</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label>Trạng thái</label>
+                                <input type="text" class="form-control bg-light" value="Hoạt động" readonly>
+                            </div>
+                            <div>
+                                <label>Email</label>
+                                <input type="email" id="mainFormEmailInput" th:field="*{email}" class="form-control bg-light" placeholder="email@example.com" readonly required>
+                            </div>
+                        </div>
+
+                        <div id="rightColumnSearch" class="col-md-6 d-none">
+                            <div class="search-employee-panel h-100">
+                                <div class="panel-search-title">Thông Tin Nhân Viên</div>
+
+                                <div class="row g-2 mb-3">
+                                    <div class="col-8">
+                                        <input type="text" id="inputSearchNV" class="form-control form-control-sm bg-white" placeholder="Tìm tên...">
+                                    </div>
+                                    <div class="col-4">
+                                        <button type="button" class="btn btn-sm btn-custom-red w-100" onclick="filterEmployeesLocal()">Tìm</button>
+                                    </div>
+                                </div>
+
+                                    <div style="max-height: 180px; overflow-y: auto; border: 1px solid #edf2f7; border-radius: 6px;">
+                                    <table class="table table-sm table-hover align-middle mb-0 employee-table">
+                                        <thead class="table-light sticky-top">
+                                        <tr style="font-size: 10px; text-transform: uppercase; color: #718096;">
+                                            <th class="ps-2">Mã NV</th>
+                                            <th>Tên Nhân Viên</th>
+                                            <th>Email</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+                                        <tr th:each="nv : ${listNhanVien}" class="nv-data-row" style="cursor: pointer;"
+                                            th:data-id="${nv.maNhanVien}" th:data-email="${nv.email}"
+                                            onclick="selectEmployeeAndCollapse(this)">
+                                            <td class="ps-2 fw-bold text-secondary" th:text="${nv.maNhanVien}"></td>
+                                            <td class="fw-semibold text-dark target-name" th:text="${nv.hoTen}"></td>
+                                            <td class="text-muted" th:text="${nv.email}"></td>
+                                        </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="text-end mt-2">
+                                    <button type="button" class="btn btn-sm btn-secondary py-0" onclick="closeSearchPanel()" style="font-size: 11px;">Hủy lọc</button>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+                <div class="modal-custom-body d-flex justify-content-end border-top pt-3 bg-light" style="border-bottom-left-radius: 16px; border-bottom-right-radius: 16px; min-height: auto;">
+                    <button type="submit" class="btn-submit-modal shadow-sm">Lưu thông tin</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    const leftCol = document.getElementById('leftColumn');
+    const arrowCol = document.getElementById('arrowColumn');
+    const rightNormal = document.getElementById('rightColumnNormal');
+    const rightSearch = document.getElementById('rightColumnSearch');
+    const btnTrigger = document.getElementById('btnTriggerSelect');
+
+    // LOGIC LỌC BẢNG CHÍNH ĐA ĐIỀU KIỆN (REAL-TIME BẤM LÀ NHẢY)
+    function filterMainTable() {
+        const keyword = document.getElementById("mainSearchKeyword").value.toUpperCase();
+        const role = document.getElementById("mainFilterRole").value;
+        const status = document.getElementById("mainFilterStatus").value;
+
+        const rows = document.getElementsByClassName("main-account-row");
+
+        for (let i = 0; i < rows.length; i++) {
+            const cells = rows[i].getElementsByTagName("td");
+            if (cells.length < 7) continue;
+
+            const maTK = cells[1].textContent || cells[1].innerText;
+            const maNV = cells[2].textContent || cells[2].innerText;
+            const username = cells[3].textContent || cells[3].innerText;
+            const email = cells[4].textContent || cells[4].innerText;
+            const vaiTro = cells[5].textContent || cells[5].innerText;
+            const trangThaiText = cells[6].textContent || cells[6].innerText;
+
+            const matchKeyword =
+                maTK.toUpperCase().indexOf(keyword) > -1 ||
+                maNV.toUpperCase().indexOf(keyword) > -1 ||
+                username.toUpperCase().indexOf(keyword) > -1 ||
+                email.toUpperCase().indexOf(keyword) > -1;
+
+            // 2. Kiểm tra vai trò
+            const matchRole = (role === "") || (vaiTro.trim() === role.trim());
+
+            // 3. Kiểm tra trạng thái
+            let matchStatus = true;
+            if (status === "true") {
+                matchStatus = (trangThaiText.indexOf("Hoạt động") > -1);
+            } else if (status === "false") {
+                matchStatus = (trangThaiText.indexOf("Bị khóa") > -1);
+            }
+
+            // Kết hợp cả 3 điều kiện lọc cùng lúc
+            if (matchKeyword && matchRole && matchStatus) {
+                rows[i].style.display = "";
+            } else {
+                rows[i].style.display = "none";
+            }
+        }
+    }
+
+    // Nút đặt lại bộ lọc
+    function clearMainTableFilter() {
+        document.getElementById("mainSearchKeyword").value = "";
+        document.getElementById("mainFilterRole").value = "";
+        document.getElementById("mainFilterStatus").value = "";
+        filterMainTable(); // Reset hiện lại toàn bộ bảng
+    }
+
+    // LOGIC QUẢN LÝ PANEL TÌM KIẾM TRONG POPUP MODAL
+    function openEmployeeSearchPanel(event) {
+        event.stopPropagation();
+        leftCol.classList.replace('col-md-6', 'col-md-5');
+        arrowCol.classList.remove('d-none');
+        rightNormal.classList.add('d-none');
+        rightSearch.classList.remove('d-none');
+    }
+
+    function selectEmployeeAndCollapse(rowElement) {
+        const maNV = rowElement.getAttribute('data-id');
+        const emailNV = rowElement.getAttribute('data-email');
+
+        document.getElementById('mainFormMaNVDisplay').value = maNV;
+        document.getElementById('mainFormMaNVValue').value = maNV;
+        document.getElementById('mainFormEmailInput').value = emailNV;
+
+        closeSearchPanel();
+    }
+
+    function closeSearchPanel() {
+        leftCol.classList.replace('col-md-5', 'col-md-6');
+        arrowCol.classList.add('d-none');
+        rightSearch.classList.add('d-none');
+        rightNormal.classList.remove('d-none');
+    }
+
+    document.getElementById('modalMainAccount').addEventListener('click', function(e) {
+        if (!rightSearch.classList.contains('d-none')) {
+            if (!rightSearch.contains(e.target) && !btnTrigger.contains(e.target)) {
+                closeSearchPanel();
+            }
+        }
+    });
+
+    function filterEmployeesLocal() {
+        const query = document.getElementById("inputSearchNV").value.toUpperCase();
+        const rows = document.getElementsByClassName("nv-data-row");
+        for (let i = 0; i < rows.length; i++) {
+            const nameText = rows[i].getElementsByClassName("target-name")[0].textContent || rows[i].getElementsByClassName("target-name")[0].innerText;
+            if (nameText.toUpperCase().indexOf(query) > -1) {
+                rows[i].style.display = "";
+            } else {
+                rows[i].style.display = "none";
+            }
+        }
+    }
+</script>
+</body>
+</html>

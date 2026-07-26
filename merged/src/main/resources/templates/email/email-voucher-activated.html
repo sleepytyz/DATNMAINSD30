@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Voucher đã được kích hoạt</title>
+</head>
+<body style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
+<div style="max-width: 600px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 10px; border-top: 5px solid #28a745;">
+
+    <div style="text-align: center; margin-bottom: 20px;">
+        <h2 style="color: #28a745; margin: 0;">🎉 Voucher đã được kích hoạt!</h2>
+        <p style="color: #666; margin: 5px 0 0;">Chương trình giảm giá đã sẵn sàng để sử dụng</p>
+    </div>
+
+    <div style="background: #f0fff4; padding: 15px; border-left: 4px solid #28a745; margin: 20px 0; border-radius: 5px;">
+        <p style="font-size: 16px; font-weight: bold; margin: 0 0 10px; color: #333;">
+            📌 Chương trình: <span th:text="${voucher.tenGiamGia}" style="color: #28a745;"></span>
+        </p>
+
+        <div style="margin: 15px 0; padding: 15px; border: 2px dashed #28a745; text-align: center; background-color: #ffffff; border-radius: 8px;">
+            <p style="margin: 0; color: #555; font-size: 14px;">Mã giảm giá của bạn:</p>
+            <h1 style="margin: 5px 0; color: #28a745; letter-spacing: 3px; font-size: 28px;" th:text="${voucher.maGiamGia}">CODE123</h1>
+        </div>
+
+        <table style="width: 100%; border-collapse: collapse; margin: 10px 0;">
+            <tr>
+                <td style="padding: 6px 0; color: #555; font-size: 14px;">Giá trị giảm:</td>
+                <td style="padding: 6px 0; text-align: right; font-weight: bold; color: #28a745; font-size: 14px;"
+                    th:text="${#numbers.formatDecimal(voucher.giaTri, 0, 'POINT', 0, 'COMMA')} +
+                    (voucher.loaiGiamGia == 'PhanTram' ? '%' : 'đ')">
+                </td>
+            </tr>
+            <tr>
+                <td style="padding: 6px 0; color: #555; font-size: 14px;">Đơn tối thiểu:</td>
+                <td style="padding: 6px 0; text-align: right; font-weight: bold; color: #333; font-size: 14px;"
+                    th:text="${#numbers.formatDecimal(voucher.donToiThieu, 0, 'POINT', 0, 'COMMA')} + 'đ'">
+                </td>
+            </tr>
+            <tr th:if="${voucher.giamToiDa != null && voucher.giamToiDa > 0}">
+                <td style="padding: 6px 0; color: #555; font-size: 14px;">Giảm tối đa:</td>
+                <td style="padding: 6px 0; text-align: right; font-weight: bold; color: #333; font-size: 14px;"
+                    th:text="${#numbers.formatDecimal(voucher.giamToiDa, 0, 'POINT', 0, 'COMMA')} + 'đ'">
+                </td>
+            </tr>
+            <tr>
+                <td style="padding: 6px 0; color: #555; font-size: 14px;">📅 Ngày bắt đầu:</td>
+                <td style="padding: 6px 0; text-align: right; font-weight: bold; color: #28a745; font-size: 14px;"
+                    th:text="${#temporals.format(voucher.ngayBatDau, 'dd/MM/yyyy HH:mm')}">
+                </td>
+            </tr>
+            <tr>
+                <td style="padding: 6px 0; color: #555; font-size: 14px;">📅 Ngày kết thúc:</td>
+                <td style="padding: 6px 0; text-align: right; font-weight: bold; color: #dc3545; font-size: 14px;"
+                    th:text="${#temporals.format(voucher.ngayKetThuc, 'dd/MM/yyyy HH:mm')}">
+                </td>
+            </tr>
+        </table>
+
+        <div style="background: #d4edda; padding: 10px 15px; border-radius: 5px; margin-top: 10px;">
+            <p style="margin: 0; color: #155724; font-size: 13px;">
+                ✅ <strong>Voucher đã được kích hoạt!</strong> Bạn có thể sử dụng ngay bây giờ.
+                <br>
+                ⏳ Thời gian áp dụng:
+                <span th:text="${#temporals.format(voucher.ngayBatDau, 'dd/MM/yyyy HH:mm')}" style="font-weight: bold;"></span>
+                →
+                <span th:text="${#temporals.format(voucher.ngayKetThuc, 'dd/MM/yyyy HH:mm')}" style="font-weight: bold;"></span>
+            </p>
+        </div>
+    </div>
+
+    <div style="text-align: center; margin: 25px 0 15px;">
+        <a href="https://your-website.com" style="display: inline-block; background: #28a745; color: #fff; padding: 10px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+            🛍️ Mua sắm ngay
+        </a>
+    </div>
+
+    <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+
+    <p style="color: #999; font-size: 12px; text-align: center; margin: 0;">
+        📧 Mọi thắc mắc xin vui lòng liên hệ hotline: <strong>1900-xxxx</strong>
+    </p>
+</div>
+</body>
+</html>

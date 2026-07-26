@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Ca làm việc – FS Shop</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+
+    <!-- CSRF meta tags -->
+    <meta name="_csrf" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:content="${_csrf.headerName}">
+
+    <style>
+        .page-title { font-size: 22px; font-weight: 700; }
+        .page-sub   { font-size: 13px; color: #6B7280; margin-top: 2px; margin-bottom: 20px; }
+
+        /* Filter card */
+        .filter-card {
+            background: #fff;
+            border: 1px solid #E5E7EB;
+            border-radius: 10px;
+            padding: 16px 20px;
+            margin-bottom: 20px;
+        }
+        .filter-card .filter-label {
+            font-size: 12.5px; font-weight: 600; color: #374151; margin-bottom: 5px; display: block;
+        }
+        .filter-card .form-control,
+        .filter-card .form-select {
+            font-size: 13px;
+            border: 1.5px solid #E5E7EB;
+            border-radius: 6px;
+            padding: 8px 12px;
+        }
+        .filter-card .form-control:focus,
+        .filter-card .form-select:focus {
+            border-color: #E53935;
+            box-shadow: none;
+        }
+        .btn-search {
+            padding: 8px 20px; border-radius: 6px;
+            background: #E53935; color: #fff; border: none;
+            font-size: 13px; font-weight: 600; cursor: pointer;
+            transition: background .15s;
+        }
+        .btn-search:hover { background: #B71C1C; }
+        .btn-reset {
+            padding: 8px 16px; border-radius: 6px;
+            background: #fff; color: #374151;
+            border: 1.5px solid #E5E7EB;
+            font-size: 13px; font-weight: 600; cursor: pointer;
+            transition: border-color .15s; text-decoration: none;
+            display: inline-flex; align-items: center; gap: 5px;
+        }
+        .btn-reset:hover { border-color: #9CA3AF; color: #374151; }
+
+        /* Table card */
+        .table-card {
+            background: #fff;
+            border: 1px solid #E5E7EB;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .table-card-header {
+            padding: 13px 18px;
+            border-bottom: 1px solid #E5E7EB;
+            display: flex; align-items: center; justify-content: space-between;
+            font-weight: 700; font-size: 14px;
+        }
+        .table-custom {
+            width: 100%; border-collapse: collapse; font-size: 13.5px;
+        }
+        .table-custom thead { background: #c92327; }
+        .table-custom th {
+            padding: 11px 16px;
+            text-align: left;
+            font-weight: 700; font-size: 12.5px; color: #fff;
+            border-bottom: none;
+            white-space: nowrap;
+        }
+        .table-custom td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #E5E7EB;
+            vertical-align: middle;
+        }
+        .table-custom tbody tr:last-child td { border-bottom: none; }
+        .table-custom tbody tr:hover td { background: #FAFBFF; }
+
+        /* Time badge */
+        .time-badge {
+            display: inline-flex; align-items: center; gap: 5px;
+            background: #EFF6FF; color: #1E40AF;
+            border: 1px solid #BFDBFE;
+            padding: 3px 10px; border-radius: 20px;
+            font-size: 12px; font-weight: 600;
+        }
+
+        /* Action buttons */
+        .icon-btn {
+            width: 30px; height: 30px; border-radius: 6px;
+            border: 1.5px solid #E5E7EB; background: #fff;
+            display: inline-flex; align-items: center; justify-content: center;
+            font-size: 14px; color: #6B7280; text-decoration: none;
+            transition: border-color .15s, color .15s;
+            cursor: pointer;
+        }
+        .icon-btn:hover { border-color: #E53935; color: #E53935; }
+
+        /* Empty state */
+        .empty-state {
+            padding: 48px 16px; text-align: center; color: #9CA3AF;
+        }
+        .empty-state i { font-size: 40px; display: block; margin-bottom: 10px; }
+        .empty-state p { font-size: 13.5px; margin: 0; }
+
+        /* ── MODAL EDIT ── */
+        .modal-edit-ca .modal-content {
+            border-radius: 12px;
+            border: none;
+        }
+        .modal-edit-ca .modal-header {
+            border-bottom: 1px solid #E5E7EB;
+            background: #FAFAFA;
+            border-radius: 12px 12px 0 0;
+            padding: 16px 24px;
+        }
+        .modal-edit-ca .modal-body {
+            padding: 24px;
+        }
+        .modal-edit-ca .modal-footer {
+            border-top: 1px solid #E5E7EB;
+            background: #FAFAFA;
+            border-radius: 0 0 12px 12px;
+            padding: 16px 24px;
+        }
+        .modal-edit-ca .form-label {
+            font-weight: 600;
+            font-size: 13px;
+            color: #374151;
+        }
+        .modal-edit-ca .form-control {
+            border: 1.5px solid #E5E7EB;
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-size: 13px;
+        }
+        .modal-edit-ca .form-control:focus {
+            border-color: #E53935;
+            box-shadow: none;
+        }
+        .modal-edit-ca .form-control.is-invalid {
+            border-color: #dc3545;
+        }
+        .modal-edit-ca .invalid-feedback {
+            font-size: 12px;
+        }
+        .modal-edit-ca .btn-save-edit {
+            padding: 9px 24px;
+            border-radius: 6px;
+            border: none;
+            background: #E53935;
+            color: #fff;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background .15s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .modal-edit-ca .btn-save-edit:hover {
+            background: #B71C1C;
+        }
+        .modal-edit-ca .btn-save-edit:disabled {
+            opacity: .6;
+            cursor: not-allowed;
+        }
+        .modal-edit-ca .btn-cancel-edit {
+            padding: 9px 20px;
+            border-radius: 6px;
+            border: 1.5px solid #E5E7EB;
+            background: #fff;
+            color: #374151;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: border-color .15s;
+        }
+        .modal-edit-ca .btn-cancel-edit:hover {
+            border-color: #9CA3AF;
+        }
+
+        /* Modal alert */
+        .modal-edit-alert {
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            display: none;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        .modal-edit-alert-success {
+            background: #ECFDF5;
+            color: #065F46;
+            border: 1px solid #6EE7B7;
+        }
+        .modal-edit-alert-error {
+            background: #FEF2F2;
+            color: #991B1B;
+            border: 1px solid #FECACA;
+        }
+
+        /* ── TOAST NOTIFICATION ── */
+        .toast-container-custom {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+        }
+        .toast-custom {
+            background: #fff;
+            border-radius: 10px;
+            padding: 14px 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,.1);
+            border: 1px solid #E5E7EB;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 10px;
+            min-width: 300px;
+            animation: slideIn 0.3s ease;
+        }
+        .toast-custom.toast-success {
+            border-left: 4px solid #059669;
+        }
+        .toast-custom.toast-error {
+            border-left: 4px solid #E53935;
+        }
+        .toast-custom .toast-icon {
+            font-size: 20px;
+        }
+        .toast-custom .toast-message {
+            flex: 1;
+            font-size: 13px;
+            color: #1A1A1A;
+        }
+        .toast-custom .toast-close {
+            cursor: pointer;
+            font-size: 18px;
+            color: #9CA3AF;
+            background: none;
+            border: none;
+            padding: 0;
+        }
+        .toast-custom .toast-close:hover {
+            color: #374151;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="wrapper">
+
+    <div sec:authorize="hasRole('ADMIN')">
+        <div th:replace="fragments/sidebaradmin :: sidebar-admin"></div>
+    </div>
+
+    <div sec:authorize="hasRole('STAFF')">
+        <div th:replace="fragments/sidebarstaff :: sidebar-staff"></div>
+    </div>
+
+    <div class="content-wrapper">
+
+        <div th:replace="~{fragments/header :: header('Lịch làm việc', 'Giao ca & chấm công')}"></div>
+
+        <div class="content-body">
+
+            <div class="page-title">Ca làm việc</div>
+            <div class="page-sub">Danh sách ca làm việc trong hệ thống</div>
+
+            <!-- Filter -->
+            <div class="filter-card">
+                <form th:action="@{/giao-ca/filter-ca}" method="get" id="filterForm">
+                    <div class="row g-3 align-items-end">
+
+                        <div class="col-md-3">
+                            <label class="filter-label">Tên ca</label>
+                            <input type="text" name="tenCa" class="form-control"
+                                   placeholder="Nhập tên ca..."
+                                   th:value="${param.tenCa}">
+                        </div>
+
+                        <div class="col-md-3">
+                            <label class="filter-label">Giờ bắt đầu</label>
+                            <input type="time" name="gioBatDau" class="form-control"
+                                   th:value="${param.gioBatDau}">
+                        </div>
+
+                        <div class="col-md-3">
+                            <label class="filter-label">Giờ kết thúc</label>
+                            <input type="time" name="gioKetThuc" class="form-control"
+                                   th:value="${param.gioKetThuc}">
+                        </div>
+
+                        <div class="col-md-3">
+                            <div class="d-flex gap-2 flex-wrap">
+                                <button type="submit" class="btn-search">
+                                    <i class="bi bi-search me-1"></i> Tìm kiếm
+                                </button>
+                                <a th:href="@{/giao-ca/ca-lam-viec}" class="btn-reset">
+                                    <i class="bi bi-arrow-clockwise"></i> Reset
+                                </a>
+                            </div>
+                        </div>
+
+                    </div>
+                </form>
+            </div>
+
+            <!-- Table -->
+            <div class="table-card">
+                <div class="table-card-header">
+                    <span>
+                        <i class="bi bi-calendar3 me-2" style="color:#E53935"></i>
+                        Danh sách ca làm việc
+                    </span>
+                    <div class="d-flex align-items-center gap-3">
+                        <span style="font-size:12.5px; color:#6B7280; font-weight:400"
+                              th:text="${'Tổng: ' + (listCaLamViec != null ? listCaLamViec.size() : 0) + ' ca'}">
+                        </span>
+                        <button sec:authorize="hasRole('ADMIN')"
+                                class="btn btn-sm btn-danger"
+                                onclick="openAddModal()"
+                                style="font-size:12.5px;font-weight:600;padding:5px 14px;border-radius:6px;">
+                            <i class="bi bi-plus-lg me-1"></i> Thêm ca
+                        </button>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table-custom">
+                        <thead>
+                        <tr>
+                            <th style="width:60px">STT</th>
+                            <th>Tên ca</th>
+                            <th>Giờ bắt đầu</th>
+                            <th>Giờ kết thúc</th>
+                            <th>Mô tả</th>
+                            <th sec:authorize="hasRole('ADMIN')" style="width:100px">Hành động</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="ca, stat : ${listCaLamViec}">
+                            <td th:text="${stat.count}" style="color:#9CA3AF; font-size:12.5px"></td>
+                            <td>
+                                <span style="font-weight:600" th:text="${ca.tenCa}"></span>
+                            </td>
+                            <td>
+                                <span class="time-badge">
+                                    <i class="bi bi-clock"></i>
+                                    <span th:text="${ca.gioBatDau}"></span>
+                                </span>
+                            </td>
+                            <td>
+                                <span class="time-badge">
+                                    <i class="bi bi-clock-fill"></i>
+                                    <span th:text="${ca.gioKetThuc}"></span>
+                                </span>
+                            </td>
+                            <td style="color:#6B7280" th:text="${ca.moTa}"></td>
+                            <td sec:authorize="hasRole('ADMIN')">
+                                <button class="icon-btn"
+                                        th:data-maca="${ca.maCa}"
+                                        th:data-tenca="${ca.tenCa}"
+                                        th:data-giobatdau="${ca.gioBatDau}"
+                                        th:data-gioketthuc="${ca.gioKetThuc}"
+                                        th:data-mota="${ca.moTa}"
+                                        onclick="openEditModal(this)"
+                                        title="Chỉnh sửa">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                            </td>
+                        </tr>
+
+                        <!-- Empty state -->
+                        <tr th:if="${listCaLamViec == null or listCaLamViec.isEmpty()}">
+                            <td colspan="6">
+                                <div class="empty-state">
+                                    <i class="bi bi-calendar-x"></i>
+                                    <p>Không có ca làm việc nào</p>
+                                </div>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- ── TOAST CONTAINER ── -->
+<div class="toast-container-custom" id="toastContainer"></div>
+
+<!-- ── MODAL THÊM CA ── -->
+<div class="modal fade modal-edit-ca" id="modalAddCa" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-plus-circle me-2" style="color:#E53935"></i>
+                    Thêm ca làm việc mới
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="addAlert" class="modal-edit-alert" style="display:none"></div>
+                <div id="addForm" novalidate>
+                    <div class="mb-3">
+                        <label class="form-label">Tên ca <span style="color:#E53935">*</span></label>
+                        <input type="text" class="form-control" id="addTenCa" placeholder="VD: Ca sáng, Ca chiều..." maxlength="100">
+                        <div class="invalid-feedback">Vui lòng nhập tên ca</div>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-6">
+                            <label class="form-label">Giờ bắt đầu <span style="color:#E53935">*</span></label>
+                            <input type="time" class="form-control" id="addGioBatDau">
+                            <div class="invalid-feedback">Vui lòng chọn giờ bắt đầu</div>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Giờ kết thúc <span style="color:#E53935">*</span></label>
+                            <input type="time" class="form-control" id="addGioKetThuc">
+                            <div class="invalid-feedback">Vui lòng chọn giờ kết thúc</div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Mô tả</label>
+                        <textarea class="form-control" id="addMoTa" rows="2" placeholder="Mô tả ngắn về ca làm việc..."></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="modal-edit-ca .btn-cancel-edit btn btn-light" data-bs-dismiss="modal">
+                    <i class="bi bi-x-lg me-1"></i> Hủy
+                </button>
+                <button type="button" class="btn-save-edit" id="btnSaveAdd" onclick="saveAdd()">
+                    <i class="bi bi-plus-lg"></i> Thêm ca
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── MODAL EDIT ── -->
+<div class="modal fade modal-edit-ca" id="modalEditCa" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-pencil-square me-2" style="color:#E53935"></i>
+                    Chỉnh sửa ca làm việc
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Alert -->
+                <div id="editAlert" class="modal-edit-alert"></div>
+
+                <form id="editForm" novalidate>
+                    <input type="hidden" id="editMaCa" name="maCa">
+
+                    <div class="mb-3">
+                        <label for="editTenCa" class="form-label">Tên ca <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="editTenCa" name="tenCa"
+                               placeholder="VD: Ca sáng" required>
+                        <div class="invalid-feedback">Vui lòng nhập tên ca</div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="editGioBatDau" class="form-label">Giờ bắt đầu <span class="text-danger">*</span></label>
+                            <input type="time" class="form-control" id="editGioBatDau" name="gioBatDau" required>
+                            <div class="invalid-feedback">Vui lòng chọn giờ bắt đầu</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="editGioKetThuc" class="form-label">Giờ kết thúc <span class="text-danger">*</span></label>
+                            <input type="time" class="form-control" id="editGioKetThuc" name="gioKetThuc" required>
+                            <div class="invalid-feedback">Vui lòng chọn giờ kết thúc</div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="editMoTa" class="form-label">Mô tả</label>
+                        <textarea class="form-control" id="editMoTa" name="moTa" rows="2"
+                                  placeholder="Mô tả ca làm việc..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-cancel-edit" data-bs-dismiss="modal">
+                    <i class="bi bi-x"></i> Hủy
+                </button>
+                <button type="button" class="btn-save-edit" id="btnSaveEdit" onclick="saveEdit()">
+                    <i class="bi bi-check-lg"></i> Lưu thay đổi
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    // ── CSRF ──
+    const csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute('content') || '';
+    const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content') || 'X-CSRF-TOKEN';
+
+    let editModal = null;
+    let addModal = null;
+
+    // ── ADD CA ──
+    function openAddModal() {
+        document.getElementById('addTenCa').value = '';
+        document.getElementById('addGioBatDau').value = '';
+        document.getElementById('addGioKetThuc').value = '';
+        document.getElementById('addMoTa').value = '';
+        document.getElementById('addForm').classList.remove('was-validated');
+        document.querySelectorAll('#addForm .form-control').forEach(el => {
+            el.classList.remove('is-invalid', 'is-valid');
+        });
+        const alert = document.getElementById('addAlert');
+        alert.style.display = 'none';
+        if (!addModal) {
+            addModal = new bootstrap.Modal(document.getElementById('modalAddCa'));
+        }
+        addModal.show();
+    }
+
+    function validateAddForm() {
+        const tenCa = document.getElementById('addTenCa');
+        const gioBatDau = document.getElementById('addGioBatDau');
+        const gioKetThuc = document.getElementById('addGioKetThuc');
+        let isValid = true;
+
+        if (!tenCa.value.trim()) {
+            tenCa.classList.add('is-invalid'); isValid = false;
+        } else {
+            tenCa.classList.remove('is-invalid');
+        }
+        if (!gioBatDau.value) {
+            gioBatDau.classList.add('is-invalid'); isValid = false;
+        } else {
+            gioBatDau.classList.remove('is-invalid');
+        }
+        if (!gioKetThuc.value) {
+            gioKetThuc.classList.add('is-invalid'); isValid = false;
+        } else {
+            gioKetThuc.classList.remove('is-invalid');
+        }
+        if (gioBatDau.value && gioKetThuc.value && gioBatDau.value >= gioKetThuc.value) {
+            gioKetThuc.classList.add('is-invalid');
+            const fb = gioKetThuc.nextElementSibling;
+            if (fb && fb.classList.contains('invalid-feedback')) fb.textContent = 'Giờ kết thúc phải sau giờ bắt đầu';
+            isValid = false;
+        }
+        document.getElementById('addForm').classList.add('was-validated');
+        return isValid;
+    }
+
+    function saveAdd() {
+        if (!validateAddForm()) {
+            showToast('Vui lòng kiểm tra lại thông tin', 'error');
+            return;
+        }
+        const btn = document.getElementById('btnSaveAdd');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Đang lưu...';
+
+        const data = {
+            tenCa: document.getElementById('addTenCa').value.trim(),
+            gioBatDau: document.getElementById('addGioBatDau').value,
+            gioKetThuc: document.getElementById('addGioKetThuc').value,
+            moTa: document.getElementById('addMoTa').value.trim()
+        };
+
+        fetch('/giao-ca/add-ca', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', [csrfHeader]: csrfToken },
+            body: JSON.stringify(data)
+        })
+            .then(r => r.json())
+            .then(result => {
+                if (result.success) {
+                    showToast('Thêm ca làm việc thành công!', 'success');
+                    if (addModal) addModal.hide();
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    const alert = document.getElementById('addAlert');
+                    alert.textContent = result.message || 'Có lỗi xảy ra';
+                    alert.className = 'modal-edit-alert modal-edit-alert-error';
+                    alert.style.display = 'block';
+                    showToast(result.message || 'Có lỗi xảy ra', 'error');
+                }
+            })
+            .catch(err => {
+                showToast('Lỗi kết nối: ' + err.message, 'error');
+            })
+            .finally(() => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-plus-lg"></i> Thêm ca';
+            });
+    }
+
+    // ── TOAST ──
+    function showToast(message, type = 'success') {
+        const container = document.getElementById('toastContainer');
+        if (!container) return;
+
+        const toast = document.createElement('div');
+        toast.className = `toast-custom toast-${type}`;
+        const icon = type === 'success' ? 'bi-check-circle-fill text-success' : 'bi-exclamation-circle-fill text-danger';
+        toast.innerHTML = `
+            <i class="bi ${icon} toast-icon"></i>
+            <span class="toast-message">${message}</span>
+            <button class="toast-close" onclick="this.closest('.toast-custom').remove()">&times;</button>
+        `;
+        container.appendChild(toast);
+
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%)';
+                toast.style.transition = 'all 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }
+        }, 4000);
+    }
+
+    // ── OPEN EDIT MODAL ──
+    function openEditModal(btn) {
+        // Lấy dữ liệu từ data attributes
+        const maCa = btn.dataset.maca;
+        const tenCa = btn.dataset.tenca || '';
+        const gioBatDau = btn.dataset.giobatdau || '';
+        const gioKetThuc = btn.dataset.gioketthuc || '';
+        const moTa = btn.dataset.mota || '';
+
+        // Đổ dữ liệu vào form
+        document.getElementById('editMaCa').value = maCa;
+        document.getElementById('editTenCa').value = tenCa;
+        document.getElementById('editGioBatDau').value = gioBatDau;
+        document.getElementById('editGioKetThuc').value = gioKetThuc;
+        document.getElementById('editMoTa').value = moTa;
+
+        // Reset validation
+        const form = document.getElementById('editForm');
+        form.classList.remove('was-validated');
+        document.querySelectorAll('.form-control').forEach(el => {
+            el.classList.remove('is-invalid', 'is-valid');
+        });
+
+        // Ẩn alert
+        const alert = document.getElementById('editAlert');
+        alert.style.display = 'none';
+        alert.className = 'modal-edit-alert';
+
+        // Mở modal
+        if (!editModal) {
+            editModal = new bootstrap.Modal(document.getElementById('modalEditCa'));
+        }
+        editModal.show();
+    }
+
+    // ── VALIDATE ──
+    function validateForm() {
+        const form = document.getElementById('editForm');
+        const tenCa = document.getElementById('editTenCa');
+        const gioBatDau = document.getElementById('editGioBatDau');
+        const gioKetThuc = document.getElementById('editGioKetThuc');
+
+        let isValid = true;
+
+        // Reset validation
+        [tenCa, gioBatDau, gioKetThuc].forEach(el => {
+            el.classList.remove('is-invalid', 'is-valid');
+        });
+
+        // Validate tên ca
+        if (!tenCa.value.trim()) {
+            tenCa.classList.add('is-invalid');
+            isValid = false;
+        } else {
+            tenCa.classList.add('is-valid');
+        }
+
+        // Validate giờ bắt đầu
+        if (!gioBatDau.value) {
+            gioBatDau.classList.add('is-invalid');
+            isValid = false;
+        } else {
+            gioBatDau.classList.add('is-valid');
+        }
+
+        // Validate giờ kết thúc
+        if (!gioKetThuc.value) {
+            gioKetThuc.classList.add('is-invalid');
+            isValid = false;
+        } else {
+            gioKetThuc.classList.add('is-valid');
+        }
+
+        // Validate giờ bắt đầu < giờ kết thúc
+        if (gioBatDau.value && gioKetThuc.value) {
+            if (gioBatDau.value >= gioKetThuc.value) {
+                gioKetThuc.classList.add('is-invalid');
+                // Thêm thông báo lỗi custom
+                const feedback = gioKetThuc.nextElementSibling;
+                if (feedback && feedback.classList.contains('invalid-feedback')) {
+                    feedback.textContent = 'Giờ kết thúc phải sau giờ bắt đầu';
+                }
+                isValid = false;
+            } else {
+                const feedback = gioKetThuc.nextElementSibling;
+                if (feedback && feedback.classList.contains('invalid-feedback')) {
+                    feedback.textContent = 'Vui lòng chọn giờ kết thúc';
+                }
+            }
+        }
+
+        form.classList.add('was-validated');
+        return isValid;
+    }
+
+    // Thay thế hàm saveEdit() trong calamviec.html
+
+    function saveEdit() {
+        if (!validateForm()) {
+            showToast('Vui lòng kiểm tra lại thông tin', 'error');
+            return;
+        }
+
+        const btn = document.getElementById('btnSaveEdit');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Đang lưu...';
+
+        const data = {
+            maCa: parseInt(document.getElementById('editMaCa').value),
+            tenCa: document.getElementById('editTenCa').value.trim(),
+            gioBatDau: document.getElementById('editGioBatDau').value,
+            gioKetThuc: document.getElementById('editGioKetThuc').value,
+            moTa: document.getElementById('editMoTa').value.trim()
+        };
+
+        fetch('/giao-ca/edit', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                [csrfHeader]: csrfToken
+            },
+            body: JSON.stringify(data)
+        })
+            .then(r => r.json())
+            .then(result => {
+                if (result.success) {
+                    showToast('Cập nhật ca làm việc thành công!', 'success');
+                    if (editModal) editModal.hide();
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    // Hiển thị lỗi chi tiết từ server
+                    let errorMsg = result.message || 'Có lỗi xảy ra';
+
+                    // Nếu có errors từ validation
+                    if (result.errors) {
+                        const errors = result.errors;
+                        const errorList = Object.values(errors).join('\n');
+                        errorMsg = errorList;
+
+                        // Highlight các field bị lỗi
+                        Object.keys(errors).forEach(field => {
+                            const input = document.querySelector(`[name="${field}"]`);
+                            if (input) {
+                                input.classList.add('is-invalid');
+                                // Cập nhật message cho field
+                                const feedback = input.nextElementSibling;
+                                if (feedback && feedback.classList.contains('invalid-feedback')) {
+                                    feedback.textContent = errors[field];
+                                }
+                            }
+                        });
+                    }
+
+                    showToast(errorMsg, 'error');
+                }
+            })
+            .catch(err => {
+                console.error('Error:', err);
+                showToast('Lỗi kết nối: ' + err.message, 'error');
+            })
+            .finally(() => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-check-lg"></i> Lưu thay đổi';
+            });
+    }
+
+    // ── REAL-TIME VALIDATION ──
+    document.addEventListener('DOMContentLoaded', function() {
+        // Thêm validation real-time
+        const inputs = document.querySelectorAll('#editForm .form-control');
+        inputs.forEach(input => {
+            input.addEventListener('input', function() {
+                if (this.classList.contains('is-invalid') && this.value.trim()) {
+                    this.classList.remove('is-invalid');
+                }
+                if (this.id === 'editGioBatDau' || this.id === 'editGioKetThuc') {
+                    // Kiểm tra giờ khi thay đổi
+                    const gioBatDau = document.getElementById('editGioBatDau');
+                    const gioKetThuc = document.getElementById('editGioKetThuc');
+                    if (gioBatDau.value && gioKetThuc.value && gioBatDau.value >= gioKetThuc.value) {
+                        gioKetThuc.classList.add('is-invalid');
+                        const feedback = gioKetThuc.nextElementSibling;
+                        if (feedback && feedback.classList.contains('invalid-feedback')) {
+                            feedback.textContent = 'Giờ kết thúc phải sau giờ bắt đầu';
+                        }
+                    } else if (gioKetThuc.value) {
+                        gioKetThuc.classList.remove('is-invalid');
+                        const feedback = gioKetThuc.nextElementSibling;
+                        if (feedback && feedback.classList.contains('invalid-feedback')) {
+                            feedback.textContent = 'Vui lòng chọn giờ kết thúc';
+                        }
+                    }
+                }
+            });
+        });
+
+        // Reset alert khi đóng modal
+        document.getElementById('modalEditCa')?.addEventListener('hidden.bs.modal', function() {
+            const alert = document.getElementById('editAlert');
+            alert.style.display = 'none';
+            alert.className = 'modal-edit-alert';
+        });
+    });
+    /*]]>*/
+</script>
+</body>
+</html>

@@ -1,0 +1,1713 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Quản lý sản phẩm - FS Shop</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <style>
+        .content-body {
+            position: relative;
+            z-index: 1;
+        }
+        .card-body.bg-white.p-4 {
+            overflow: visible !important;
+        }
+
+        /* Đảm bảo form không bị overflow hidden */
+        .filter-form {
+            overflow: visible !important;
+        }
+
+        /* Đảm bảo row không bị overflow hidden */
+        .filter-form .row {
+            overflow: visible !important;
+        }
+        /* ===== TOAST ===== */
+        .toast-container-custom {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            max-width: 420px;
+            width: 100%;
+        }
+        .toast-custom {
+            background: #fff;
+            border-radius: 12px;
+            padding: 16px 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+            border-left: 5px solid #dc3545;
+            animation: slideInRight 0.4s ease;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        .toast-custom.success { border-left-color: #28a745; }
+        .toast-custom.warning { border-left-color: #ffc107; }
+        .toast-custom .toast-icon { font-size: 1.5rem; flex-shrink: 0; margin-top: 2px; }
+        .toast-custom .toast-content { flex: 1; }
+        .toast-custom .toast-title { font-weight: 700; font-size: 0.95rem; color: #2d3748; }
+        .toast-custom .toast-message { font-size: 0.85rem; color: #6c757d; margin-top: 2px; }
+        .toast-custom .toast-close {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            color: #adb5bd;
+            cursor: pointer;
+            padding: 0 4px;
+            transition: color 0.2s;
+        }
+        .toast-custom .toast-close:hover { color: #dc3545; }
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideOutRight {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+
+        /* ===== LOẠI BỎ GẠCH DƯỚI CHO CÁC NÚT ===== */
+        .btn-toolbar,
+        .btn-action,
+        .btn-back,
+        .btn-add,
+        .btn-export,
+        .btn-reset-toolbar,
+        .btn-action-view,
+        .btn-action-edit,
+        a.btn,
+        a.btn-toolbar,
+        a.btn-action,
+        a.btn-back,
+        a.btn-add,
+        a.btn-export,
+        a.btn-reset-toolbar,
+        a.btn-action-view,
+        a.btn-action-edit,
+        .toolbar a,
+        .toolbar a:hover {
+            text-decoration: none !important;
+        }
+
+        .btn-toolbar:hover,
+        .btn-action:hover,
+        .btn-back:hover,
+        .btn-add:hover,
+        .btn-export:hover,
+        .btn-reset-toolbar:hover,
+        .btn-action-view:hover,
+        .btn-action-edit:hover,
+        a.btn:hover,
+        a.btn-toolbar:hover,
+        a.btn-action:hover,
+        a.btn-back:hover,
+        a.btn-add:hover,
+        a.btn-export:hover,
+        a.btn-reset-toolbar:hover,
+        a.btn-action-view:hover,
+        a.btn-action-edit:hover {
+            text-decoration: none !important;
+        }
+
+        .btn {
+            text-decoration: none !important;
+        }
+        .btn:hover {
+            text-decoration: none !important;
+        }
+
+        /* ===== CUSTOM CSS ===== */
+        .content-wrapper {
+            width: calc(100% - 250px);
+        }
+
+        .card-custom {
+            border-radius: 16px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        .card-custom:hover {
+            box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.08) !important;
+        }
+
+        .card-header-custom {
+            background: linear-gradient(135deg, #c92327 0%, #a01a1e 100%);
+            border: none;
+            padding: 14px 24px;
+        }
+        .card-header-custom h5 {
+            font-weight: 700;
+            font-size: 1rem;
+            letter-spacing: 0.3px;
+            color: white;
+        }
+        .card-header-custom .bi {
+            font-size: 1.2rem;
+        }
+
+        .filter-form {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #e9ecef;
+        }
+        .filter-form .form-label {
+            font-weight: 600;
+            font-size: 0.8rem;
+            color: #2d3748;
+            margin-bottom: 4px;
+        }
+        .filter-form .form-control,
+        .filter-form .form-select {
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            font-size: 0.85rem;
+            padding: 8px 12px;
+            transition: all 0.3s ease;
+        }
+        .filter-form .form-control:focus,
+        .filter-form .form-select:focus {
+            border-color: #c92327 !important;
+            box-shadow: 0 0 0 0.2rem rgba(201, 35, 39, 0.12) !important;
+        }
+
+        .toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 16px;
+            padding: 12px 16px;
+            background: #fff;
+            border-radius: 12px;
+            border: 1px solid #e9ecef;
+        }
+        .toolbar .toolbar-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .toolbar .toolbar-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .toolbar .btn-toolbar {
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            text-decoration: none !important;
+        }
+        .toolbar .btn-add {
+            background: #c92327;
+            color: white;
+            border: none;
+            text-decoration: none !important;
+        }
+        .toolbar .btn-add:hover {
+            background: #a01a1e;
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(201, 35, 39, 0.3);
+            text-decoration: none !important;
+        }
+        .toolbar .btn-export {
+            background: #28a745;
+            color: white;
+            border: none;
+            text-decoration: none !important;
+        }
+        .toolbar .btn-export:hover {
+            background: #1e7e34;
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+            text-decoration: none !important;
+        }
+        .toolbar .btn-reset-toolbar {
+            background: #6c757d;
+            color: white;
+            border: none;
+            text-decoration: none !important;
+        }
+        .toolbar .btn-reset-toolbar:hover {
+            background: #5a6268;
+            color: white;
+            transform: translateY(-1px);
+            text-decoration: none !important;
+        }
+
+        .table-card {
+            background: #fff;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+            border: 1px solid #e9ecef;
+        }
+        .table-custom {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            table-layout: fixed;
+        }
+        .table-custom thead {
+            background: linear-gradient(135deg, #f8f9fa 0%, #f1f3f5 100%);
+            border-bottom: 2px solid #e9ecef;
+        }
+        .table-custom thead th {
+            padding: 10px 8px;
+            font-weight: 700;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            color: #495057;
+            border-bottom: none;
+            white-space: nowrap;
+            text-align: center;
+        }
+        .table-custom tbody tr {
+            transition: all 0.2s ease;
+            border-bottom: 1px solid #f1f3f5;
+        }
+        .table-custom tbody tr:hover {
+            background: #fff5f5 !important;
+        }
+        .table-custom tbody td {
+            padding: 10px 8px;
+            vertical-align: middle;
+            color: #2d3748;
+            text-align: center;
+            word-break: break-word;
+        }
+
+        .table-custom .col-stt { width: 35px; min-width: 35px; max-width: 35px; }
+        .table-custom .col-ma { width: 80px; min-width: 80px; max-width: 80px; }
+        .table-custom .col-ten { width: 150px; min-width: 150px; max-width: 150px; }
+        .table-custom .col-thuonghieu { width: 110px; min-width: 110px; max-width: 110px; }
+        .table-custom .col-mota { width: 150px; min-width: 150px; max-width: 150px; }
+        .table-custom .col-gia { width: 130px; min-width: 130px; max-width: 130px; }
+        .table-custom .col-ton { width: 60px; min-width: 60px; max-width: 60px; }
+        .table-custom .col-trangthai { width: 100px; min-width: 100px; max-width: 100px; }
+        .table-custom .col-hanhdong { width: 145px; min-width: 145px; max-width: 145px; }
+
+        .table-custom .text-left { text-align: left; }
+        .table-custom .text-center { text-align: center; }
+
+        .price-range {
+            font-weight: 600;
+            color: #c92327;
+        }
+
+        .badge-active {
+            background: #d4edda;
+            color: #155724;
+            padding: 3px 12px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+        }
+        .badge-locked {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 3px 12px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+        }
+
+        .btn-action {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
+            font-size: 0.85rem;
+            text-decoration: none !important;
+        }
+        .btn-action-view {
+            border-color: #c92327;
+            color: #c92327;
+            background: transparent;
+            text-decoration: none !important;
+        }
+        .btn-action-view:hover {
+            background: #c92327;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(201, 35, 39, 0.25);
+            text-decoration: none !important;
+        }
+        .btn-action-edit {
+            border-color: #0d6efd;
+            color: #0d6efd;
+            background: transparent;
+            text-decoration: none !important;
+        }
+        .btn-action-edit:hover {
+            background: #0d6efd;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(13, 110, 253, 0.25);
+            text-decoration: none !important;
+        }
+
+        .custom-switch {
+            width: 2.5em !important;
+            height: 1.2em !important;
+            cursor: pointer;
+        }
+        .custom-switch:checked {
+            background-color: #c92327 !important;
+            border-color: #c92327 !important;
+        }
+        .custom-switch:focus {
+            box-shadow: 0 0 0 0.2rem rgba(201, 35, 39, 0.2) !important;
+        }
+
+        .pagination-custom {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            flex-wrap: wrap;
+        }
+        .pagination-custom .page-item {
+            display: inline-block;
+        }
+        .pagination-custom .page-item .page-link {
+            border: none;
+            border-radius: 8px;
+            padding: 6px 14px;
+            color: #495057;
+            font-weight: 600;
+            font-size: 0.85rem;
+            transition: all 0.3s ease;
+            background: transparent;
+            min-width: 36px;
+            text-align: center;
+            text-decoration: none !important;
+            display: block;
+        }
+        .pagination-custom .page-item .page-link:hover {
+            background: #fff5f5;
+            color: #c92327;
+            text-decoration: none !important;
+        }
+        .pagination-custom .page-item.active .page-link {
+            background: linear-gradient(135deg, #c92327, #a01a1e);
+            color: white;
+            box-shadow: 0 2px 8px rgba(201, 35, 39, 0.3);
+        }
+        .pagination-custom .page-item.disabled .page-link {
+            color: #adb5bd;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+        .pagination-custom .page-item .page-link i {
+            font-size: 0.8rem;
+        }
+
+        .stats-bar {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+        .stats-item {
+            background: #f8f9fa;
+            padding: 8px 16px;
+            border-radius: 10px;
+            border: 1px solid #e9ecef;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+        }
+        .stats-item .num {
+            font-weight: 700;
+            color: #c92327;
+            font-size: 1rem;
+        }
+
+        .table-footer {
+            background: #f8f9fa;
+            padding: 12px 20px;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .table-footer .info-text {
+            font-size: 0.85rem;
+            color: #6c757d;
+        }
+        .table-footer .info-text strong {
+            color: #2d3748;
+        }
+
+        /* ===== MODAL CONFIRM ===== */
+        #confirmActionModal .modal-content {
+            animation: modalSlideIn 0.4s ease;
+        }
+        @keyframes modalSlideIn {
+            from {
+                transform: scale(0.9) translateY(20px);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1) translateY(0);
+                opacity: 1;
+            }
+        }
+        #confirmActionModal .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        #confirmActionModal .btn-outline-secondary:hover {
+            background: #f8f9fa;
+            border-color: #dee2e6;
+        }
+        .confirm-icon-wrapper {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 12px;
+        }
+        .confirm-icon-wrapper.warning {
+            background: #fff3cd;
+        }
+        .confirm-icon-wrapper.danger {
+            background: #f8d7da;
+        }
+        .confirm-icon-wrapper.success {
+            background: #d4edda;
+        }
+        .confirm-icon-wrapper i {
+            font-size: 2rem;
+        }
+        .confirm-icon-wrapper.warning i {
+            color: #856404;
+        }
+        .confirm-icon-wrapper.danger i {
+            color: #721c24;
+        }
+        .confirm-icon-wrapper.success i {
+            color: #155724;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 1200px) {
+            .table-custom .col-ten { width: 130px; min-width: 130px; max-width: 130px; }
+            .table-custom .col-mota { width: 130px; min-width: 130px; max-width: 130px; }
+            .table-custom .col-thuonghieu { width: 100px; min-width: 100px; max-width: 100px; }
+        }
+
+        @media (max-width: 992px) {
+            .table-custom .col-ten { width: 110px; min-width: 110px; max-width: 110px; }
+            .table-custom .col-mota { width: 110px; min-width: 110px; max-width: 110px; }
+            .table-custom .col-thuonghieu { width: 90px; min-width: 90px; max-width: 90px; }
+            .table-custom .col-gia { width: 110px; min-width: 110px; max-width: 110px; }
+            .toolbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .toolbar .toolbar-left,
+            .toolbar .toolbar-right {
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .content-wrapper { width: 100%; }
+            .table-custom { font-size: 0.75rem; table-layout: auto; }
+            .table-custom thead th,
+            .table-custom tbody td { padding: 6px 6px; }
+            .table-custom .col-stt { width: 30px; min-width: 30px; max-width: 30px; }
+            .table-custom .col-ma { width: 70px; min-width: 70px; max-width: 70px; }
+            .table-custom .col-ten { width: 100px; min-width: 100px; max-width: 100px; }
+            .table-custom .col-thuonghieu { width: 80px; min-width: 80px; max-width: 80px; }
+            .table-custom .col-mota { width: 90px; min-width: 90px; max-width: 90px; }
+            .table-custom .col-gia { width: 100px; min-width: 100px; max-width: 100px; }
+            .table-custom .col-ton { width: 50px; min-width: 50px; max-width: 50px; }
+            .table-custom .col-trangthai { width: 90px; min-width: 90px; max-width: 90px; }
+            .table-custom .col-hanhdong { width: 120px; min-width: 120px; max-width: 120px; }
+            .btn-action { width: 26px; height: 26px; font-size: 0.7rem; }
+            .stats-bar { gap: 10px; }
+            .stats-item { font-size: 0.75rem; padding: 4px 12px; }
+            .pagination-custom .page-item .page-link { padding: 4px 10px; font-size: 0.75rem; min-width: 30px; }
+            .table-footer { flex-direction: column; align-items: flex-start; gap: 8px; }
+            .toolbar .toolbar-left,
+            .toolbar .toolbar-right { flex-wrap: wrap; justify-content: center; }
+        }
+
+        @media (max-width: 576px) {
+            .filter-form { padding: 12px; }
+            .table-custom { font-size: 0.65rem; }
+            .table-custom thead th,
+            .table-custom tbody td { padding: 4px 4px; }
+            .table-custom .col-stt { width: 25px; min-width: 25px; max-width: 25px; }
+            .table-custom .col-ma { width: 55px; min-width: 55px; max-width: 55px; }
+            .table-custom .col-ten { width: 80px; min-width: 80px; max-width: 80px; }
+            .table-custom .col-thuonghieu { width: 70px; min-width: 70px; max-width: 70px; }
+            .table-custom .col-mota { width: 70px; min-width: 70px; max-width: 70px; }
+            .table-custom .col-gia { width: 80px; min-width: 80px; max-width: 80px; }
+            .table-custom .col-ton { width: 35px; min-width: 35px; max-width: 35px; }
+            .table-custom .col-trangthai { width: 75px; min-width: 75px; max-width: 75px; }
+            .table-custom .col-hanhdong { width: 95px; min-width: 95px; max-width: 95px; }
+            .btn-action { width: 22px; height: 22px; font-size: 0.6rem; }
+            .badge-active, .badge-locked { font-size: 0.6rem; padding: 2px 8px; }
+            .custom-switch { width: 2em !important; height: 1em !important; }
+        }
+
+        .select2-container .select2-selection--single {
+            height: 38px !important;
+            border-radius: 8px !important;
+            border: 1px solid #e0e0e0 !important;
+        }
+        .select2-container .select2-selection--single .select2-selection__rendered {
+            line-height: 36px !important;
+            padding-left: 12px !important;
+            font-size: 0.85rem;
+        }
+        .select2-container .select2-selection--single .select2-selection__arrow {
+            height: 36px !important;
+        }
+        .select2-container--open .select2-dropdown {
+            border-radius: 8px !important;
+            border-color: #c92327 !important;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+        }
+        .select2-container--default .select2-search--dropdown .select2-search__field {
+            border-radius: 6px !important;
+            border: 1px solid #e0e0e0 !important;
+        }
+        .select2-container--default .select2-results__option--highlighted.select2-results__option--selectable {
+            background-color: #c92327 !important;
+        }
+
+        /* ===== MODAL CUSTOM ===== */
+        .modal-content-custom {
+            border-radius: 16px !important;
+            border: none !important;
+            overflow: hidden;
+        }
+        .modal-header-custom {
+            background: linear-gradient(135deg, #c92327 0%, #a01a1e 100%);
+            border: none;
+            padding: 16px 24px;
+        }
+        .modal-header-custom .modal-title {
+            color: white;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+        .modal-header-custom .btn-close {
+            filter: brightness(0) invert(1);
+        }
+        .modal-body-custom {
+            padding: 24px;
+            background: #f8f9fa;
+        }
+        .modal-body-custom .form-label {
+            font-weight: 600;
+            font-size: 0.8rem;
+            color: #2d3748;
+        }
+        .modal-body-custom .form-control,
+        .modal-body-custom .form-select {
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            font-size: 0.85rem;
+            padding: 8px 12px;
+            transition: all 0.3s ease;
+        }
+        .modal-body-custom .form-control:focus,
+        .modal-body-custom .form-select:focus {
+            border-color: #c92327 !important;
+            box-shadow: 0 0 0 0.2rem rgba(201, 35, 39, 0.12) !important;
+        }
+        .modal-footer-custom {
+            padding: 16px 24px;
+            background: white;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        /* ===== SEARCH SUGGESTIONS - FIXED POSITION ===== */
+        .search-wrapper {
+            position: relative;
+            width: 100%;
+            z-index: 99999 !important;
+        }
+
+        .search-wrapper .input-group {
+            position: relative;
+            z-index: 1;
+        }
+
+        .suggestions-dropdown {
+            position: fixed !important;
+            background: #ffffff;
+            border: 1px solid #d1d5db;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+            max-height: 460px !important;
+            min-height: 60px;
+            overflow-y: auto !important;
+            z-index: 999999 !important;
+            display: none !important;
+            min-width: 380px;
+            max-width: 550px;
+            width: auto;
+            padding: 6px 0;
+            transition: opacity 0.15s ease;
+        }
+
+        .suggestions-dropdown.show {
+            display: block !important;
+            opacity: 1;
+        }
+
+        /* Style cho các item */
+        .suggestions-dropdown .suggestion-item {
+            padding: 10px 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid #f3f4f6;
+            transition: all 0.15s ease;
+            min-height: 44px;
+        }
+
+        .suggestions-dropdown .suggestion-item:last-child {
+            border-bottom: none;
+            border-radius: 0 0 12px 12px;
+        }
+
+        .suggestions-dropdown .suggestion-item:hover {
+            background: #fef2f2;
+        }
+
+        .suggestions-dropdown .suggestion-item .suggestion-code {
+            font-weight: 700;
+            color: #dc2626;
+            font-size: 0.82rem;
+            min-width: 80px;
+            flex-shrink: 0;
+            background: #fef2f2;
+            padding: 2px 10px;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .suggestions-dropdown .suggestion-item .suggestion-name {
+            flex: 1;
+            font-size: 0.9rem;
+            color: #1f2937;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 250px;
+        }
+
+        .suggestions-dropdown .suggestion-item .suggestion-brand {
+            font-size: 0.75rem;
+            color: #6b7280;
+            background: #f3f4f6;
+            padding: 2px 12px;
+            border-radius: 20px;
+            white-space: nowrap;
+            flex-shrink: 0;
+            font-weight: 500;
+        }
+
+        .suggestions-dropdown .suggestion-item .highlight {
+            color: #dc2626;
+            font-weight: 700;
+            background: #fef2f2;
+            padding: 0 4px;
+            border-radius: 3px;
+        }
+
+        /* Loading và empty state */
+        .suggestions-dropdown .suggestion-empty {
+            padding: 20px;
+            text-align: center;
+            color: #6b7280;
+            font-size: 0.9rem;
+        }
+
+        .suggestions-dropdown .suggestion-loading {
+            padding: 18px;
+            text-align: center;
+            color: #6b7280;
+            font-size: 0.85rem;
+        }
+
+        .suggestions-dropdown .suggestion-loading .spinner-border {
+            width: 1.2rem;
+            height: 1.2rem;
+            margin-right: 10px;
+        }
+
+        /* Scrollbar đẹp hơn */
+        .suggestions-dropdown::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .suggestions-dropdown::-webkit-scrollbar-track {
+            background: #f3f4f6;
+            border-radius: 10px;
+        }
+
+        .suggestions-dropdown::-webkit-scrollbar-thumb {
+            background: #dc2626;
+            border-radius: 10px;
+        }
+
+        .suggestions-dropdown::-webkit-scrollbar-thumb:hover {
+            background: #b91c1c;
+        }
+
+        /* Active item */
+        .suggestion-item.active {
+            background: #fef2f2 !important;
+            border-left: 3px solid #dc2626;
+        }
+
+        .suggestion-item.active .suggestion-name {
+            color: #dc2626;
+        }
+
+        /* Responsive cho dropdown */
+        @media (max-width: 768px) {
+            .suggestions-dropdown {
+                max-height: 360px !important;
+                min-width: 320px !important;
+                max-width: 90vw !important;
+                border-radius: 0 0 10px 10px;
+            }
+
+            .suggestions-dropdown .suggestion-item {
+                padding: 8px 12px;
+                min-height: 40px;
+                gap: 10px;
+            }
+
+            .suggestions-dropdown .suggestion-item .suggestion-code {
+                font-size: 0.75rem;
+                min-width: 65px;
+                padding: 2px 8px;
+            }
+
+            .suggestions-dropdown .suggestion-item .suggestion-name {
+                font-size: 0.85rem;
+                max-width: 150px;
+            }
+
+            .suggestions-dropdown .suggestion-item .suggestion-brand {
+                font-size: 0.68rem;
+                padding: 2px 8px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .suggestions-dropdown {
+                max-height: 280px !important;
+                min-width: 280px !important;
+                max-width: 95vw !important;
+                border-radius: 0 0 8px 8px;
+            }
+
+            .suggestions-dropdown .suggestion-item {
+                padding: 6px 10px;
+                min-height: 36px;
+                gap: 8px;
+            }
+
+            .suggestions-dropdown .suggestion-item .suggestion-code {
+                font-size: 0.68rem;
+                min-width: 55px;
+                padding: 2px 6px;
+            }
+
+            .suggestions-dropdown .suggestion-item .suggestion-name {
+                font-size: 0.78rem;
+                max-width: 100px;
+            }
+
+            .suggestions-dropdown .suggestion-item .suggestion-brand {
+                font-size: 0.6rem;
+                padding: 2px 6px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="wrapper">
+
+    <div sec:authorize="hasRole('ADMIN')">
+        <div th:replace="fragments/sidebaradmin :: sidebar-admin"></div>
+    </div>
+
+    <div sec:authorize="hasRole('STAFF')">
+        <div th:replace="fragments/sidebarstaff :: sidebar-staff"></div>
+    </div>
+
+    <div class="content-wrapper">
+
+        <div th:replace="~{fragments/header :: header('Quản lý sản phẩm', 'Sản phẩm')}"></div>
+
+        <div class="content-body px-3 py-3">
+
+            <div class="toast-container-custom" id="toastContainer"></div>
+            <div class="card card-custom mb-4 shadow-sm border-0">
+                <div class="card-header-custom">
+                    <h5 class="mb-0 d-flex align-items-center gap-2 py-1">
+                        <i class="bi bi-funnel-fill"></i>
+                        <span>Bộ lọc & Tìm kiếm sản phẩm</span>
+                    </h5>
+                </div>
+
+                <div class="card-body bg-white p-4">
+                    <form id="filterForm" th:action="@{/sanpham/index}" method="get" class="filter-form">
+                        <div class="row g-3">
+                            <div class="col-lg-2 col-md-4 col-sm-6">
+                                <label class="form-label">
+                                    Thương hiệu
+                                </label>
+                                <select name="maTH" class="form-select select2-search" onchange="this.form.submit()">
+                                    <option value="">-- Tất cả --</option>
+                                    <option th:each="th : ${listth}"
+                                            th:value="${th.maThuongHieu}"
+                                            th:text="${th.tenThuongHieu}"
+                                            th:selected="${#strings.toString(th.maThuongHieu) == #strings.toString(param.maTH)}">
+                                    </option>
+                                </select>
+                            </div>
+
+                            <div class="col-lg-2 col-md-4 col-sm-6">
+                                <label class="form-label">
+                                    <i class="bi bi-shoe-prints-fill text-danger me-1"></i>Kiểu giày
+                                </label>
+                                <select name="maKG" class="form-select select2-search" onchange="this.form.submit()">
+                                    <option value="">-- Tất cả --</option>
+                                    <option th:each="kg : ${listkg}"
+                                            th:value="${kg.maKieuGiay}"
+                                            th:text="${kg.tenKieuGiay}"
+                                            th:selected="${#strings.toString(kg.maKieuGiay) == #strings.toString(param.maKG)}">
+                                    </option>
+                                </select>
+                            </div>
+
+                            <div class="col-lg-2 col-md-4 col-sm-6">
+                                <label class="form-label">
+                                    Danh mục
+                                </label>
+                                <select name="maDanhMuc" class="form-select select2-search" onchange="this.form.submit()">
+                                    <option value="">-- Tất cả --</option>
+                                    <option th:each="dm : ${listdmsp}"
+                                            th:value="${dm.maDanhMuc}"
+                                            th:text="${dm.tenDanhMuc}"
+                                            th:selected="${#strings.toString(dm.maDanhMuc) == #strings.toString(param.maDanhMuc)}">
+                                    </option>
+                                </select>
+                            </div>
+
+                            <div class="col-lg-2 col-md-4 col-sm-6">
+                                <label class="form-label">
+                                   Trạng thái
+                                </label>
+                                <select name="tt" class="form-select select2-search" onchange="this.form.submit()">
+                                    <option value="">-- Tất cả --</option>
+                                    <option value="true" th:selected="${param.tt != null && param.tt == 'true'}">Còn bán</option>
+                                    <option value="false" th:selected="${param.tt != null && param.tt == 'false'}">Ngừng bán</option>
+                                </select>
+                            </div>
+                            <div class="col-lg-3 col-md-6 col-sm-12">
+                                <label class="form-label">
+                                     Từ khóa
+                                </label>
+                                <div class="search-wrapper">
+                                    <div class="input-group">
+                                        <input type="text"
+                                               class="form-control"
+                                               id="searchInput"
+                                               placeholder="Mã hoặc tên sản phẩm..."
+                                               name="t"
+                                               th:value="${param.t}"
+                                               autocomplete="off">
+                                        <button class="btn btn-danger" type="submit" id="searchButton">
+                                            <i class="bi bi-search me-1"></i>Tìm
+                                        </button>
+                                    </div>
+                                    <div class="suggestions-dropdown" id="suggestionsDropdown">
+                                        <div class="suggestion-loading" style="display: none;">
+                                            <div class="spinner-border text-danger spinner-border-sm" role="status">
+                                                <span class="visually-hidden">Loading...</span>
+                                            </div>
+                                            Đang tìm kiếm...
+                                        </div>
+                                        <div id="suggestionsList"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+
+            <div class="toolbar">
+                <div class="toolbar-left">
+                    <a th:href="@{/sanpham/add-view}" class="btn-toolbar btn-add" title="Thêm sản phẩm mới">
+                        <i class="bi bi-plus-circle"></i>Thêm sản phẩm
+                    </a>
+                    <a th:href="@{/sanpham/export-excel(
+    maDanhMuc=${param.maDanhMuc != null && !param.maDanhMuc.isEmpty() ? param.maDanhMuc : ''},
+    tt=${param.tt != null && !param.tt.isEmpty() ? param.tt : ''},
+    maTH=${param.maTH != null && !param.maTH.isEmpty() ? param.maTH : ''},
+    maKG=${param.maKG != null && !param.maKG.isEmpty() ? param.maKG : ''},
+    t=${param.t != null && !param.t.isEmpty() ? param.t : ''}
+)}"
+                       class="btn-toolbar btn-export"
+                       title="Xuất Excel">
+                        <i class="bi bi-file-earmark-excel"></i>Xuất Excel
+                    </a>
+                </div>
+                <div class="toolbar-right">
+                    <a th:href="@{/sanpham/index}" class="btn-toolbar btn-reset-toolbar" title="Reset bộ lọc">
+                        <i class="bi bi-arrow-counterclockwise"></i>Reset
+                    </a>
+                </div>
+            </div>
+
+            <!-- Table -->
+            <div class="table-card">
+                <div class="table-responsive">
+                    <table class="table-custom">
+                        <thead>
+                        <tr>
+                            <th class="col-stt">STT</th>
+                            <th class="col-ma">Mã SP</th>
+                            <th class="col-ten text-left">Tên sản phẩm</th>
+                            <th class="col-thuonghieu text-left">Thương hiệu</th>
+                            <th class="col-mota text-left">Mô tả</th>
+                            <th class="col-gia">Giá bán</th>
+                            <th class="col-ton">Tồn kho</th>
+                            <th class="col-trangthai">Trạng thái</th>
+                            <th class="col-hanhdong">Hành động</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="c,count : ${listsp}">
+                            <td class="col-stt text-center fw-semibold" th:text="${count.count}"></td>
+                            <td class="col-ma">
+                                <span class="fw-semibold text-danger" th:text="${c.maSanPham}"></span>
+                            </td>
+                            <td class="col-ten text-left" th:text="${c.tenSanPham}"></td>
+                            <td class="col-thuonghieu text-left" th:text="${c.tenThuongHieu}"></td>
+                            <td class="col-mota text-left text-muted small" th:text="${c.moTa}"></td>
+                            <td class="col-gia">
+                                <span class="price-range" th:text="${c.giaBanDisplay}">0₫</span>
+                            </td>
+                            <td class="col-ton text-center">
+                                <span class="fw-bold" th:text="${c.tongTon}">0</span>
+                            </td>
+                            <td class="col-trangthai text-center">
+                                <span th:if="${c.trangThai}" class="badge-active">
+                                    <i class="bi bi-check-circle-fill"></i>Còn bán
+                                </span>
+                                <span th:if="${!c.trangThai}" class="badge-locked">
+                                    <i class="bi bi-x-circle-fill"></i>Ngừng bán
+                                </span>
+                            </td>
+                            <td class="col-hanhdong text-center">
+                                <div class="d-flex align-items-center justify-content-center gap-1">
+                                    <!-- View -->
+                                    <a class="btn-action btn-action-view"
+                                       th:href="@{/sanpham/detail/{id}(
+                                               id=${c.maSanPham},
+                                               page=${currentPage},
+                                               maDanhMuc=${param.maDanhMuc},
+                                               tt=${param.tt},
+                                               maTH=${param.maTH},
+                                               maKG=${param.maKG},
+                                               t=${param.t})}"
+                                       title="Xem chi tiết">
+                                        <i class="bi bi-eye-fill"></i>
+                                    </a>
+                                    <!-- Toggle Status -->
+                                    <form th:action="@{/sanpham/toggle-status/{id}(id=${c.maSanPham})}"
+                                          method="get" class="m-0 d-flex align-items-center toggle-status-form"
+                                          data-id="${c.maSanPham}"
+                                          data-name="${c.tenSanPham}"
+                                          data-status="${c.trangThai}">
+                                        <input type="hidden" name="status" th:value="${!c.trangThai}">
+                                        <input type="hidden" name="page" th:value="${currentPage}">
+                                        <input type="hidden" name="maDanhMuc" th:value="${param.maDanhMuc}">
+                                        <input type="hidden" name="tt" th:value="${param.tt}">
+                                        <input type="hidden" name="maTH" th:value="${param.maTH}">
+                                        <input type="hidden" name="maKG" th:value="${param.maKG}">
+                                        <input type="hidden" name="t" th:value="${param.t}">
+                                        <div class="form-check form-switch m-0">
+                                            <input class="form-check-input custom-switch toggle-switch"
+                                                   type="checkbox"
+                                                   role="switch"
+                                                   th:checked="${c.trangThai}"
+                                                   th:data-id="${c.maSanPham}"
+                                                   th:data-name="${c.tenSanPham}"
+                                                   th:data-status="${c.trangThai}"
+                                                   title="Bật/Tắt trạng thái">
+                                        </div>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(listsp)}">
+                            <td colspan="9" class="text-center text-muted py-4">
+                                <i class="bi bi-inbox" style="font-size: 2rem; display: block; margin-bottom: 8px;"></i>
+                                Không có dữ liệu hiển thị
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Table Footer with Pagination -->
+                <div class="table-footer" th:if="${totalPages > 0}">
+                    <div class="info-text">
+                        <i class="bi bi-database me-1"></i>
+                        Tổng: <strong th:text="${totalItems}">0</strong> bản ghi
+                        <span class="mx-1">|</span>
+                        Trang <strong th:text="${currentPage + 1}">1</strong> / <strong th:text="${totalPages}">1</strong>
+                    </div>
+
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination-custom">
+                            <!-- First -->
+                            <li class="page-item" th:classappend="${currentPage == 0} ? 'disabled'">
+                                <a class="page-link" th:href="@{/sanpham/index(page=0, size=5, maDanhMuc=${param.maDanhMuc}, tt=${param.tt}, maTH=${param.maTH}, maKG=${param.maKG}, t=${param.t})}">
+                                    <i class="bi bi-chevron-double-left"></i>
+                                </a>
+                            </li>
+
+                            <!-- Prev -->
+                            <li class="page-item" th:classappend="${currentPage == 0} ? 'disabled'">
+                                <a class="page-link" th:href="@{/sanpham/index(page=${currentPage - 1}, size=5, maDanhMuc=${param.maDanhMuc}, tt=${param.tt}, maTH=${param.maTH}, maKG=${param.maKG}, t=${param.t})}">
+                                    <i class="bi bi-chevron-left"></i>
+                                </a>
+                            </li>
+
+                            <!-- Pages -->
+                            <li class="page-item" th:each="i : ${#numbers.sequence(0, totalPages - 1)}"
+                                th:if="${i >= 0 && i < totalPages && (
+                                    (i >= currentPage - 2 && i <= currentPage + 2) ||
+                                    i == 0 ||
+                                    i == totalPages - 1
+                                )}"
+                                th:classappend="${currentPage == i} ? 'active' : ''">
+
+                                <span class="page-link" th:if="${i == 2 && currentPage > 3}" style="border: none; background: transparent; cursor: default;">...</span>
+
+                                <a class="page-link" th:unless="${i == 2 && currentPage > 3}"
+                                   th:href="@{/sanpham/index(page=${i}, size=5, maDanhMuc=${param.maDanhMuc}, tt=${param.tt}, maTH=${param.maTH}, maKG=${param.maKG}, t=${param.t})}"
+                                   th:text="${i + 1}">
+                                </a>
+
+                                <span class="page-link" th:if="${i == totalPages - 3 && currentPage < totalPages - 4}" style="border: none; background: transparent; cursor: default;">...</span>
+                            </li>
+
+                            <!-- Next -->
+                            <li class="page-item" th:classappend="${currentPage + 1 >= totalPages} ? 'disabled'">
+                                <a class="page-link" th:href="@{/sanpham/index(page=${currentPage + 1}, size=5, maDanhMuc=${param.maDanhMuc}, tt=${param.tt}, maTH=${param.maTH}, maKG=${param.maKG}, t=${param.t})}">
+                                    <i class="bi bi-chevron-right"></i>
+                                </a>
+                            </li>
+
+                            <!-- Last -->
+                            <li class="page-item" th:classappend="${currentPage + 1 >= totalPages} ? 'disabled'">
+                                <a class="page-link" th:href="@{/sanpham/index(page=${totalPages - 1}, size=5, maDanhMuc=${param.maDanhMuc}, tt=${param.tt}, maTH=${param.maTH}, maKG=${param.maKG}, t=${param.t})}">
+                                    <i class="bi bi-chevron-double-right"></i>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+</div>
+
+<div class="modal fade" id="editModal" tabindex="-1" th:classappend="${showModal} ? 'show d-block'" style="background: rgba(0,0,0,0.5);" th:if="${showModal}">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <form th:action="@{/sanpham/update}" method="post" id="editForm">
+
+            <input type="hidden" name="page" th:value="${currentPage}">
+            <input type="hidden" name="source" th:value="${source}">
+            <input type="hidden" name="maSanPham" th:value="${sanpham.maSanPham}">
+
+            <div class="modal-content modal-content-custom">
+
+                <div class="modal-header-custom">
+                    <h5 class="modal-title">
+                        <i class="bi bi-pencil-square me-2"></i>Cập nhật sản phẩm
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body-custom">
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            <i class="bi bi-tag-fill text-danger me-1"></i>Tên sản phẩm <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" name="tenSanPham" th:value="${sanpham.tenSanPham}" class="form-control" placeholder="Nhập tên sản phẩm...">
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-grid-3x3-gap-fill text-danger me-1"></i>Danh mục
+                            </label>
+                            <select name="maDanhMuc" class="form-select">
+                                <option value="">-- Chọn danh mục --</option>
+                                <option th:each="dm : ${listdmsp}"
+                                        th:value="${dm.maDanhMuc}"
+                                        th:selected="${sanpham.danhMucSanPham != null && dm.maDanhMuc == sanpham.danhMucSanPham.maDanhMuc}"
+                                        th:text="${dm.tenDanhMuc}">
+                                </option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-building-fill text-danger me-1"></i>Thương hiệu
+                            </label>
+                            <select name="maThuongHieu" class="form-select">
+                                <option th:each="th : ${listth}"
+                                        th:value="${th.maThuongHieu}"
+                                        th:selected="${th.maThuongHieu == sanpham.thuongHieu.maThuongHieu}"
+                                        th:text="${th.tenThuongHieu}">
+                                </option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-droplet-fill text-danger me-1"></i>Chất liệu
+                            </label>
+                            <select name="maChatLieu" class="form-select">
+                                <option th:each="cl : ${listcl}"
+                                        th:value="${cl.maChatLieu}"
+                                        th:selected="${cl.maChatLieu == sanpham.chatLieu.maChatLieu}"
+                                        th:text="${cl.tenChatLieu}">
+                                </option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-shoe-prints-fill text-danger me-1"></i>Kiểu giày
+                            </label>
+                            <select name="maKieuGiay" class="form-select">
+                                <option th:each="kg : ${listkg}"
+                                        th:value="${kg.maKieuGiay}"
+                                        th:selected="${kg.maKieuGiay == sanpham.kieuGiay.maKieuGiay}"
+                                        th:text="${kg.tenKieuGiay}">
+                                </option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mt-3">
+                        <label class="form-label fw-semibold">
+                            <i class="bi bi-card-text text-danger me-1"></i>Mô tả
+                        </label>
+                        <textarea name="moTa" class="form-control" rows="3" th:text="${sanpham.moTa}" placeholder="Nhập mô tả sản phẩm..."></textarea>
+                    </div>
+
+                </div>
+
+                <div class="modal-footer-custom">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-1"></i>Hủy
+                    </button>
+                    <button type="submit" class="btn" style="background: #c92327; color: white;">
+                        <i class="bi bi-save me-1"></i>Lưu thay đổi
+                    </button>
+                </div>
+
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal fade" id="confirmActionModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px; overflow: hidden;">
+            <div class="modal-header" style="background: linear-gradient(135deg, #c92327 0%, #a01a1e 100%); border: none; padding: 16px 24px;">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-circle bg-white bg-opacity-25 p-2" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                        <i class="bi bi-exclamation-triangle-fill" style="font-size: 1.2rem; color: white;"></i>
+                    </div>
+                    <div>
+                        <h5 class="modal-title fw-bold text-white" id="confirmActionTitle" style="font-size: 1rem;">Xác nhận</h5>
+                        <small class="text-white-50" id="confirmActionSubtitle">Vui lòng xác nhận hành động</small>
+                    </div>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body p-4" style="background: #f8f9fa;">
+                <div class="text-center">
+                    <div class="confirm-icon-wrapper warning" id="confirmActionIcon">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                    </div>
+                    <h5 class="fw-bold text-dark" id="confirmActionMessage">Bạn có chắc chắn muốn thực hiện hành động này?</h5>
+                    <p class="text-muted small" id="confirmActionDescription">Hành động này có thể không thể hoàn tác.</p>
+                    <div class="mt-2" id="confirmActionExtra" style="display: none;"></div>
+                </div>
+            </div>
+
+            <div class="modal-footer border-0" style="background: white; padding: 12px 24px;">
+                <button type="button" class="btn btn-outline-secondary px-4 py-2 fw-semibold" data-bs-dismiss="modal" style="border-radius: 10px; font-size: 0.9rem;">
+                    <i class="bi bi-x-circle me-1"></i>Hủy bỏ
+                </button>
+                <button type="button" class="btn px-4 py-2 fw-semibold" id="confirmActionBtn" style="background: #c92327; color: white; border-radius: 10px; transition: all 0.3s; font-size: 0.9rem;">
+                    <i class="bi bi-check-circle-fill me-1"></i>Xác nhận
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    $(document).ready(function() {
+        $('.select2-search').select2({
+            placeholder: "Chọn...",
+            allowClear: true,
+            width: '100%',
+            dropdownParent: $('body')
+        });
+    });
+
+    // ===== SHOW TOAST =====
+    function showToast(message, type, title) {
+        var container = document.getElementById('toastContainer');
+        if (!container) return;
+
+        var icons = {
+            error: 'bi bi-x-circle-fill text-danger',
+            success: 'bi bi-check-circle-fill text-success',
+            warning: 'bi bi-exclamation-triangle-fill text-warning'
+        };
+
+        var titles = {
+            error: 'Lỗi!',
+            success: 'Thành công!',
+            warning: 'Cảnh báo!'
+        };
+
+        var toast = document.createElement('div');
+        toast.className = 'toast-custom ' + type;
+        toast.innerHTML = `
+            <div class="toast-icon">
+                <i class="${icons[type] || icons.error}"></i>
+            </div>
+            <div class="toast-content">
+                <div class="toast-title">${title || titles[type] || 'Thông báo'}</div>
+                <div class="toast-message">${message}</div>
+            </div>
+            <button class="toast-close" onclick="this.closest('.toast-custom').remove()">
+                <i class="bi bi-x"></i>
+            </button>
+        `;
+
+        container.appendChild(toast);
+
+        setTimeout(function() {
+            if (toast.parentNode) {
+                toast.style.animation = 'slideOutRight 0.3s ease forwards';
+                setTimeout(function() { toast.remove(); }, 300);
+            }
+        }, 5000);
+    }
+
+    // ===== SHOW CONFIRM MODAL =====
+    function showConfirmModal(options) {
+        return new Promise((resolve) => {
+            var icon = document.getElementById('confirmActionIcon');
+            var title = document.getElementById('confirmActionTitle');
+            var subtitle = document.getElementById('confirmActionSubtitle');
+            var message = document.getElementById('confirmActionMessage');
+            var description = document.getElementById('confirmActionDescription');
+            var extra = document.getElementById('confirmActionExtra');
+            var btn = document.getElementById('confirmActionBtn');
+
+            // Set icon
+            var iconType = options.icon || 'warning';
+            var iconClass = options.iconClass || 'bi-exclamation-triangle-fill';
+            icon.className = 'confirm-icon-wrapper ' + iconType;
+            icon.innerHTML = '<i class="bi ' + iconClass + '"></i>';
+
+            // Set text - dùng textContent cho an toàn
+            title.textContent = options.title || 'Xác nhận';
+            subtitle.textContent = options.subtitle || 'Vui lòng xác nhận hành động';
+
+            // Xử lý message với **text** để in đậm
+            message.innerHTML = '';
+            var msgText = options.message || 'Bạn có chắc chắn muốn thực hiện hành động này?';
+            var parts = msgText.split(/\*\*(.*?)\*\*/g);
+
+            for (var i = 0; i < parts.length; i++) {
+                if (i % 2 === 1) {
+                    var strong = document.createElement('strong');
+                    strong.textContent = parts[i];
+                    message.appendChild(strong);
+                } else {
+                    if (parts[i]) {
+                        var textNode = document.createTextNode(parts[i]);
+                        message.appendChild(textNode);
+                    }
+                }
+            }
+
+            description.textContent = options.description || 'Hành động này có thể không thể hoàn tác.';
+
+            // Extra content
+            if (options.extra) {
+                extra.style.display = 'block';
+                extra.innerHTML = options.extra;
+            } else {
+                extra.style.display = 'none';
+            }
+
+            // Button
+            btn.innerHTML = options.btnText || '<i class="bi bi-check-circle-fill me-1"></i>Xác nhận';
+            btn.className = 'btn px-4 py-2 fw-semibold ' + (options.btnClass || 'btn-danger');
+            btn.style.borderRadius = '10px';
+            btn.style.transition = 'all 0.3s';
+
+            // Xử lý nút xác nhận
+            var newBtn = btn.cloneNode(true);
+            btn.parentNode.replaceChild(newBtn, btn);
+
+            newBtn.addEventListener('click', function() {
+                var modal = bootstrap.Modal.getInstance(document.getElementById('confirmActionModal'));
+                modal.hide();
+                resolve(true);
+            });
+
+            // Xử lý đóng modal
+            var modalElement = document.getElementById('confirmActionModal');
+            var handleHidden = function() {
+                resolve(false);
+                modalElement.removeEventListener('hidden.bs.modal', handleHidden);
+            };
+            modalElement.addEventListener('hidden.bs.modal', handleHidden);
+
+            // Hiển thị modal
+            var modal = new bootstrap.Modal(modalElement);
+            modal.show();
+        });
+    }
+
+    // ===== TOGGLE STATUS - CÓ CONFIRM =====
+    document.addEventListener('DOMContentLoaded', function() {
+        // Xử lý toggle switch với confirm
+        document.querySelectorAll('.toggle-switch').forEach(function(switchEl) {
+            switchEl.addEventListener('change', function(e) {
+                e.preventDefault();
+
+                var isChecked = this.checked;
+                var id = this.getAttribute('data-id');
+                var name = this.getAttribute('data-name') || id;
+                var form = this.closest('.toggle-status-form');
+                var originalChecked = !isChecked;
+
+                showConfirmModal({
+                    icon: isChecked ? 'success' : 'warning',
+                    iconClass: isChecked ? 'bi-check-circle-fill' : 'bi-slash-circle-fill',
+                    title: isChecked ? 'Xác nhận bật sản phẩm' : 'Xác nhận tắt sản phẩm',
+                    subtitle: isChecked ? 'Sản phẩm sẽ được bật' : 'Sản phẩm sẽ được tắt',
+                    message: 'Bạn có chắc chắn muốn ' + (isChecked ? 'bật' : 'tắt') + ' sản phẩm **"' + name + '"**?',
+                    description: 'Trạng thái sẽ chuyển thành "' + (isChecked ? 'Còn bán' : 'Ngừng bán') + '"',
+                    btnText: isChecked ? '<i class="bi bi-check-circle-fill me-1"></i>Xác nhận bật' : '<i class="bi bi-slash-circle-fill me-1"></i>Xác nhận tắt',
+                    btnClass: isChecked ? 'btn-success' : 'btn-danger',
+                    extra: '<div class="alert alert-info mb-0 text-start"><i class="bi bi-info-circle me-1"></i>Mã sản phẩm: <strong>' + id + '</strong></div>'
+                }).then(function(confirmed) {
+                    if (confirmed) {
+                        form.submit();
+                    } else {
+                        switchEl.checked = originalChecked;
+                    }
+                });
+            });
+        });
+    });
+
+    // Xử lý message từ sessionStorage
+    document.addEventListener('DOMContentLoaded', function() {
+        var message = sessionStorage.getItem('toastMessage');
+        var type = sessionStorage.getItem('toastType');
+        if (message) {
+            showToast(message, type || 'success');
+            sessionStorage.removeItem('toastMessage');
+            sessionStorage.removeItem('toastType');
+        }
+    });
+
+    // ===== SEARCH SUGGESTIONS - FIXED POSITION =====
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('searchInput');
+        const suggestionsDropdown = document.getElementById('suggestionsDropdown');
+        const suggestionsList = document.getElementById('suggestionsList');
+        const loadingEl = document.querySelector('.suggestion-loading');
+        const filterForm = document.getElementById('filterForm');
+
+        if (!searchInput || !suggestionsDropdown || !suggestionsList) {
+            console.error('Không tìm thấy element cần thiết!');
+            return;
+        }
+
+        let debounceTimer = null;
+        let currentRequest = null;
+
+        // Hàm cập nhật vị trí dropdown
+        function updateDropdownPosition() {
+            const rect = searchInput.getBoundingClientRect();
+            const dropdownWidth = Math.min(rect.width, 550);
+
+            suggestionsDropdown.style.left = rect.left + 'px';
+            suggestionsDropdown.style.top = (rect.bottom + 4) + 'px';
+            suggestionsDropdown.style.width = dropdownWidth + 'px';
+            suggestionsDropdown.style.minWidth = Math.min(rect.width, 380) + 'px';
+            suggestionsDropdown.style.maxWidth = '550px';
+        }
+
+        // Hàm highlight text
+        function highlightText(text, keyword) {
+            if (!keyword || !text) return text;
+            const regex = new RegExp('(' + keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
+            return text.replace(regex, '<span class="highlight">$1</span>');
+        }
+
+        // Hàm hiển thị gợi ý
+        function showSuggestions(data, keyword) {
+            suggestionsList.innerHTML = '';
+
+            if (!data || data.length === 0) {
+                suggestionsList.innerHTML = `
+                <div class="suggestion-empty">
+                    <i class="bi bi-search me-1"></i>
+                    Không tìm thấy sản phẩm nào cho "<strong>${keyword}</strong>"
+                </div>
+            `;
+                suggestionsDropdown.classList.add('show');
+                updateDropdownPosition();
+                return;
+            }
+
+            const maxDisplay = 20;
+            const displayData = data.slice(0, maxDisplay);
+
+            displayData.forEach((item) => {
+                const div = document.createElement('div');
+                div.className = 'suggestion-item';
+
+                const highlightedName = highlightText(item.tenSanPham, keyword);
+                const highlightedCode = highlightText(item.maSanPham, keyword);
+
+                div.innerHTML = `
+                <span class="suggestion-code">${highlightedCode}</span>
+                <span class="suggestion-name" title="${item.tenSanPham}">${highlightedName}</span>
+                <span class="suggestion-brand">${item.tenThuongHieu || 'Chưa có thương hiệu'}</span>
+            `;
+
+                div.addEventListener('click', function() {
+                    searchInput.value = item.tenSanPham;
+                    suggestionsDropdown.classList.remove('show');
+                    filterForm.submit();
+                });
+
+                div.addEventListener('mousedown', function(e) {
+                    e.preventDefault();
+                });
+
+                suggestionsList.appendChild(div);
+            });
+
+            const totalItems = data.length;
+            const countDiv = document.createElement('div');
+            countDiv.className = 'suggestion-item';
+            countDiv.style.background = '#f8f9fa';
+            countDiv.style.justifyContent = 'center';
+            countDiv.style.color = '#6b7280';
+            countDiv.style.fontSize = '0.8rem';
+            countDiv.style.cursor = 'default';
+            countDiv.style.borderBottom = 'none';
+            countDiv.style.fontWeight = '500';
+            countDiv.style.padding = '8px 18px';
+
+            if (totalItems > maxDisplay) {
+                countDiv.innerHTML = `
+                <i class="bi bi-list-ul me-1"></i>
+                Hiển thị <strong>${maxDisplay}</strong> / <strong>${totalItems}</strong> sản phẩm
+            `;
+            } else {
+                countDiv.innerHTML = `
+                <i class="bi bi-list-ul me-1"></i>
+                Tìm thấy <strong>${totalItems}</strong> sản phẩm
+            `;
+            }
+            suggestionsList.appendChild(countDiv);
+
+            suggestionsDropdown.classList.add('show');
+            updateDropdownPosition();
+            suggestionsDropdown.scrollTop = 0;
+        }
+
+        // Hàm tìm kiếm gợi ý
+        function fetchSuggestions(keyword) {
+            if (!keyword || keyword.trim().length < 1) {
+                suggestionsDropdown.classList.remove('show');
+                return;
+            }
+
+            loadingEl.style.display = 'block';
+            suggestionsList.innerHTML = '';
+            suggestionsDropdown.classList.add('show');
+            updateDropdownPosition();
+
+            if (currentRequest) {
+                currentRequest.abort();
+            }
+
+            currentRequest = new XMLHttpRequest();
+            const url = `/sanpham/api/search-suggestions?q=${encodeURIComponent(keyword.trim())}`;
+
+            currentRequest.open('GET', url, true);
+            currentRequest.setRequestHeader('Content-Type', 'application/json');
+
+            currentRequest.onload = function() {
+                loadingEl.style.display = 'none';
+                if (currentRequest.status === 200) {
+                    try {
+                        const data = JSON.parse(currentRequest.responseText);
+                        showSuggestions(data, keyword.trim());
+                    } catch (e) {
+                        console.error('Parse error:', e);
+                    }
+                } else {
+                    suggestionsDropdown.classList.remove('show');
+                }
+                currentRequest = null;
+            };
+
+            currentRequest.onerror = function() {
+                loadingEl.style.display = 'none';
+                suggestionsDropdown.classList.remove('show');
+                currentRequest = null;
+            };
+
+            currentRequest.send();
+        }
+
+        // Xử lý input
+        searchInput.addEventListener('input', function() {
+            const keyword = this.value;
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(function() {
+                fetchSuggestions(keyword);
+            }, 300);
+        });
+
+        searchInput.addEventListener('focus', function() {
+            if (this.value && this.value.trim().length >= 1) {
+                fetchSuggestions(this.value);
+            }
+        });
+
+        searchInput.addEventListener('blur', function() {
+            setTimeout(function() {
+                suggestionsDropdown.classList.remove('show');
+            }, 300);
+        });
+
+        // Xử lý phím
+        searchInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                suggestionsDropdown.classList.remove('show');
+                filterForm.submit();
+            }
+
+            if (e.key === 'Escape') {
+                suggestionsDropdown.classList.remove('show');
+            }
+        });
+
+        // Đóng dropdown khi click ra ngoài
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.search-wrapper')) {
+                suggestionsDropdown.classList.remove('show');
+            }
+        });
+
+        // Cập nhật vị trí khi resize hoặc scroll
+        window.addEventListener('resize', function() {
+            if (suggestionsDropdown.classList.contains('show')) {
+                updateDropdownPosition();
+            }
+        });
+
+        window.addEventListener('scroll', function() {
+            if (suggestionsDropdown.classList.contains('show')) {
+                updateDropdownPosition();
+            }
+        });
+    });
+</script>
+</body>
+</html>

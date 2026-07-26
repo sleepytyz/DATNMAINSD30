@@ -1,0 +1,1566 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Quản lý màu sắc - FS Shop</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+
+    <style>
+        .modal-open .search-wrapper .input-group .form-control:focus {
+            border-color: #e0e0e0 !important;
+            box-shadow: none !important;
+        }
+        .search-wrapper .input-group .form-control:focus {
+            border-color: #c92327 !important;
+            box-shadow: 0 0 0 0.25rem rgba(201, 35, 39, 0.15) !important;
+        }
+
+        .form-control:focus {
+            border-color: #c92327 !important;
+            box-shadow: 0 0 0 0.25rem rgba(201, 35, 39, 0.15) !important;
+        }
+        .form-select:focus {
+            border-color: #c92327 !important;
+            box-shadow: 0 0 0 0.25rem rgba(201, 35, 39, 0.15) !important;
+        }
+
+        .pagination .page-item .page-link {
+            color: #495057;
+            background-color: #f8f9fa;
+            transition: all 0.2s ease;
+        }
+        .pagination .page-item .page-link:hover {
+            background-color: #e9ecef;
+            color: #c92327;
+        }
+        .pagination .page-item.active .page-link {
+            background-color: #c92327 !important;
+            color: #fff !important;
+            border-color: #c92327 !important;
+            box-shadow: 0 4px 10px rgba(201, 35, 39, 0.2);
+        }
+        .pagination .page-item.disabled .page-link {
+            background-color: #f8f9fa;
+            color: #6c757d;
+            opacity: 0.5;
+        }
+
+        .toast-container-custom {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            max-width: 420px;
+            width: 100%;
+        }
+        .toast-custom {
+            background: #fff;
+            border-radius: 12px;
+            padding: 16px 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+            border-left: 5px solid #dc3545;
+            animation: slideInRight 0.4s ease;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        .toast-custom.success { border-left-color: #28a745; }
+        .toast-custom.warning { border-left-color: #ffc107; }
+        .toast-custom.error { border-left-color: #dc3545; }
+        .toast-custom .toast-icon { font-size: 1.5rem; flex-shrink: 0; margin-top: 2px; }
+        .toast-custom .toast-content { flex: 1; }
+        .toast-custom .toast-title { font-weight: 700; font-size: 0.95rem; color: #2d3748; }
+        .toast-custom .toast-message { font-size: 0.85rem; color: #6c757d; margin-top: 2px; }
+        .toast-custom .toast-close {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            color: #adb5bd;
+            cursor: pointer;
+            padding: 0 4px;
+            transition: color 0.2s;
+        }
+        .toast-custom .toast-close:hover { color: #dc3545; }
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideOutRight {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+
+        #confirmActionModal .modal-content {
+            animation: modalSlideIn 0.3s ease;
+        }
+        @keyframes modalSlideIn {
+            from {
+                transform: scale(0.9) translateY(20px);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1) translateY(0);
+                opacity: 1;
+            }
+        }
+        #confirmActionModal .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        #confirmActionModal .btn-outline-secondary:hover {
+            background: #f8f9fa;
+            border-color: #dee2e6;
+        }
+        .confirm-icon-wrapper {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 12px;
+        }
+        .confirm-icon-wrapper.warning { background: #fff3cd; }
+        .confirm-icon-wrapper.danger { background: #f8d7da; }
+        .confirm-icon-wrapper.success { background: #d4edda; }
+        .confirm-icon-wrapper i { font-size: 2rem; }
+        .confirm-icon-wrapper.warning i { color: #856404; }
+        .confirm-icon-wrapper.danger i { color: #721c24; }
+        .confirm-icon-wrapper.success i { color: #155724; }
+
+        .custom-switch {
+            width: 2.5em !important;
+            height: 1.2em !important;
+            cursor: pointer;
+        }
+        .custom-switch:checked {
+            background-color: #c92327 !important;
+            border-color: #c92327 !important;
+        }
+        .custom-switch:focus {
+            box-shadow: 0 0 0 0.2rem rgba(201, 35, 39, 0.2) !important;
+        }
+
+        .form-check { margin: 0 !important; }
+
+        .badge-active {
+            background: #d4edda;
+            color: #155724;
+            padding: 5px 14px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+        .badge-locked {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 5px 14px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+
+        .table-card {
+            background: #fff;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #e9ecef;
+        }
+
+        .table-custom {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+            margin-bottom: 0;
+            table-layout: fixed;
+        }
+
+        .table-custom thead {
+            background: linear-gradient(135deg, #f8f9fa 0%, #f1f3f5 100%);
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .table-custom thead th {
+            padding: 12px 16px;
+            font-weight: 700;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #495057;
+            border-bottom: none;
+            white-space: nowrap;
+            text-align: center;
+        }
+
+        .table-custom tbody tr {
+            transition: all 0.2s ease;
+            border-bottom: 1px solid #f1f3f5;
+        }
+
+        .table-custom tbody tr:last-child { border-bottom: none; }
+        .table-custom tbody tr:hover { background: #fff5f5 !important; }
+
+        .table-custom tbody td {
+            padding: 12px 16px;
+            vertical-align: middle;
+            color: #2d3748;
+            text-align: center;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .table-custom .col-stt { width: 60px; min-width: 60px; max-width: 60px; }
+        .table-custom .col-ma { width: 150px; min-width: 150px; max-width: 150px; }
+        .table-custom .col-ten { width: auto; min-width: 180px; }
+        .table-custom .col-trangthai { width: 180px; min-width: 180px; max-width: 180px; }
+        .table-custom .col-hanhdong { width: 100px; min-width: 100px; max-width: 100px; }
+
+        .table-custom .text-left { text-align: left; }
+        .table-custom .text-center { text-align: center; }
+        .table-custom .fw-semibold { font-weight: 600; }
+        .table-custom .fw-bold { font-weight: 700; }
+
+        .search-wrapper {
+            position: relative;
+            flex: 1;
+            min-width: 220px;
+            z-index: 99 !important;
+        }
+
+        .search-wrapper .input-group { position: relative; z-index: 1; }
+
+        .suggestions-dropdown {
+            position: fixed !important;
+            background: #ffffff;
+            border: 1px solid #d1d5db;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+            max-height: 400px !important;
+            min-height: 60px;
+            overflow-y: auto !important;
+            z-index: 999999 !important;
+            display: none !important;
+            min-width: 350px;
+            max-width: 500px;
+            width: auto;
+            padding: 6px 0;
+        }
+
+        .suggestions-dropdown.show { display: block !important; }
+
+        .suggestions-dropdown .suggestion-item {
+            padding: 10px 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid #f3f4f6;
+            transition: all 0.15s ease;
+            min-height: 44px;
+        }
+
+        .suggestions-dropdown .suggestion-item:last-child { border-bottom: none; }
+        .suggestions-dropdown .suggestion-item:hover { background: #fef2f2; }
+
+        .suggestions-dropdown .suggestion-item .suggestion-code {
+            font-weight: 700;
+            color: #dc2626;
+            font-size: 0.82rem;
+            min-width: 80px;
+            flex-shrink: 0;
+            background: #fef2f2;
+            padding: 2px 10px;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .suggestions-dropdown .suggestion-item .suggestion-name {
+            flex: 1;
+            font-size: 0.9rem;
+            color: #1f2937;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .suggestions-dropdown .suggestion-item .highlight {
+            color: #dc2626;
+            font-weight: 700;
+            background: #fef2f2;
+            padding: 0 4px;
+            border-radius: 3px;
+        }
+
+        .suggestions-dropdown .suggestion-empty {
+            padding: 20px;
+            text-align: center;
+            color: #6b7280;
+            font-size: 0.9rem;
+        }
+
+        .suggestions-dropdown .suggestion-loading {
+            padding: 18px;
+            text-align: center;
+            color: #6b7280;
+            font-size: 0.85rem;
+        }
+
+        .suggestions-dropdown .suggestion-loading .spinner-border {
+            width: 1.2rem;
+            height: 1.2rem;
+            margin-right: 10px;
+        }
+
+        .suggestions-dropdown::-webkit-scrollbar { width: 6px; }
+        .suggestions-dropdown::-webkit-scrollbar-track { background: #f3f4f6; border-radius: 10px; }
+        .suggestions-dropdown::-webkit-scrollbar-thumb { background: #dc2626; border-radius: 10px; }
+        .suggestions-dropdown::-webkit-scrollbar-thumb:hover { background: #b91c1c; }
+
+        .stats-bar {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+        .stats-item {
+            background: #f8f9fa;
+            padding: 6px 16px;
+            border-radius: 10px;
+            border: 1px solid #e9ecef;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+        }
+        .stats-item .num { font-weight: 700; color: #c92327; font-size: 1rem; }
+        .stats-item .bi { font-size: 1rem; }
+
+        .modal-content-custom {
+            border-radius: 16px !important;
+            border: none !important;
+            overflow: hidden;
+        }
+        .modal-header-custom {
+            background: linear-gradient(135deg, #c92327 0%, #a01a1e 100%);
+            border: none;
+            padding: 16px 24px;
+        }
+        .modal-header-custom .modal-title { color: white; font-weight: 700; font-size: 1.1rem; }
+        .modal-header-custom .btn-close { filter: brightness(0) invert(1); }
+        .modal-body-custom {
+            padding: 24px;
+            background: #f8f9fa;
+        }
+        .modal-body-custom .form-label {
+            font-weight: 600;
+            font-size: 0.8rem;
+            color: #2d3748;
+        }
+        .modal-body-custom .form-control,
+        .modal-body-custom .form-select {
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            font-size: 0.85rem;
+            padding: 8px 12px;
+            transition: all 0.3s ease;
+        }
+        .modal-body-custom .form-control:focus,
+        .modal-body-custom .form-select:focus {
+            border-color: #c92327 !important;
+            box-shadow: 0 0 0 0.2rem rgba(201, 35, 39, 0.12) !important;
+        }
+        .modal-body-custom .text-danger { font-size: 0.8rem; }
+        .modal-footer-custom {
+            padding: 16px 24px;
+            background: white;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .filter-bar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            background: #f8f9fa;
+            padding: 12px 20px;
+            border-radius: 0 0 12px 12px;
+            border: 1px solid #e9ecef;
+            border-top: none;
+            width: 100%;
+        }
+
+        .filter-bar .search-wrapper {
+            flex: 2;
+            min-width: 200px;
+            max-width: 350px;
+        }
+        .filter-bar .search-wrapper .input-group .form-control {
+            border-radius: 8px 0 0 8px;
+            border: 1px solid #d1d5db;
+            font-size: 0.88rem;
+            padding: 6px 14px;
+            height: 40px;
+        }
+        .filter-bar .search-wrapper .input-group .btn {
+            border-radius: 0 8px 8px 0;
+            padding: 6px 14px;
+            height: 40px;
+        }
+        .filter-bar .filter-select {
+            flex: 1;
+            min-width: 160px;
+            max-width: 220px;
+            border-radius: 8px;
+            border: 1px solid #d1d5db;
+            font-size: 0.88rem;
+            padding: 6px 14px;
+            height: 40px;
+            background-color: #fff;
+        }
+        .filter-bar .filter-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: nowrap;
+        }
+        .filter-bar .btn-action-filter {
+            border: none;
+            border-radius: 8px;
+            padding: 6px 18px;
+            font-weight: 600;
+            font-size: 0.88rem;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+            height: 40px;
+            min-width: 110px;
+            justify-content: center;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .filter-bar .btn-action-filter:hover { text-decoration: none; transform: translateY(-1px); }
+        .filter-bar .btn-add-modal { background: #c92327; color: white; }
+        .filter-bar .btn-add-modal:hover { background: #a01a1e; color: white; box-shadow: 0 4px 12px rgba(201, 35, 39, 0.3); }
+        .filter-bar .btn-export-excel {
+            background: #28a745;
+            color: white;
+        }
+        .filter-bar .btn-export-excel:hover {
+            background: #1e7e34;
+            color: white;
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+        }
+        .filter-bar .btn-reset-filter { background: #6c757d; color: white; }
+        .filter-bar .btn-reset-filter:hover { background: #5a6268; color: white; box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3); }
+
+        @media (max-width: 992px) {
+            .table-custom .col-stt { width: 50px; min-width: 50px; max-width: 50px; }
+            .table-custom .col-ma { width: 120px; min-width: 120px; max-width: 120px; }
+            .table-custom .col-trangthai { width: 150px; min-width: 150px; max-width: 150px; }
+            .table-custom .col-hanhdong { width: 80px; min-width: 80px; max-width: 80px; }
+            .suggestions-dropdown { min-width: 300px; max-width: 400px; }
+            .filter-bar .search-wrapper { min-width: 160px; max-width: 280px; }
+            .filter-bar .filter-select { min-width: 140px; max-width: 180px; }
+            .filter-bar .btn-action-filter { min-width: 95px; font-size: 0.82rem; padding: 5px 14px; height: 38px; }
+        }
+
+        @media (max-width: 768px) {
+            .table-custom { font-size: 0.8rem; }
+            .table-custom thead th { padding: 8px 10px; font-size: 0.65rem; }
+            .table-custom tbody td { padding: 8px 10px; }
+            .table-custom .col-stt { width: 40px; min-width: 40px; max-width: 40px; }
+            .table-custom .col-ma { width: 100px; min-width: 100px; max-width: 100px; }
+            .table-custom .col-trangthai { width: 130px; min-width: 130px; max-width: 130px; }
+            .table-custom .col-hanhdong { width: 70px; min-width: 70px; max-width: 70px; }
+            .badge-active, .badge-locked { font-size: 0.6rem; padding: 3px 10px; gap: 4px; }
+            .custom-switch { width: 2em !important; height: 1em !important; }
+            .suggestions-dropdown { min-width: 260px !important; max-width: 85vw !important; max-height: 350px !important; }
+            .stats-bar { gap: 8px; }
+            .stats-item { font-size: 0.75rem; padding: 4px 12px; }
+            .filter-bar {
+                flex-direction: column;
+                align-items: stretch;
+                padding: 12px 16px;
+                gap: 8px;
+            }
+            .filter-bar .search-wrapper { min-width: 100%; max-width: 100%; }
+            .filter-bar .filter-select { min-width: 100%; max-width: 100%; }
+            .filter-bar .filter-actions {
+                justify-content: stretch;
+                flex-wrap: wrap;
+            }
+            .filter-bar .btn-action-filter {
+                min-width: 120px;
+                font-size: 0.82rem;
+                padding: 5px 16px;
+                height: 38px;
+                flex: 1;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .table-custom { font-size: 0.7rem; }
+            .table-custom thead th { padding: 6px 8px; font-size: 0.55rem; letter-spacing: 0.3px; }
+            .table-custom tbody td { padding: 6px 8px; }
+            .table-custom .col-stt { width: 35px; min-width: 35px; max-width: 35px; }
+            .table-custom .col-ma { width: 80px; min-width: 80px; max-width: 80px; }
+            .table-custom .col-trangthai { width: 100px; min-width: 100px; max-width: 100px; }
+            .table-custom .col-hanhdong { width: 60px; min-width: 60px; max-width: 60px; }
+            .badge-active, .badge-locked { font-size: 0.5rem; padding: 2px 8px; gap: 3px; }
+            .badge-active i, .badge-locked i { font-size: 0.5rem; }
+            .custom-switch { width: 1.6em !important; height: 0.8em !important; }
+            .suggestions-dropdown { min-width: 230px !important; max-width: 90vw !important; max-height: 280px !important; }
+            .suggestions-dropdown .suggestion-item { padding: 6px 10px; min-height: 34px; gap: 8px; }
+            .suggestions-dropdown .suggestion-item .suggestion-code { font-size: 0.68rem; min-width: 55px; padding: 2px 6px; }
+            .suggestions-dropdown .suggestion-item .suggestion-name { font-size: 0.78rem; }
+            .stats-item { font-size: 0.6rem; padding: 3px 8px; }
+            .stats-item .num { font-size: 0.75rem; }
+            .filter-bar .btn-action-filter {
+                min-width: 100%;
+                font-size: 0.78rem;
+                padding: 5px 14px;
+                height: 36px;
+                flex: 1;
+            }
+        }
+    </style>
+</head>
+
+<body>
+<div class="wrapper">
+    <div sec:authorize="hasRole('ADMIN')">
+        <div th:replace="fragments/sidebaradmin :: sidebar-admin"></div>
+    </div>
+    <div sec:authorize="hasRole('STAFF')">
+        <div th:replace="fragments/sidebarstaff :: sidebar-staff"></div>
+    </div>
+    <div class="content-wrapper">
+        <div th:replace="fragments/header :: header('Quản lý màu sắc', 'Màu sắc')"></div>
+        <div class="content-body px-3">
+            <div class="toast-container-custom" id="toastContainer"></div>
+            <div id="alertData" style="display: none;">
+                <div id="successMessage" th:text="${successMess}"></div>
+                <div id="warningMessage" th:text="${mess}"></div>
+                <div id="errorMessage" th:text="${errorMess}"></div>
+            </div>
+
+            <div class="card card-custom mb-4 shadow-sm border-0">
+                <div class="card-header text-white" style="background: #c92327; border-radius: 12px 12px 0 0;">
+                    <h5 class="mb-0 d-flex align-items-center gap-2 py-1">
+                        <i class="bi bi-funnel-fill"></i>
+                        <span>Bộ lọc & Tìm kiếm màu sắc</span>
+                    </h5>
+                </div>
+                <div class="filter-bar">
+                    <div class="search-wrapper">
+                        <div class="input-group">
+                            <input type="text"
+                                   class="form-control"
+                                   id="searchInput"
+                                   placeholder="Tìm theo mã hoặc tên..."
+                                   name="keyword"
+                                   th:value="${param.keyword}"
+                                   autocomplete="off">
+                            <button class="btn btn-danger" type="submit" id="searchButton" form="filterForm">
+                                <i class="bi bi-search"></i>
+                            </button>
+                            <div class="suggestions-dropdown" id="suggestionsDropdown">
+                                <div class="suggestion-loading" style="display: none;">
+                                    <div class="spinner-border text-danger spinner-border-sm" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    Đang tìm kiếm...
+                                </div>
+                                <div id="suggestionsList"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form th:action="@{/mausac/index}" method="get" id="filterForm" class="d-flex align-items-center gap-2 flex-wrap" style="flex:1;">
+                        <select name="trangThai" class="form-select filter-select" onchange="this.form.submit()">
+                            <option value="">-- Tất cả --</option>
+                            <option value="true" th:selected="${param.trangThai != null && param.trangThai == 'true'}">Đang hoạt động</option>
+                            <option value="false" th:selected="${param.trangThai != null && param.trangThai == 'false'}">Ngừng hoạt động</option>
+                        </select>
+                    </form>
+
+                    <div class="filter-actions">
+                        <button type="button" class="btn-action-filter btn-add-modal" id="btnAddModal">
+                            <i class="bi bi-plus-circle"></i> Thêm mới
+                        </button>
+                        <a th:href="@{/mausac/export-excel(keyword=${param.keyword}, trangThai=${param.trangThai})}"
+                           class="btn-action-filter btn-export-excel">
+                            <i class="bi bi-file-earmark-excel"></i> Xuất Excel
+                        </a>
+                        <a th:href="@{/mausac/index}" class="btn-action-filter btn-reset-filter">
+                            <i class="bi bi-arrow-counterclockwise"></i> Reset
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card card-custom border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h5 class="mb-0 fw-bold text-dark d-flex align-items-center gap-2">
+                        <i class="bi bi-list-stars text-danger"></i>
+                        <span>Danh sách màu sắc</span>
+                    </h5>
+                </div>
+
+                <div class="table-card">
+                    <div class="table-responsive">
+                        <table class="table-custom">
+                            <thead>
+                            <tr>
+                                <th class="col-stt">STT</th>
+                                <th class="col-ma">Mã màu sắc</th>
+                                <th class="col-ten text-left">Tên màu sắc</th>
+                                <th class="col-trangthai">Trạng thái</th>
+                                <th class="col-hanhdong">Hành động</th>
+                            </tr>
+                            </thead>
+
+                            <tbody>
+                            <tr th:each="ms,stt : ${listms}">
+                                <td class="col-stt fw-semibold" th:text="${(currentPage * 5) + stt.count}"></td>
+                                <td class="col-ma fw-semibold text-secondary" th:text="${ms.maMauSac}"></td>
+                                <td class="col-ten text-left fw-bold text-dark" th:text="${ms.tenMauSac}"></td>
+                                <td class="col-trangthai" th:id="'status-' + ${ms.maMauSac}">
+                                    <span th:if="${ms.trangThai}" class="badge-active">
+                                        <i class="bi bi-check-circle-fill"></i>Đang hoạt động
+                                    </span>
+                                    <span th:unless="${ms.trangThai}" class="badge-locked">
+                                        <i class="bi bi-x-circle-fill"></i>Ngừng hoạt động
+                                    </span>
+                                </td>
+                                <td class="col-hanhdong">
+                                    <div class="d-flex align-items-center justify-content-center">
+                                        <div class="form-check form-switch m-0">
+                                            <input class="form-check-input custom-switch toggle-switch"
+                                                   type="checkbox"
+                                                   role="switch"
+                                                   th:checked="${ms.trangThai}"
+                                                   th:data-id="${ms.maMauSac}"
+                                                   th:data-name="${ms.tenMauSac}">
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(listms)}">
+                                <td colspan="5" class="text-center text-muted py-4">
+                                    <i class="bi bi-inbox" style="font-size: 2rem; display: block; margin-bottom: 8px;"></i>
+                                    Không tìm thấy màu sắc nào.
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card-footer bg-white border-top d-flex justify-content-between align-items-center px-4 py-3" th:if="${totalPages > 0}">
+                    <div class="small text-muted fw-semibold">
+                        <i class="bi bi-database me-1"></i>
+                        Tổng số bản ghi: <span class="fw-semibold text-dark" th:text="${totalItems}">0</span>
+                        <span class="mx-1">|</span>
+                        Trang <span class="fw-semibold text-dark" th:text="${currentPage + 1}">1</span> / <span class="fw-semibold text-dark" th:text="${totalPages}">1</span>
+                    </div>
+
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination pagination-sm mb-0 gap-1">
+                            <li class="page-item" th:classappend="${currentPage == 0} ? 'disabled' : ''">
+                                <a class="page-link rounded-2 border-0 d-flex align-items-center justify-content-center"
+                                   th:href="@{/mausac/index(page=${currentPage - 1}, keyword=${param.keyword}, trangThai=${param.trangThai})}"
+                                   style="width: 32px; height: 32px; color: #c92327;">
+                                    <i class="bi bi-chevron-left"></i>
+                                </a>
+                            </li>
+
+                            <li class="page-item"
+                                th:each="i : ${#numbers.sequence(0, totalPages - 1)}"
+                                th:classappend="${currentPage == i} ? 'active' : ''">
+                                <a class="page-link rounded-2 border-0 d-flex align-items-center justify-content-center fw-semibold"
+                                   th:href="@{/mausac/index(page=${i}, keyword=${param.keyword}, trangThai=${param.trangThai})}"
+                                   th:text="${i + 1}"
+                                   style="width: 32px; height: 32px;"
+                                   th:style="${currentPage == i} ? 'background-color:#c92327; border-color:#c92327; color:#fff;' : 'color:#212529;'">
+                                </a>
+                            </li>
+
+                            <li class="page-item" th:classappend="${currentPage + 1 >= totalPages} ? 'disabled' : ''">
+                                <a class="page-link rounded-2 border-0 d-flex align-items-center justify-content-center"
+                                   th:href="@{/mausac/index(page=${currentPage + 1}, keyword=${param.keyword}, trangThai=${param.trangThai})}"
+                                   style="width: 32px; height: 32px; color: #c92327;">
+                                    <i class="bi bi-chevron-right"></i>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== MODAL THÊM MÀU SẮC ===== -->
+<div class="modal fade" id="addModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content modal-content-custom">
+            <div class="modal-header-custom">
+                <h5 class="modal-title">
+                    <i class="bi bi-plus-circle me-2"></i>Thêm màu sắc mới
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body-custom">
+                <div class="alert alert-warning alert-dismissible fade show" id="errorAlert" style="display: none;" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <span id="errorMessageText"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">
+                        <i class="bi bi-tag text-danger me-1"></i>Mã màu sắc <span class="text-danger">*</span>
+                    </label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-secondary-subtle">
+                            <i class="bi bi-tag text-danger"></i>
+                        </span>
+                        <input type="text"
+                               class="form-control bg-light border-secondary-subtle fw-bold text-danger"
+                               id="maMauSac"
+                               name="maMauSac"
+                               th:value="${mausac != null ? mausac.maMauSac : 'MS'}"
+                               readonly
+                               style="background-color: #f8f9fa !important; cursor: not-allowed;">
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">
+                        <i class="bi bi-pencil text-danger me-1"></i>Tên màu sắc <span class="text-danger">*</span>
+                    </label>
+                    <input type="text"
+                           class="form-control border-secondary-subtle py-2"
+                           id="tenMauSac"
+                           name="tenMauSac"
+                           th:value="${mausac != null ? mausac.tenMauSac : ''}"
+                           placeholder="Ví dụ: Đỏ, Xanh navy, Đen nhám...">
+
+                    <div class="text-danger small mt-1" id="tenMauSacError"></div>
+                </div>
+            </div>
+
+            <div class="modal-footer-custom">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i>Hủy
+                </button>
+                <button type="button" class="btn" style="background: #c92327; color: white;" onclick="submitAddForm()">
+                    <i class="bi bi-plus-circle me-1"></i>Thêm mới
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== CONFIRM MODAL ===== -->
+<div class="modal fade" id="confirmActionModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px; overflow: hidden;">
+            <div class="modal-header" style="background: linear-gradient(135deg, #c92327 0%, #a01a1e 100%); border: none; padding: 16px 24px;">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-circle bg-white bg-opacity-25 p-2" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                        <i class="bi bi-exclamation-triangle-fill" style="font-size: 1.2rem; color: white;"></i>
+                    </div>
+                    <div>
+                        <h5 class="modal-title fw-bold text-white" id="confirmActionTitle" style="font-size: 1rem;">Xác nhận</h5>
+                        <small class="text-white-50" id="confirmActionSubtitle">Vui lòng xác nhận hành động</small>
+                    </div>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body p-4" style="background: #f8f9fa;">
+                <div class="text-center">
+                    <div class="confirm-icon-wrapper warning" id="confirmActionIcon">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                    </div>
+                    <h5 class="fw-bold text-dark" id="confirmActionMessage">Bạn có chắc chắn muốn thực hiện hành động này?</h5>
+                    <p class="text-muted small" id="confirmActionDescription">Hành động này có thể không thể hoàn tác.</p>
+                    <div class="mt-2" id="confirmActionExtra" style="display: none;"></div>
+                </div>
+            </div>
+
+            <div class="modal-footer border-0" style="background: white; padding: 12px 24px;">
+                <button type="button" class="btn btn-outline-secondary px-4 py-2 fw-semibold" data-bs-dismiss="modal" style="border-radius: 10px; font-size: 0.9rem;">
+                    <i class="bi bi-x-circle me-1"></i>Hủy bỏ
+                </button>
+                <button type="button" class="btn px-4 py-2 fw-semibold" id="confirmActionBtn" style="background: #c92327; color: white; border-radius: 10px; transition: all 0.3s; font-size: 0.9rem;">
+                    <i class="bi bi-check-circle-fill me-1"></i>Xác nhận
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    // ============================================================
+    // 1. SHOW TOAST
+    // ============================================================
+    function showToast(message, type, title) {
+        var container = document.getElementById('toastContainer');
+        if (!container) return;
+
+        var icons = {
+            error: 'bi bi-x-circle-fill text-danger',
+            success: 'bi bi-check-circle-fill text-success',
+            warning: 'bi bi-exclamation-triangle-fill text-warning',
+            info: 'bi bi-info-circle-fill text-info'
+        };
+
+        var titles = {
+            error: 'Lỗi!',
+            success: 'Thành công!',
+            warning: 'Cảnh báo!',
+            info: 'Thông tin'
+        };
+
+        var toast = document.createElement('div');
+        toast.className = 'toast-custom ' + type;
+        toast.innerHTML = `
+            <div class="toast-icon">
+                <i class="${icons[type] || icons.info}"></i>
+            </div>
+            <div class="toast-content">
+                <div class="toast-title">${title || titles[type] || 'Thông báo'}</div>
+                <div class="toast-message">${message}</div>
+            </div>
+            <button class="toast-close" onclick="this.closest('.toast-custom').remove()">
+                <i class="bi bi-x"></i>
+            </button>
+        `;
+
+        container.appendChild(toast);
+
+        setTimeout(function() {
+            if (toast.parentNode) {
+                toast.style.animation = 'slideOutRight 0.3s ease forwards';
+                setTimeout(function() { toast.remove(); }, 300);
+            }
+        }, 5000);
+    }
+
+    // ============================================================
+    // 2. SHOW CONFIRM MODAL
+    // ============================================================
+    function showConfirmModal(options) {
+        return new Promise((resolve) => {
+            var icon = document.getElementById('confirmActionIcon');
+            var title = document.getElementById('confirmActionTitle');
+            var subtitle = document.getElementById('confirmActionSubtitle');
+            var message = document.getElementById('confirmActionMessage');
+            var description = document.getElementById('confirmActionDescription');
+            var extra = document.getElementById('confirmActionExtra');
+            var btn = document.getElementById('confirmActionBtn');
+
+            var iconType = options.icon || 'warning';
+            var iconClass = options.iconClass || 'bi-exclamation-triangle-fill';
+            icon.className = 'confirm-icon-wrapper ' + iconType;
+            icon.innerHTML = '<i class="bi ' + iconClass + '"></i>';
+
+            title.textContent = options.title || 'Xác nhận';
+            subtitle.textContent = options.subtitle || 'Vui lòng xác nhận hành động';
+
+            message.innerHTML = '';
+            var msgText = options.message || 'Bạn có chắc chắn muốn thực hiện hành động này?';
+            var parts = msgText.split(/\*\*(.*?)\*\*/g);
+
+            for (var i = 0; i < parts.length; i++) {
+                if (i % 2 === 1) {
+                    var strong = document.createElement('strong');
+                    strong.textContent = parts[i];
+                    message.appendChild(strong);
+                } else {
+                    if (parts[i]) {
+                        var textNode = document.createTextNode(parts[i]);
+                        message.appendChild(textNode);
+                    }
+                }
+            }
+
+            description.textContent = options.description || 'Hành động này có thể không thể hoàn tác.';
+
+            if (options.extra) {
+                extra.style.display = 'block';
+                extra.innerHTML = options.extra;
+            } else {
+                extra.style.display = 'none';
+            }
+
+            btn.innerHTML = options.btnText || '<i class="bi bi-check-circle-fill me-1"></i>Xác nhận';
+            btn.className = 'btn px-4 py-2 fw-semibold ' + (options.btnClass || 'btn-danger');
+            btn.style.borderRadius = '10px';
+            btn.style.transition = 'all 0.3s';
+
+            var newBtn = btn.cloneNode(true);
+            btn.parentNode.replaceChild(newBtn, btn);
+
+            newBtn.addEventListener('click', function() {
+                var modal = bootstrap.Modal.getInstance(document.getElementById('confirmActionModal'));
+                modal.hide();
+                resolve(true);
+            });
+
+            var modalElement = document.getElementById('confirmActionModal');
+            var handleHidden = function() {
+                resolve(false);
+                modalElement.removeEventListener('hidden.bs.modal', handleHidden);
+            };
+            modalElement.addEventListener('hidden.bs.modal', handleHidden);
+
+            var modal = new bootstrap.Modal(modalElement);
+            modal.show();
+        });
+    }
+
+    // ============================================================
+    // 3. SEARCH AJAX - KHÔNG RELOAD TRANG
+    // ============================================================
+    function searchAjax(keyword, trangThai, page) {
+        console.log('🔍 Search AJAX:', { keyword, trangThai, page });
+
+        var csrfToken = document.querySelector('meta[name="_csrf"]');
+        var csrfHeader = document.querySelector('meta[name="_csrf_header"]');
+        var token = csrfToken ? csrfToken.getAttribute('content') : '';
+        var header = csrfHeader ? csrfHeader.getAttribute('content') : 'X-CSRF-TOKEN';
+
+        var url = `/mausac/api/search?keyword=${encodeURIComponent(keyword || '')}&trangThai=${encodeURIComponent(trangThai || '')}&page=${page || 0}&size=5`;
+
+        fetch(url, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                [header]: token
+            }
+        })
+            .then(response => response.json())
+            .then(data => {
+                console.log('📦 Search response:', data);
+                if (data.success) {
+                    updateTable(data);
+                    updatePagination(data);
+                    updateUrl(keyword, trangThai, page);
+                }
+            })
+            .catch(error => {
+                console.error('❌ Search error:', error);
+                showToast('Có lỗi xảy ra khi tìm kiếm!', 'error');
+            });
+    }
+
+    // ============================================================
+    // 4. UPDATE TABLE
+    // ============================================================
+    function updateTable(data) {
+        var tbody = document.querySelector('.table-custom tbody');
+        if (!tbody) return;
+
+        var html = '';
+        if (data.listms && data.listms.length > 0) {
+            data.listms.forEach((item, index) => {
+                var stt = (data.currentPage * 5) + index + 1;
+                var statusBadge = item.trangThai
+                    ? '<span class="badge-active"><i class="bi bi-check-circle-fill"></i>Đang hoạt động</span>'
+                    : '<span class="badge-locked"><i class="bi bi-x-circle-fill"></i>Ngừng hoạt động</span>';
+
+                html += `
+                <tr>
+                    <td class="col-stt fw-semibold">${stt}</td>
+                    <td class="col-ma fw-semibold text-secondary">${item.maMauSac}</td>
+                    <td class="col-ten text-left fw-bold text-dark">${item.tenMauSac}</td>
+                    <td class="col-trangthai" id="status-${item.maMauSac}">${statusBadge}</td>
+                    <td class="col-hanhdong">
+                        <div class="d-flex align-items-center justify-content-center">
+                            <div class="form-check form-switch m-0">
+                                <input class="form-check-input custom-switch toggle-switch"
+                                       type="checkbox"
+                                       role="switch"
+                                       ${item.trangThai ? 'checked' : ''}
+                                       data-id="${item.maMauSac}"
+                                       data-name="${item.tenMauSac}">
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            `;
+            });
+        } else {
+            html = `
+            <tr>
+                <td colspan="5" class="text-center text-muted py-4">
+                    <i class="bi bi-inbox" style="font-size: 2rem; display: block; margin-bottom: 8px;"></i>
+                    Không tìm thấy màu sắc nào.
+                </td>
+            </tr>
+        `;
+        }
+        tbody.innerHTML = html;
+
+        bindToggleEvents();
+    }
+
+    // ============================================================
+    // 5. UPDATE PAGINATION
+    // ============================================================
+    function updatePagination(data) {
+        var paginationContainer = document.querySelector('.pagination');
+        if (!paginationContainer) return;
+
+        var totalPages = data.totalPages || 1;
+        var currentPage = data.currentPage || 0;
+        var keyword = document.getElementById('searchInput').value;
+        var trangThai = document.querySelector('select[name="trangThai"]').value;
+
+        var html = '';
+        html += `<li class="page-item ${currentPage == 0 ? 'disabled' : ''}">
+            <a class="page-link rounded-2 border-0 d-flex align-items-center justify-content-center" href="#" onclick="searchAjax('${keyword}', '${trangThai}', 0)" style="width: 32px; height: 32px; color: #c92327;">
+                <i class="bi bi-chevron-double-left"></i>
+            </a>
+        </li>`;
+        html += `<li class="page-item ${currentPage == 0 ? 'disabled' : ''}">
+            <a class="page-link rounded-2 border-0 d-flex align-items-center justify-content-center" href="#" onclick="searchAjax('${keyword}', '${trangThai}', ${currentPage - 1})" style="width: 32px; height: 32px; color: #c92327;">
+                <i class="bi bi-chevron-left"></i>
+            </a>
+        </li>`;
+        for (var i = 0; i < totalPages; i++) {
+            if (i >= 0 && i < totalPages && (i >= currentPage - 2 && i <= currentPage + 2 || i == 0 || i == totalPages - 1)) {
+                var activeClass = currentPage == i ? 'active' : '';
+                var style = currentPage == i ? 'background-color:#c92327; border-color:#c92327; color:#fff;' : 'color:#212529;';
+                html += `<li class="page-item ${activeClass}">
+                    <a class="page-link rounded-2 border-0 d-flex align-items-center justify-content-center fw-semibold" href="#" onclick="searchAjax('${keyword}', '${trangThai}', ${i})" style="width: 32px; height: 32px; ${style}">
+                        ${i + 1}
+                    </a>
+                </li>`;
+            }
+        }
+        html += `<li class="page-item ${currentPage + 1 >= totalPages ? 'disabled' : ''}">
+            <a class="page-link rounded-2 border-0 d-flex align-items-center justify-content-center" href="#" onclick="searchAjax('${keyword}', '${trangThai}', ${currentPage + 1})" style="width: 32px; height: 32px; color: #c92327;">
+                <i class="bi bi-chevron-right"></i>
+            </a>
+        </li>`;
+        html += `<li class="page-item ${currentPage + 1 >= totalPages ? 'disabled' : ''}">
+            <a class="page-link rounded-2 border-0 d-flex align-items-center justify-content-center" href="#" onclick="searchAjax('${keyword}', '${trangThai}', ${totalPages - 1})" style="width: 32px; height: 32px; color: #c92327;">
+                <i class="bi bi-chevron-double-right"></i>
+            </a>
+        </li>`;
+
+        paginationContainer.innerHTML = html;
+
+        var footerInfo = document.querySelector('.card-footer .small.text-muted.fw-semibold');
+        if (footerInfo) {
+            footerInfo.innerHTML = `
+                <i class="bi bi-database me-1"></i>
+                Tổng số bản ghi: <span class="fw-semibold text-dark">${data.totalItems || 0}</span>
+                <span class="mx-1">|</span>
+                Trang <span class="fw-semibold text-dark">${currentPage + 1}</span> / <span class="fw-semibold text-dark">${totalPages}</span>
+            `;
+        }
+    }
+
+    // ============================================================
+    // 6. UPDATE URL
+    // ============================================================
+    function updateUrl(keyword, trangThai, page) {
+        var url = new URL(window.location.href);
+        if (keyword) {
+            url.searchParams.set('keyword', keyword);
+        } else {
+            url.searchParams.delete('keyword');
+        }
+        if (trangThai) {
+            url.searchParams.set('trangThai', trangThai);
+        } else {
+            url.searchParams.delete('trangThai');
+        }
+        if (page !== undefined && page !== null) {
+            url.searchParams.set('page', page);
+        }
+        window.history.pushState({}, '', url);
+    }
+
+    // ============================================================
+    // 7. SUBMIT ADD FORM
+    // ============================================================
+    function submitAddForm() {
+        var tenMauSac = document.getElementById('tenMauSac').value.trim();
+        var maMauSac = document.getElementById('maMauSac').value.trim();
+
+        if (!tenMauSac) {
+            document.getElementById('tenMauSacError').textContent = 'Tên màu sắc không được để trống!';
+            return;
+        }
+
+        var csrfToken = document.querySelector('meta[name="_csrf"]');
+        var csrfHeader = document.querySelector('meta[name="_csrf_header"]');
+        var token = csrfToken ? csrfToken.getAttribute('content') : '';
+        var header = csrfHeader ? csrfHeader.getAttribute('content') : 'X-CSRF-TOKEN';
+
+        var jsonData = { maMauSac: maMauSac, tenMauSac: tenMauSac };
+
+        var submitBtn = document.querySelector('#addModal button[onclick="submitAddForm()"]');
+        var originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> Đang xử lý...';
+        submitBtn.disabled = true;
+
+        fetch('/mausac/add-ajax', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                [header]: token
+            },
+            body: JSON.stringify(jsonData)
+        })
+            .then(response => response.json())
+            .then(data => {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+
+                if (data.success) {
+                    var modal = bootstrap.Modal.getInstance(document.getElementById('addModal'));
+                    if (modal) modal.hide();
+                    showToast(data.message, 'success');
+                    document.getElementById('tenMauSac').value = '';
+                    var keyword = document.getElementById('searchInput').value;
+                    var trangThai = document.querySelector('select[name="trangThai"]').value;
+                    searchAjax(keyword, trangThai, 0);
+                } else {
+                    document.getElementById('errorAlert').style.display = 'block';
+                    document.getElementById('errorMessageText').textContent = data.message;
+                    if (data.errors && data.errors.tenMauSac) {
+                        document.getElementById('tenMauSacError').textContent = data.errors.tenMauSac;
+                    }
+                }
+            })
+            .catch(error => {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+                showToast('Có lỗi xảy ra: ' + error.message, 'error');
+            });
+    }
+
+    // ============================================================
+    // 8. OPEN ADD MODAL
+    // ============================================================
+    function openAddModal() {
+        var modalElement = document.getElementById('addModal');
+        if (modalElement) {
+            document.getElementById('errorAlert').style.display = 'none';
+            document.getElementById('tenMauSacError').textContent = '';
+            var modal = bootstrap.Modal.getInstance(modalElement);
+            if (!modal) {
+                modal = new bootstrap.Modal(modalElement, { backdrop: 'static', keyboard: false });
+                modalElement._modal = modal;
+            }
+            modal.show();
+            setTimeout(function() { document.getElementById('tenMauSac').focus(); }, 300);
+        }
+    }
+
+    // ============================================================
+    // 9. BIND TOGGLE EVENTS
+    // ============================================================
+    function bindToggleEvents() {
+        document.querySelectorAll('.toggle-switch').forEach(function(switchEl) {
+            switchEl.removeEventListener('change', handleToggleChange);
+            switchEl.addEventListener('change', handleToggleChange);
+        });
+    }
+
+    // ============================================================
+    // 10. HANDLE TOGGLE CHANGE
+    // ============================================================
+    function handleToggleChange(e) {
+        var element = this;
+        var id = element.getAttribute('data-id');
+        var name = element.getAttribute('data-name') || 'Màu sắc';
+        var isChecked = element.checked;
+        var originalChecked = !isChecked;
+
+        showConfirmModal({
+            icon: isChecked ? 'success' : 'warning',
+            iconClass: isChecked ? 'bi-check-circle-fill' : 'bi-slash-circle-fill',
+            title: isChecked ? 'Xác nhận kích hoạt màu sắc' : 'Xác nhận ngừng hoạt động',
+            subtitle: isChecked ? 'Màu sắc sẽ được kích hoạt' : 'Màu sắc sẽ bị ngừng hoạt động',
+            message: 'Bạn có chắc chắn muốn ' + (isChecked ? 'kích hoạt' : 'ngừng hoạt động') + ' màu sắc **"' + name + '"**?',
+            description: 'Trạng thái sẽ chuyển thành "' + (isChecked ? 'Đang hoạt động' : 'Ngừng hoạt động') + '"',
+            btnText: isChecked ? '<i class="bi bi-check-circle-fill me-1"></i>Xác nhận kích hoạt' : '<i class="bi bi-slash-circle-fill me-1"></i>Xác nhận ngừng',
+            btnClass: isChecked ? 'btn-success' : 'btn-danger',
+            extra: '<div class="alert alert-info mb-0 text-start"><i class="bi bi-info-circle me-1"></i>Mã màu sắc: <strong>' + id + '</strong></div>'
+        }).then(function(confirmed) {
+            if (confirmed) {
+                toggleStatusAjax(id, name, element);
+            } else {
+                element.checked = originalChecked;
+            }
+        });
+    }
+
+    // ============================================================
+    // 11. TOGGLE STATUS AJAX
+    // ============================================================
+    function toggleStatusAjax(id, name, element) {
+        var csrfToken = document.querySelector('meta[name="_csrf"]');
+        var csrfHeader = document.querySelector('meta[name="_csrf_header"]');
+        var token = csrfToken ? csrfToken.getAttribute('content') : '';
+        var header = csrfHeader ? csrfHeader.getAttribute('content') : 'X-CSRF-TOKEN';
+
+        element.disabled = true;
+
+        fetch('/mausac/api/toggle-status/' + id, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                [header]: token
+            },
+            credentials: 'same-origin'
+        })
+            .then(response => response.json())
+            .then(data => {
+                element.disabled = false;
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    var statusCell = document.getElementById('status-' + id);
+                    if (statusCell) {
+                        if (data.trangThai) {
+                            statusCell.innerHTML = '<span class="badge-active"><i class="bi bi-check-circle-fill"></i>Đang hoạt động</span>';
+                        } else {
+                            statusCell.innerHTML = '<span class="badge-locked"><i class="bi bi-x-circle-fill"></i>Ngừng hoạt động</span>';
+                        }
+                    }
+                    var currentKeyword = document.getElementById('searchInput').value;
+                    var currentTrangThai = document.querySelector('select[name="trangThai"]').value;
+                    var currentPage = parseInt(new URLSearchParams(window.location.search).get('page')) || 0;
+                    searchAjax(currentKeyword, currentTrangThai, currentPage);
+                } else {
+                    showToast(data.message, 'error');
+                    element.checked = !element.checked;
+                }
+            })
+            .catch(error => {
+                element.disabled = false;
+                showToast('Có lỗi xảy ra: ' + error.message, 'error');
+                element.checked = !element.checked;
+            });
+    }
+
+    // ============================================================
+    // 12. SEARCH SUGGESTIONS
+    // ============================================================
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('searchInput');
+        const suggestionsDropdown = document.getElementById('suggestionsDropdown');
+        const suggestionsList = document.getElementById('suggestionsList');
+        const loadingEl = document.querySelector('.suggestion-loading');
+
+        if (!searchInput || !suggestionsDropdown || !suggestionsList) {
+            console.error('❌ Không tìm thấy element cần thiết!');
+            return;
+        }
+
+        let debounceTimer = null;
+        let currentRequest = null;
+
+        function updateDropdownPosition() {
+            const rect = searchInput.getBoundingClientRect();
+            const dropdownWidth = Math.min(rect.width, 450);
+            suggestionsDropdown.style.left = rect.left + 'px';
+            suggestionsDropdown.style.top = (rect.bottom + 4) + 'px';
+            suggestionsDropdown.style.width = dropdownWidth + 'px';
+            suggestionsDropdown.style.minWidth = Math.min(rect.width, 350) + 'px';
+            suggestionsDropdown.style.maxWidth = '450px';
+        }
+
+        function highlightText(text, keyword) {
+            if (!keyword || !text) return text;
+            const regex = new RegExp('(' + keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
+            return text.replace(regex, '<span class="highlight">$1</span>');
+        }
+
+        function showSuggestions(data, keyword) {
+            suggestionsList.innerHTML = '';
+
+            if (!data || data.length === 0) {
+                suggestionsList.innerHTML = `
+                    <div class="suggestion-empty">
+                        <i class="bi bi-search me-1"></i>
+                        Không tìm thấy màu sắc nào cho "<strong>${keyword}</strong>"
+                    </div>
+                `;
+                suggestionsDropdown.classList.add('show');
+                updateDropdownPosition();
+                return;
+            }
+
+            const maxDisplay = 15;
+            const displayData = data.slice(0, maxDisplay);
+
+            displayData.forEach((item) => {
+                const div = document.createElement('div');
+                div.className = 'suggestion-item';
+
+                const highlightedName = highlightText(item.tenMauSac, keyword);
+                const highlightedCode = highlightText(item.maMauSac, keyword);
+
+                div.innerHTML = `
+                    <span class="suggestion-code">${highlightedCode}</span>
+                    <span class="suggestion-name">${highlightedName}</span>
+                `;
+
+                div.addEventListener('click', function() {
+                    searchInput.value = item.tenMauSac;
+                    suggestionsDropdown.classList.remove('show');
+                    var trangThai = document.querySelector('select[name="trangThai"]').value;
+                    searchAjax(item.tenMauSac, trangThai, 0);
+                });
+
+                div.addEventListener('mousedown', function(e) { e.preventDefault(); });
+
+                suggestionsList.appendChild(div);
+            });
+
+            const totalItems = data.length;
+            const countDiv = document.createElement('div');
+            countDiv.className = 'suggestion-item';
+            countDiv.style.background = '#f8f9fa';
+            countDiv.style.justifyContent = 'center';
+            countDiv.style.color = '#6b7280';
+            countDiv.style.fontSize = '0.8rem';
+            countDiv.style.cursor = 'default';
+            countDiv.style.borderBottom = 'none';
+            countDiv.style.fontWeight = '500';
+            countDiv.style.padding = '6px 18px';
+
+            if (totalItems > maxDisplay) {
+                countDiv.innerHTML = `
+                    <i class="bi bi-list-ul me-1"></i>
+                    Hiển thị <strong>${maxDisplay}</strong> / <strong>${totalItems}</strong> màu sắc
+                `;
+            } else {
+                countDiv.innerHTML = `
+                    <i class="bi bi-list-ul me-1"></i>
+                    Tìm thấy <strong>${totalItems}</strong> màu sắc
+                `;
+            }
+            suggestionsList.appendChild(countDiv);
+
+            suggestionsDropdown.classList.add('show');
+            updateDropdownPosition();
+            suggestionsDropdown.scrollTop = 0;
+        }
+
+        function fetchSuggestions(keyword) {
+            if (!keyword || keyword.trim().length < 1) {
+                suggestionsDropdown.classList.remove('show');
+                return;
+            }
+
+            loadingEl.style.display = 'block';
+            suggestionsList.innerHTML = '';
+            suggestionsDropdown.classList.add('show');
+            updateDropdownPosition();
+
+            if (currentRequest) { currentRequest.abort(); }
+
+            const url = `/mausac/api/search-suggestions?q=${encodeURIComponent(keyword.trim())}`;
+            currentRequest = new XMLHttpRequest();
+            currentRequest.open('GET', url, true);
+            currentRequest.setRequestHeader('Content-Type', 'application/json');
+
+            currentRequest.onload = function() {
+                loadingEl.style.display = 'none';
+                if (currentRequest.status === 200) {
+                    try { showSuggestions(JSON.parse(currentRequest.responseText), keyword.trim()); }
+                    catch (e) { console.error('❌ Parse error:', e); }
+                } else { suggestionsDropdown.classList.remove('show'); }
+                currentRequest = null;
+            };
+
+            currentRequest.onerror = function() {
+                loadingEl.style.display = 'none';
+                suggestionsDropdown.classList.remove('show');
+                currentRequest = null;
+            };
+
+            currentRequest.send();
+        }
+
+        searchInput.addEventListener('input', function() {
+            const keyword = this.value;
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(function() { fetchSuggestions(keyword); }, 300);
+        });
+
+        searchInput.addEventListener('focus', function() {
+            if (this.value && this.value.trim().length >= 1) { fetchSuggestions(this.value); }
+        });
+
+        searchInput.addEventListener('blur', function() {
+            setTimeout(function() { suggestionsDropdown.classList.remove('show'); }, 300);
+        });
+
+        searchInput.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                const items = suggestionsList.querySelectorAll('.suggestion-item');
+                if (items.length === 0) return;
+                let currentIndex = -1;
+                items.forEach((item, index) => {
+                    if (item.classList.contains('active')) {
+                        currentIndex = index;
+                        item.classList.remove('active');
+                    }
+                });
+                if (e.key === 'ArrowDown') { currentIndex = (currentIndex + 1) % items.length; }
+                else { currentIndex = (currentIndex - 1 + items.length) % items.length; }
+                items[currentIndex].classList.add('active');
+                items[currentIndex].scrollIntoView({ block: 'nearest' });
+                return;
+            }
+
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const activeItem = suggestionsList.querySelector('.suggestion-item.active');
+                if (activeItem) { activeItem.click(); return; }
+                suggestionsDropdown.classList.remove('show');
+                var keyword = this.value;
+                var trangThai = document.querySelector('select[name="trangThai"]').value;
+                searchAjax(keyword, trangThai, 0);
+            }
+
+            if (e.key === 'Escape') { suggestionsDropdown.classList.remove('show'); }
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.search-wrapper')) { suggestionsDropdown.classList.remove('show'); }
+        });
+
+        window.addEventListener('resize', function() {
+            if (suggestionsDropdown.classList.contains('show')) { updateDropdownPosition(); }
+        });
+
+        window.addEventListener('scroll', function() {
+            if (suggestionsDropdown.classList.contains('show')) { updateDropdownPosition(); }
+        });
+    });
+
+    // ============================================================
+    // 13. HANDLE SEARCH EVENTS
+    // ============================================================
+    document.addEventListener('DOMContentLoaded', function() {
+        var searchButton = document.getElementById('searchButton');
+        if (searchButton) {
+            searchButton.addEventListener('click', function(e) {
+                e.preventDefault();
+                var keyword = document.getElementById('searchInput').value;
+                var trangThai = document.querySelector('select[name="trangThai"]').value;
+                searchAjax(keyword, trangThai, 0);
+            });
+        }
+
+        var filterSelect = document.querySelector('select[name="trangThai"]');
+        if (filterSelect) {
+            filterSelect.addEventListener('change', function() {
+                var keyword = document.getElementById('searchInput').value;
+                searchAjax(keyword, this.value, 0);
+            });
+        }
+
+        var btnAdd = document.getElementById('btnAddModal');
+        if (btnAdd) {
+            btnAdd.addEventListener('click', function(e) {
+                e.preventDefault();
+                openAddModal();
+            });
+        }
+
+        var urlParams = new URLSearchParams(window.location.search);
+        var initialKeyword = urlParams.get('keyword') || '';
+        var initialTrangThai = urlParams.get('trangThai') || '';
+        var initialPage = parseInt(urlParams.get('page')) || 0;
+
+        if (initialKeyword || initialTrangThai) {
+            document.getElementById('searchInput').value = initialKeyword;
+            if (initialTrangThai) { document.querySelector('select[name="trangThai"]').value = initialTrangThai; }
+            searchAjax(initialKeyword, initialTrangThai, initialPage);
+        }
+
+        bindToggleEvents();
+    });
+
+    // ============================================================
+    // 14. HANDLE TOAST MESSAGES
+    // ============================================================
+    document.addEventListener("DOMContentLoaded", function() {
+        var storedMessage = sessionStorage.getItem('toastMessage');
+        var storedType = sessionStorage.getItem('toastType');
+
+        if (storedMessage && storedMessage !== '' && storedMessage !== 'null' && storedMessage !== 'undefined') {
+            showToast(storedMessage, storedType || 'success');
+            sessionStorage.removeItem('toastMessage');
+            sessionStorage.removeItem('toastType');
+        }
+
+        var successMsg = document.getElementById('successMessage')?.textContent?.trim();
+        var warningMsg = document.getElementById('warningMessage')?.textContent?.trim();
+        var errorMsg = document.getElementById('errorMessage')?.textContent?.trim();
+
+        if (successMsg && successMsg !== '' && successMsg !== 'null' && successMsg !== 'undefined') {
+            showToast(successMsg, 'success');
+        } else if (warningMsg && warningMsg !== '' && warningMsg !== 'null' && warningMsg !== 'undefined') {
+            showToast(warningMsg, 'warning');
+        } else if (errorMsg && errorMsg !== '' && errorMsg !== 'null' && errorMsg !== 'undefined') {
+            showToast(errorMsg, 'error');
+        }
+    });
+
+    window.addEventListener('load', function() {
+        var urlParams = new URLSearchParams(window.location.search);
+        var toastMsg = urlParams.get('toastMsg');
+        var toastType = urlParams.get('toastType');
+
+        if (toastMsg && toastMsg !== '' && toastMsg !== 'null') {
+            showToast(decodeURIComponent(toastMsg), toastType || 'success');
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+    });
+</script>
+
+</body>
+</html>

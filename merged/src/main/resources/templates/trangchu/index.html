@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/client-layout :: head('Trang chủ')}"></head>
+<body>
+<header th:replace="~{fragments/client-layout :: header}"></header>
+
+<!-- ============ HERO ============ -->
+<section class="fs-hero fs-hero-full" id="fsHeroCarousel" aria-label="Ảnh quảng cáo sản phẩm">
+    <!-- Ảnh nền phủ trọn khối — kéo ngang / tự chuyển / đè giữ để tạm dừng -->
+    <div class="fs-hc-track" id="fsHcTrack">
+        <div class="fs-hc-slide"><img th:src="@{/storefront/img/hero/hero-1.png}" alt="FS Shoes — Bộ sưu tập 2026"></div>
+        <div class="fs-hc-slide"><img th:src="@{/storefront/img/hero/hero-2.png}" alt="FS Shoes — Flash Sale giảm đến 50%"></div>
+        <div class="fs-hc-slide"><img th:src="@{/storefront/img/hero/hero-3.png}" alt="FS Shoes — Freeship đơn từ 500K"></div>
+    </div>
+    <div class="fs-hero-lop" aria-hidden="true"></div>
+
+    <div class="fs-container fs-hero-inner">
+        <div class="fs-hero-noidung">
+            <span class="fs-hero-kicker"><i class="bi bi-stars"></i> Bộ sưu tập 2026 đã có mặt</span>
+            <h1>Bứt phá mọi bước chạy cùng <em>FS Shoes</em></h1>
+            <p>Giày thể thao nam chính hãng từ các thương hiệu hàng đầu.
+                Đặt online — nhận hàng tận nơi, theo dõi đơn theo thời gian thực.</p>
+            <div class="fs-hero-cta">
+                <a th:href="@{/cua-hang/san-pham}" class="fs-btn fs-btn-primary fs-btn-lg">
+                    <i class="bi bi-bag"></i> Mua sắm ngay</a>
+                <a th:href="@{/khuyen-mai}" class="fs-btn fs-btn-outline fs-btn-lg"
+                   style="background:transparent;color:#fff;border-color:rgba(255,255,255,.35)">
+                    <i class="bi bi-fire"></i> Săn khuyến mãi</a>
+            </div>
+            <div class="fs-hero-stats">
+                <div><b th:text="${tongSoSanPham}">120</b><span>Mẫu giày đang bán</span></div>
+                <div><b>100%</b><span>Chính hãng</span></div>
+                <div><b>24h</b><span>Xác nhận đơn</span></div>
+            </div>
+        </div>
+    </div>
+
+    <button type="button" class="fs-hc-arrow prev" id="fsHcPrev" aria-label="Ảnh trước"><i class="bi bi-chevron-left"></i></button>
+    <button type="button" class="fs-hc-arrow next" id="fsHcNext" aria-label="Ảnh sau"><i class="bi bi-chevron-right"></i></button>
+    <div class="fs-hc-dots" id="fsHcDots"></div>
+</section>
+
+
+<!-- ============ TICKER CAM KẾT (chạy ngang) ============ -->
+<div class="fs-ticker" aria-hidden="true">
+    <div class="fs-ticker-track">
+        <th:block th:each="lan : ${#numbers.sequence(1,3)}">
+            <span>FREESHIP ĐƠN TỪ 500K</span><i>◆</i>
+            <span>ĐỔI SIZE TRONG 7 NGÀY</span><i>◆</i>
+            <span>THANH TOÁN VIETQR &amp; COD</span><i>◆</i>
+            <span>HỖ TRỢ TRỰC TUYẾN 24/7</span><i>◆</i>
+        </th:block>
+    </div>
+</div>
+
+<!-- ============ USP ============ -->
+<section class="fs-usp">
+    <div class="fs-container fs-usp-grid">
+        <div class="fs-usp-item"><i class="bi bi-truck"></i>
+            <div><b>Miễn phí vận chuyển</b><span>Cho đơn hàng từ 500.000₫</span></div></div>
+        <div class="fs-usp-item"><i class="bi bi-shield-check"></i>
+            <div><b>Hàng chính hãng 100%</b><span>Nhập trực tiếp từ thương hiệu</span></div></div>
+        <div class="fs-usp-item"><i class="bi bi-broadcast"></i>
+            <div><b>Theo dõi thời gian thực</b><span>Trạng thái đơn cập nhật tức thì</span></div></div>
+        <div class="fs-usp-item"><i class="bi bi-arrow-repeat"></i>
+            <div><b>Huỷ đơn dễ dàng</b><span>Khi đơn chưa được xác nhận</span></div></div>
+    </div>
+</section>
+
+<!-- ============ DANH MỤC ============ -->
+<section class="fs-section" th:if="${danhMucs != null && !danhMucs.isEmpty()}">
+    <div class="fs-container">
+        <div class="fs-section-head">
+            <div><h2><i class="bi bi-grid"></i> Danh mục nổi bật</h2>
+                <p>Chọn nhanh phong cách của bạn</p></div>
+            <a th:href="@{/cua-hang/san-pham}" class="fs-link-all">Xem tất cả <i class="bi bi-arrow-right"></i></a>
+        </div>
+        <div class="fs-brand-strip">
+            <a th:each="dm : ${danhMucs}" class="fs-brand-chip reveal"
+               th:href="@{/cua-hang/san-pham(danhMuc=${dm.maDanhMuc})}"
+               th:text="${dm.tenDanhMuc}">Giày chạy bộ</a>
+        </div>
+    </div>
+</section>
+
+<!-- ============ FLASH SALE (khu riêng — khác hẳn lưới sản phẩm thường) ============ -->
+<section class="fs-sale" th:if="${sanPhamKhuyenMai != null && !sanPhamKhuyenMai.isEmpty()}">
+    <div class="fs-container">
+        <div class="fs-sale-head">
+            <div class="fs-sale-title">
+                <span class="fs-sale-flame"><i class="bi bi-lightning-charge-fill"></i></span>
+                <div>
+                    <h2>FLASH SALE <em>đang diễn ra</em></h2>
+                    <p>Giảm giá trực tiếp từ quầy quản lý — hết đợt là hết giá này!</p>
+                </div>
+            </div>
+            <a th:href="@{/khuyen-mai}" class="fs-btn fs-btn-lg fs-sale-cta">
+                Săn ngay <i class="bi bi-arrow-right"></i></a>
+        </div>
+
+        <div class="fs-sale-track">
+            <a class="fs-sale-card" th:each="c : ${sanPhamKhuyenMai}"
+               th:href="@{/cua-hang/san-pham/{id}(id=${c.maSanPham}, bt=${c.maBienTheHienThi})}">
+                <span class="fs-sale-off" th:text="'-' + ${c.phanTramGiam} + '%'">-25%</span>
+                <div class="fs-sale-img">
+                    <img th:src="${c.anh}" th:alt="${c.tenSanPham}" loading="lazy"
+                         onerror="this.src='/storefront/img/no-image.svg'">
+                </div>
+                <div class="fs-sale-info">
+                    <small th:text="${c.tenThuongHieu}">NIKE</small>
+                    <b th:text="${c.tenSanPham}">Tên sản phẩm</b>
+                    <div class="fs-sale-price">
+                        <span class="now" th:text="${#numbers.formatDecimal(c.giaSauGiam,0,'POINT',0,'COMMA')} + '₫'">899.000₫</span>
+                        <s th:text="${#numbers.formatDecimal(c.giaGoc,0,'POINT',0,'COMMA')} + '₫'">1.200.000₫</s>
+                    </div>
+                    <div class="fs-sale-bar">
+                        <div class="fill" th:style="'width:' + ${c.phanTramGiam > 60 ? 92 : (30 + c.phanTramGiam)} + '%'"></div>
+                    </div>
+                    <small class="fs-sale-sold">
+                        <i class="bi bi-fire"></i>
+                        <span th:text="${c.daBan > 0 ? 'Đã bán ' + c.daBan + ' — nhanh kẻo lỡ!' : 'Vừa mở bán — nhanh tay!'}">Đã bán 12</span>
+                    </small>
+                </div>
+            </a>
+        </div>
+    </div>
+</section>
+
+
+<!-- ============ VOUCHER ============ -->
+
+<!-- ============ BỘ SƯU TẬP NỔI BẬT (khu sản phẩm linh hoạt: tab đổi tức thì) ============ -->
+<section class="fs-bst"
+         th:if="${(sanPhamBanChay != null && !sanPhamBanChay.isEmpty())
+                || (sanPhamMoi != null && !sanPhamMoi.isEmpty())
+                || (sanPhamDanhGiaCao != null && !sanPhamDanhGiaCao.isEmpty())}">
+    <span class="fs-bst-wm" aria-hidden="true">SHOES</span>
+    <div class="fs-container">
+        <div class="fs-bst-head">
+            <div>
+                <span class="fs-bst-kicker">FS COLLECTION</span>
+                <h2>BỘ SƯU TẬP <em>NỔI BẬT</em></h2>
+            </div>
+            <div class="fs-bst-tabs" id="fsBstTabs">
+                <button type="button" class="active" data-pane="banchay"
+                        th:if="${sanPhamBanChay != null && !sanPhamBanChay.isEmpty()}">
+                    <i class="bi bi-fire"></i> Bán chạy</button>
+                <button type="button" data-pane="moive"
+                        th:if="${sanPhamMoi != null && !sanPhamMoi.isEmpty()}"
+                        th:classappend="${sanPhamBanChay == null || sanPhamBanChay.isEmpty()} ? ' active'">
+                    <i class="bi bi-stars"></i> Mới về</button>
+                <button type="button" data-pane="danhgia"
+                        th:if="${sanPhamDanhGiaCao != null && !sanPhamDanhGiaCao.isEmpty()}">
+                    <i class="bi bi-star-fill"></i> Đánh giá cao</button>
+            </div>
+            <a th:href="@{/cua-hang/san-pham}" class="fs-bst-all">Vào cửa hàng <i class="bi bi-arrow-right"></i></a>
+        </div>
+
+        <div class="fs-bst-pane active" data-pane="banchay"
+             th:if="${sanPhamBanChay != null && !sanPhamBanChay.isEmpty()}">
+            <th:block th:with="s=${sanPhamBanChay[0]}">
+                <a class="fs-bst-spot" th:href="@{/cua-hang/san-pham/{id}(id=${s.maSanPham}, bt=${s.maBienTheHienThi})}">
+                    <div class="fs-bst-spot-media">
+                        <img th:src="${s.anh}" th:alt="${s.tenSanPham}" loading="lazy"
+                             onerror="this.src='/storefront/img/no-image.svg'">
+                        <span class="fs-badge-sale" th:if="${s.phanTramGiam != null && s.phanTramGiam > 0}"
+                              th:text="'-' + ${s.phanTramGiam} + '%'">-20%</span>
+                    </div>
+                    <div class="fs-bst-spot-info">
+                        <span class="fs-bst-spot-tag">🔥 TÂM ĐIỂM BÁN CHẠY</span>
+                        <small th:text="${s.tenThuongHieu}">NIKE</small>
+                        <h3 th:text="${s.tenSanPham}">Tên sản phẩm</h3>
+                        <div class="fs-bst-spot-meta">
+                        <span th:if="${s.soLuotDanhGia > 0}"><i class="bi bi-star-fill"></i>
+                            <b th:text="${#numbers.formatDecimal(s.diemTrungBinh,1,1)}">4.8</b>
+                            <span th:text="'(' + ${s.soLuotDanhGia} + ')'">(12)</span></span>
+                            <span th:if="${s.daBan > 0}" th:text="'Đã bán ' + ${s.daBan}">Đã bán 30</span>
+                        </div>
+                        <div class="fs-bst-spot-price">
+                            <b th:text="${#numbers.formatDecimal(s.giaSauGiam,0,'POINT',0,'COMMA')} + '₫'">1.200.000₫</b>
+                            <s th:if="${s.phanTramGiam != null && s.phanTramGiam > 0}"
+                               th:text="${#numbers.formatDecimal(s.giaGoc,0,'POINT',0,'COMMA')} + '₫'">1.500.000₫</s>
+                        </div>
+                        <span class="fs-btn fs-btn-primary fs-bst-spot-cta">Chọn mua ngay <i class="bi bi-arrow-right"></i></span>
+                    </div>
+                </a>
+            </th:block>
+            <div class="fs-bst-grid">
+                <div class="fs-rank-item" th:each="c, i : ${sanPhamBanChay}" th:if="${i.index > 0}">
+                <span class="fs-rank-chip" th:classappend="' top' + ${i.count <= 3 ? i.count : 0}"
+                      th:text="'#' + ${i.count}">#1</span>
+                    <div th:replace="~{fragments/client-layout :: card(${c}, false)}"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="fs-bst-pane" data-pane="moive"
+             th:if="${sanPhamMoi != null && !sanPhamMoi.isEmpty()}">
+            <th:block th:with="s=${sanPhamMoi[0]}">
+                <a class="fs-bst-spot" th:href="@{/cua-hang/san-pham/{id}(id=${s.maSanPham}, bt=${s.maBienTheHienThi})}">
+                    <div class="fs-bst-spot-media">
+                        <img th:src="${s.anh}" th:alt="${s.tenSanPham}" loading="lazy"
+                             onerror="this.src='/storefront/img/no-image.svg'">
+                        <span class="fs-badge-sale" th:if="${s.phanTramGiam != null && s.phanTramGiam > 0}"
+                              th:text="'-' + ${s.phanTramGiam} + '%'">-20%</span>
+                    </div>
+                    <div class="fs-bst-spot-info">
+                        <span class="fs-bst-spot-tag">✨ VỪA LÊN KỆ</span>
+                        <small th:text="${s.tenThuongHieu}">NIKE</small>
+                        <h3 th:text="${s.tenSanPham}">Tên sản phẩm</h3>
+                        <div class="fs-bst-spot-meta">
+                        <span th:if="${s.soLuotDanhGia > 0}"><i class="bi bi-star-fill"></i>
+                            <b th:text="${#numbers.formatDecimal(s.diemTrungBinh,1,1)}">4.8</b>
+                            <span th:text="'(' + ${s.soLuotDanhGia} + ')'">(12)</span></span>
+                            <span th:if="${s.daBan > 0}" th:text="'Đã bán ' + ${s.daBan}">Đã bán 30</span>
+                        </div>
+                        <div class="fs-bst-spot-price">
+                            <b th:text="${#numbers.formatDecimal(s.giaSauGiam,0,'POINT',0,'COMMA')} + '₫'">1.200.000₫</b>
+                            <s th:if="${s.phanTramGiam != null && s.phanTramGiam > 0}"
+                               th:text="${#numbers.formatDecimal(s.giaGoc,0,'POINT',0,'COMMA')} + '₫'">1.500.000₫</s>
+                        </div>
+                        <span class="fs-btn fs-btn-primary fs-bst-spot-cta">Chọn mua ngay <i class="bi bi-arrow-right"></i></span>
+                    </div>
+                </a>
+            </th:block>
+            <div class="fs-bst-grid">
+                <div class="fs-rank-item" th:each="c, i : ${sanPhamMoi}" th:if="${i.index > 0}">
+                    <div th:replace="~{fragments/client-layout :: card(${c}, false)}"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="fs-bst-pane" data-pane="danhgia"
+             th:if="${sanPhamDanhGiaCao != null && !sanPhamDanhGiaCao.isEmpty()}">
+            <th:block th:with="s=${sanPhamDanhGiaCao[0]}">
+                <a class="fs-bst-spot" th:href="@{/cua-hang/san-pham/{id}(id=${s.maSanPham}, bt=${s.maBienTheHienThi})}">
+                    <div class="fs-bst-spot-media">
+                        <img th:src="${s.anh}" th:alt="${s.tenSanPham}" loading="lazy"
+                             onerror="this.src='/storefront/img/no-image.svg'">
+                        <span class="fs-badge-sale" th:if="${s.phanTramGiam != null && s.phanTramGiam > 0}"
+                              th:text="'-' + ${s.phanTramGiam} + '%'">-20%</span>
+                    </div>
+                    <div class="fs-bst-spot-info">
+                        <span class="fs-bst-spot-tag">⭐ KHÁCH KHEN NHIỀU</span>
+                        <small th:text="${s.tenThuongHieu}">NIKE</small>
+                        <h3 th:text="${s.tenSanPham}">Tên sản phẩm</h3>
+                        <div class="fs-bst-spot-meta">
+                        <span th:if="${s.soLuotDanhGia > 0}"><i class="bi bi-star-fill"></i>
+                            <b th:text="${#numbers.formatDecimal(s.diemTrungBinh,1,1)}">4.8</b>
+                            <span th:text="'(' + ${s.soLuotDanhGia} + ')'">(12)</span></span>
+                            <span th:if="${s.daBan > 0}" th:text="'Đã bán ' + ${s.daBan}">Đã bán 30</span>
+                        </div>
+                        <div class="fs-bst-spot-price">
+                            <b th:text="${#numbers.formatDecimal(s.giaSauGiam,0,'POINT',0,'COMMA')} + '₫'">1.200.000₫</b>
+                            <s th:if="${s.phanTramGiam != null && s.phanTramGiam > 0}"
+                               th:text="${#numbers.formatDecimal(s.giaGoc,0,'POINT',0,'COMMA')} + '₫'">1.500.000₫</s>
+                        </div>
+                        <span class="fs-btn fs-btn-primary fs-bst-spot-cta">Chọn mua ngay <i class="bi bi-arrow-right"></i></span>
+                    </div>
+                </a>
+            </th:block>
+            <div class="fs-bst-grid">
+                <div class="fs-rank-item" th:each="c, i : ${sanPhamDanhGiaCao}" th:if="${i.index > 0}">
+                    <div th:replace="~{fragments/client-layout :: card(${c}, false)}"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="fs-section" th:if="${voucherCongKhai != null && !voucherCongKhai.isEmpty()}">
+    <div class="fs-container">
+        <div class="fs-section-head">
+            <div><h2><i class="bi bi-ticket-perforated"></i> Săn mã giảm giá</h2>
+                <p>Nhập tên mã ở giỏ hàng để được giảm ngay</p></div>
+        </div>
+        <div class="fs-voucher-strip">
+            <div th:each="v : ${voucherCongKhai}" class="fs-voucher reveal">
+                <div class="fs-voucher-icon"><i class="bi bi-ticket-perforated-fill"></i></div>
+                <div style="flex:1">
+                    <b th:text="${v.tenGiamGia}">FSSALE10</b>
+                    <small>
+                        <span th:if="${v.loaiGiamGia == 'PhanTram'}"
+                              th:text="'Giảm ' + ${#numbers.formatDecimal(v.giaTriGiam,0,'POINT',0,'COMMA')} + '%'
+                                       + (${v.giamToiDa != null} ? ', tối đa ' + ${#numbers.formatDecimal(v.giamToiDa,0,'POINT',0,'COMMA')} + '₫' : '')">Giảm 10%</span>
+                        <span th:unless="${v.loaiGiamGia == 'PhanTram'}"
+                              th:text="'Giảm ' + ${#numbers.formatDecimal(v.giaTriGiam,0,'POINT',0,'COMMA')} + '₫'">Giảm 50.000₫</span>
+                        <span th:if="${v.donToiThieu != null && v.donToiThieu.signum() > 0}"
+                              th:text="' • Đơn từ ' + ${#numbers.formatDecimal(v.donToiThieu,0,'POINT',0,'COMMA')} + '₫'"></span>
+                    </small>
+                </div>
+                <button type="button" class="fs-voucher-copy" th:attr="data-ma=${v.tenGiamGia}"
+                        title="Sao chép mã"><i class="bi bi-copy"></i> Chép mã</button>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+
+
+<footer th:replace="~{fragments/client-layout :: footer}"></footer>
+<div th:replace="~{fragments/client-layout :: toast}"></div>
+<th:block th:replace="~{fragments/client-layout :: scripts}"></th:block>
+<script>
+    // Sao chép nhanh tên mã voucher
+    document.querySelectorAll('.fs-voucher-copy').forEach(function (nut) {
+        nut.addEventListener('click', function () {
+            var ma = nut.dataset.ma || '';
+            (navigator.clipboard ? navigator.clipboard.writeText(ma) : Promise.reject())
+                .then(function () {
+                    if (window.fsToast) fsToast('Đã sao chép mã "' + ma + '" — dán vào ô voucher ở giỏ hàng nhé!', 'ok');
+                    nut.innerHTML = '<i class="bi bi-check2"></i> Đã chép';
+                    setTimeout(function () { nut.innerHTML = '<i class="bi bi-copy"></i> Chép mã'; }, 2200);
+                })
+                .catch(function () { if (window.fsToast) fsToast('Mã: ' + ma, 'ok'); });
+        });
+    });
+
+    // Hero carousel: KÉO NGANG để đổi ảnh; tự chuyển sau vài giây; ĐÈ GIỮ để tạm dừng
+    (function () {
+        var track = document.getElementById('fsHcTrack');
+        var khungDots = document.getElementById('fsHcDots');
+        if (!track || !khungDots) return;
+        var soAnh = track.children.length, idx = 0, timer = null, DUNG_MS = 4500;
+        for (var i = 0; i < soAnh; i++) {
+            var d = document.createElement('button');
+            d.type = 'button';
+            d.className = 'fs-hc-dot' + (i === 0 ? ' active' : '');
+            d.dataset.i = i;
+            d.addEventListener('click', function () { toi(+this.dataset.i); henLai(); });
+            khungDots.appendChild(d);
+        }
+        var nutTruoc = document.getElementById('fsHcPrev');
+        var nutSau = document.getElementById('fsHcNext');
+        if (nutTruoc) nutTruoc.addEventListener('click', function () { toi(idx - 1); henLai(); });
+        if (nutSau) nutSau.addEventListener('click', function () { toi(idx + 1); henLai(); });
+        function ve() {
+            track.style.transform = 'translateX(' + (-idx * 100) + '%)';
+            [].forEach.call(khungDots.children, function (d, i) {
+                d.classList.toggle('active', i === idx);
+            });
+        }
+        function toi(i) { idx = (i + soAnh) % soAnh; ve(); }
+        function henLai() { clearInterval(timer); timer = setInterval(function () { toi(idx + 1); }, DUNG_MS); }
+        var keo = false, x0 = 0, dx = 0;
+        track.addEventListener('pointerdown', function (e) {
+            keo = true; x0 = e.clientX; dx = 0;
+            clearInterval(timer);                       // đè giữ = tạm dừng tự chạy
+            track.style.transition = 'none';
+            track.setPointerCapture(e.pointerId);
+        });
+        track.addEventListener('pointermove', function (e) {
+            if (!keo) return;
+            dx = e.clientX - x0;
+            track.style.transform = 'translateX(calc(' + (-idx * 100) + '% + ' + dx + 'px))';
+        });
+        function tha() {
+            if (!keo) return;
+            keo = false; track.style.transition = '';
+            if (dx < -50) idx = (idx + 1) % soAnh;      // kéo sang trái -> ảnh kế
+            else if (dx > 50) idx = (idx - 1 + soAnh) % soAnh;
+            ve(); henLai();
+        }
+        track.addEventListener('pointerup', tha);
+        track.addEventListener('pointercancel', tha);
+        ve(); henLai();
+    })();
+
+    // Tab BỘ SƯU TẬP: đổi bảng sản phẩm tức thì, không tải lại trang
+    (function () {
+        var tabs = document.getElementById('fsBstTabs');
+        if (!tabs) return;
+        function moPane(key) {
+            tabs.querySelectorAll('button').forEach(function (b) {
+                b.classList.toggle('active', b.dataset.pane === key);
+            });
+            document.querySelectorAll('.fs-bst-pane').forEach(function (p) {
+                p.classList.toggle('active', p.dataset.pane === key);
+            });
+        }
+        tabs.addEventListener('click', function (e) {
+            var b = e.target.closest('button');
+            if (b) moPane(b.dataset.pane);
+        });
+        var dau = tabs.querySelector('button.active') || tabs.querySelector('button');
+        if (dau) moPane(dau.dataset.pane);
+    })();
+</script>
+</body>
+</html>

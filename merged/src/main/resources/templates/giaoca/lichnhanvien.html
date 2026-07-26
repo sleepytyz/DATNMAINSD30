@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Lịch nhân viên – FS Shop</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+
+    <!-- CSRF meta tags -->
+    <meta name="_csrf" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:content="${_csrf.headerName}">
+
+    <style>
+        /* ── PAGE ── */
+        .page-title { font-size: 22px; font-weight: 700; }
+        .page-sub   { font-size: 13px; color: #6B7280; margin-top: 2px; margin-bottom: 20px; }
+
+        /* ── FILTER CARD ── */
+        .filter-card {
+            background: #fff;
+            border: 1px solid #E5E7EB;
+            border-radius: 10px;
+            padding: 16px 20px;
+            margin-bottom: 20px;
+        }
+        .filter-label {
+            font-size: 12.5px; font-weight: 600;
+            color: #374151; margin-bottom: 5px; display: block;
+        }
+        .filter-card .form-control,
+        .filter-card .form-select {
+            font-size: 13px;
+            border: 1.5px solid #E5E7EB;
+            border-radius: 6px;
+            padding: 8px 12px;
+        }
+        .filter-card .form-control:focus,
+        .filter-card .form-select:focus {
+            border-color: #E53935; box-shadow: none;
+        }
+        .btn-search {
+            padding: 8px 20px; border-radius: 6px;
+            background: #E53935; color: #fff; border: none;
+            font-size: 13px; font-weight: 600; cursor: pointer;
+            transition: background .15s; display: inline-flex; align-items: center; gap: 5px;
+        }
+        .btn-search:hover { background: #B71C1C; }
+        .btn-reset {
+            padding: 8px 16px; border-radius: 6px;
+            background: #fff; color: #374151;
+            border: 1.5px solid #E5E7EB;
+            font-size: 13px; font-weight: 600; cursor: pointer;
+            transition: border-color .15s; text-decoration: none;
+            display: inline-flex; align-items: center; gap: 5px;
+        }
+        .btn-reset:hover { border-color: #9CA3AF; color: #374151; }
+        .btn-create-schedule {
+            padding: 8px 16px; border-radius: 6px;
+            background: #059669; color: #fff; border: none;
+            font-size: 13px; font-weight: 600; cursor: pointer;
+            transition: background .15s; display: inline-flex; align-items: center; gap: 5px;
+        }
+        .btn-create-schedule:hover { background: #047857; }
+
+        /* ── SCHEDULE WRAPPER ── */
+        .schedule-card {
+            background: #fff;
+            border: 1px solid #E5E7EB;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .schedule-card-header {
+            padding: 13px 18px;
+            border-bottom: 1px solid #E5E7EB;
+            display: flex; align-items: center; justify-content: space-between;
+            font-weight: 700; font-size: 14px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .schedule-wrap { overflow-x: auto; }
+
+        /* ── SCHEDULE TABLE ── */
+        .schedule-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 800px;
+            table-layout: fixed;
+        }
+
+        /* Header row */
+        .schedule-table thead tr th {
+            border-bottom: none;
+            background: #c92327;
+            padding: 10px 12px;
+            text-align: center;
+            font-size: 12px;
+            font-weight: 700;
+            color: #fff;
+            color: #6B7280;
+            white-space: nowrap;
+        }
+        .schedule-table thead tr th:first-child {
+            text-align: left;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: .06em;
+            color: #fff;
+            text-transform: uppercase;
+            width: 130px;
+            background: #F9FAFB;
+        }
+        .col-day-name {
+            font-size: 12.5px; font-weight: 700; color: #1A1A1A;
+            display: block; margin-bottom: 2px;
+        }
+        .col-day-date {
+            font-size: 11px; color: #9CA3AF; font-weight: 400;
+        }
+        .col-today th {
+            background: #FEF2F2 !important;
+            color: #E53935 !important;
+        }
+        .col-today th .col-day-name { color: #E53935; }
+        .col-today th .col-day-date { color: #E53935; opacity: .7; }
+
+        /* Body rows */
+        .schedule-table tbody tr td {
+            border-bottom: 1px solid #F3F4F6;
+            border-right: 1px solid #F3F4F6;
+            padding: 10px 8px;
+            vertical-align: top;
+            min-height: 80px;
+            height: 90px;
+        }
+        .schedule-table tbody tr td:first-child {
+            background: #FAFAFA;
+            border-right: 2px solid #E5E7EB;
+            padding: 12px 14px;
+            vertical-align: middle;
+        }
+        .schedule-table tbody tr:last-child td { border-bottom: none; }
+
+        .cell-today { background: #FFFBFB !important; }
+
+        .ca-name { font-weight: 700; font-size: 13px; color: #1A1A1A; }
+        .ca-time { font-size: 11.5px; color: #9CA3AF; margin-top: 2px; }
+
+        /* ── NV CARD ── */
+        .nv-card {
+            background: #fff;
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            padding: 8px 10px;
+            margin-bottom: 6px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            text-align: center;
+            position: relative;
+            transition: box-shadow .15s;
+            border-left: 3px solid #E53935;
+        }
+        .nv-card:hover { box-shadow: 0 2px 10px rgba(0,0,0,.08); }
+
+        .nv-avatar {
+            width: 32px; height: 32px; border-radius: 50%;
+            background: #F5F6FA;
+            border: 2px solid #E5E7EB;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 14px; color: #9CA3AF;
+            overflow: hidden; flex-shrink: 0;
+            position: relative;
+        }
+        .nv-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+        .nv-ten {
+            font-size: 11.5px; font-weight: 700; color: #1A1A1A;
+            line-height: 1.3; max-width: 90px;
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+        .nv-ma {
+            font-size: 10.5px; color: #9CA3AF; font-weight: 500;
+        }
+        .nv-gio {
+            font-size: 10.5px; color: #059669; font-weight: 600;
+            display: flex; align-items: center; gap: 3px;
+        }
+        .nv-status {
+            font-size: 9px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+        .status-upcoming { background: #DBEAFE; color: #1E40AF; }
+        .status-past { background: #D1FAE5; color: #065F46; }
+        .status-absent { background: #FEE2E2; color: #991B1B; }
+
+        /* ── Nút xóa trên card ── */
+        .btn-delete-schedule {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: none;
+            background: #FEE2E2;
+            color: #991B1B;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all .15s;
+            opacity: 0;
+            padding: 0;
+            line-height: 1;
+        }
+        .nv-card:hover .btn-delete-schedule {
+            opacity: 1;
+        }
+        .btn-delete-schedule:hover {
+            background: #991B1B;
+            color: #fff;
+            transform: scale(1.1);
+        }
+
+        .cell-empty {
+            color: #E5E7EB; font-size: 18px; text-align: center; padding-top: 20px;
+        }
+
+        .empty-schedule {
+            padding: 60px; text-align: center; color: #9CA3AF;
+        }
+        .empty-schedule i { font-size: 40px; display: block; margin-bottom: 10px; }
+
+        /* ── MODAL TẠO LỊCH ── */
+        .modal-xl-custom {
+            max-width: 1100px;
+        }
+        .modal-content-custom {
+            border-radius: 12px;
+            border: none;
+        }
+        .modal-header-custom {
+            padding: 16px 24px;
+            border-bottom: 1px solid #E5E7EB;
+            background: #FAFAFA;
+            border-radius: 12px 12px 0 0;
+        }
+        .modal-body-custom {
+            padding: 24px;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+        .modal-footer-custom {
+            padding: 16px 24px;
+            border-top: 1px solid #E5E7EB;
+            background: #FAFAFA;
+            border-radius: 0 0 12px 12px;
+        }
+
+        /* ── CA LIST TRONG MODAL ── */
+        .ca-list-modal {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .ca-item-modal {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 10px;
+            border: 1.5px solid #E5E7EB;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: border-color .15s, background .15s;
+            font-size: 13px;
+        }
+        .ca-item-modal:hover { border-color: #E53935; background: #FEF2F2; }
+        .ca-item-modal.selected {
+            border-color: #E53935;
+            background: #FEF2F2;
+            color: #E53935;
+            font-weight: 600;
+        }
+        .ca-item-modal input[type=checkbox] {
+            accent-color: #E53935;
+            width: 15px; height: 15px; cursor: pointer;
+        }
+        .ca-time-modal { font-size: 11px; color: #9CA3AF; margin-left: auto; }
+        .ca-item-modal.selected .ca-time-modal { color: #E53935; opacity: .7; }
+
+        /* ── DAY GRID TRONG MODAL ── */
+        .day-grid-modal {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 10px;
+        }
+        .day-card-modal {
+            border: 1.5px solid #E5E7EB;
+            border-radius: 10px;
+            padding: 10px 12px;
+            cursor: pointer;
+            transition: border-color .15s, background .15s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .day-card-modal:hover { border-color: #E53935; background: #FFF8F8; }
+        .day-card-modal.selected {
+            border-color: #E53935;
+            background: #FEF2F2;
+        }
+        .day-card-modal.today { border-color: #2563EB; }
+        .day-card-modal.today .day-name-modal { color: #2563EB; }
+
+        .day-checkbox-modal {
+            width: 18px; height: 18px;
+            border: 2px solid #E5E7EB;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all .15s;
+        }
+        .day-card-modal.selected .day-checkbox-modal {
+            background: #E53935; border-color: #E53935;
+        }
+        .day-card-modal.selected .day-checkbox-modal::after {
+            content: '✓'; color: #fff; font-size: 11px; font-weight: 700;
+        }
+
+        .day-info-modal { flex: 1; }
+        .day-name-modal { font-weight: 700; font-size: 13px; color: #1A1A1A; }
+        .day-date-modal { font-size: 11.5px; color: #9CA3AF; margin-top: 1px; }
+
+        .week-nav-modal {
+            display: flex; align-items: center; gap: 8px; margin-bottom: 16px;
+        }
+        .week-nav-btn-modal {
+            width: 30px; height: 30px; border-radius: 6px;
+            border: 1.5px solid #E5E7EB; background: #fff;
+            display: flex; align-items: center; justify-content: center;
+            text-decoration: none; color: #374151; font-size: 13px;
+            transition: border-color .15s;
+            cursor: pointer;
+        }
+        .week-nav-btn-modal:hover { border-color: #E53935; color: #E53935; }
+
+        .modal-alert {
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            display: none;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        .modal-alert-success { background: #ECFDF5; color: #065F46; border: 1px solid #6EE7B7; }
+        .modal-alert-error { background: #FEF2F2; color: #991B1B; border: 1px solid #FECACA; }
+
+        /* ── CONFIRM DELETE MODAL ── */
+        .modal-confirm-delete .modal-content {
+            border-radius: 12px;
+            border: none;
+        }
+        .modal-confirm-delete .modal-header {
+            border-bottom: 1px solid #E5E7EB;
+            background: #FAFAFA;
+            border-radius: 12px 12px 0 0;
+        }
+        .modal-confirm-delete .modal-footer {
+            border-top: 1px solid #E5E7EB;
+            background: #FAFAFA;
+            border-radius: 0 0 12px 12px;
+        }
+    </style>
+</head>
+<body>
+<div class="wrapper">
+
+    <div sec:authorize="hasRole('ADMIN')">
+        <div th:replace="fragments/sidebaradmin :: sidebar-admin"></div>
+    </div>
+
+    <div sec:authorize="hasRole('STAFF')">
+        <div th:replace="fragments/sidebarstaff :: sidebar-staff"></div>
+    </div>
+
+    <div class="content-wrapper">
+
+        <div th:replace="~{fragments/header :: header('Lịch nhân viên', 'Giao ca & chấm công')}"></div>
+
+        <div class="content-body">
+
+            <div class="page-title">Lịch nhân viên</div>
+            <div class="page-sub">Xem lịch phân ca theo tuần</div>
+
+            <!-- ── FILTER ── -->
+            <div class="filter-card">
+                <form th:action="@{/giao-ca/filter}" method="get" id="filterForm">
+                    <div class="row g-3 align-items-end">
+
+                        <div class="col-md-3">
+                            <label class="filter-label">Tên hoặc Mã NV</label>
+                            <div style="position:relative">
+                                <i class="bi bi-search" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#9CA3AF;font-size:13px"></i>
+                                <input type="text" name="tenNhanVien" class="form-control"
+                                       style="padding-left:32px"
+                                       placeholder="Tìm nhân viên..."
+                                       th:value="${param.tenNhanVien}">
+                            </div>
+                        </div>
+
+                        <div class="col-md-2">
+                            <label class="filter-label">Ca làm việc</label>
+                            <select name="maCa" class="form-select">
+                                <option value="">Tất cả ca</option>
+                                <option th:each="ca : ${allCa}"
+                                        th:value="${ca.maCa}"
+                                        th:text="${ca.tenCa}"
+                                        th:selected="${param.maCa != null and param.maCa[0] == ca.maCa.toString()}">
+                                </option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-2">
+                            <label class="filter-label">Từ ngày</label>
+                            <input type="date" name="tuNgay" class="form-control"
+                                   th:value="${param.tuNgay}">
+                        </div>
+
+                        <div class="col-md-2">
+                            <label class="filter-label">Đến ngày</label>
+                            <input type="text" class="form-control" readonly
+                                   th:value="${denNgayValue != null ? #temporals.format(denNgayValue, 'dd/MM/yyyy') : ''}"
+                                   style="background:#f5f5f5;">
+                        </div>
+
+                        <div class="col-md-3">
+                            <div class="d-flex gap-2 flex-wrap">
+                                <button type="submit" class="btn-search">
+                                    <i class="bi bi-search"></i> Tìm kiếm
+                                </button>
+                                <a th:href="@{/giao-ca/lich-nhan-vien}" class="btn-reset">
+                                    <i class="bi bi-arrow-clockwise"></i> Reset
+                                </a>
+                                <button type="button" class="btn-create-schedule" onclick="moModalTaoLich()">
+                                    <i class="bi bi-calendar-plus"></i> Tạo lịch
+                                </button>
+                            </div>
+                        </div>
+
+                    </div>
+                </form>
+            </div>
+
+            <!-- ── SCHEDULE CARD ── -->
+            <div class="schedule-card">
+                <div class="schedule-card-header">
+                    <span>
+                        <i class="bi bi-calendar-week me-2" style="color:#E53935"></i>
+                        Lịch làm việc theo tuần
+                    </span>
+
+                    <span style="font-size:12.5px;color:#6B7280;font-weight:500"
+                          th:if="${listNgay != null and !listNgay.isEmpty()}">
+                        <i class="bi bi-calendar3 me-1"></i>
+                        <span th:text="${#temporals.format(listNgay[0], 'dd/MM/yyyy')}"></span>
+                        –
+                        <span th:text="${#temporals.format(listNgay[listNgay.size()-1], 'dd/MM/yyyy')}"></span>
+                    </span>
+                </div>
+
+                <!-- Table -->
+                <div class="schedule-wrap"
+                     th:if="${listNgay != null and !listNgay.isEmpty() and allCa != null and !allCa.isEmpty()}">
+                    <table class="schedule-table">
+                        <thead>
+                        <tr>
+                            <th>CA / NGÀY</th>
+                            <th th:each="ngay : ${listNgay}"
+                                th:classappend="${ngay == today} ? 'col-today'">
+                                    <span class="col-day-name"
+                                          th:text="${#temporals.format(ngay, 'EEE', new java.util.Locale('vi'))}">
+                                    </span>
+                                <span class="col-day-date"
+                                      th:text="${#temporals.format(ngay, 'dd/MM/yyyy')}">
+                                    </span>
+                            </th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="ca : ${allCa}">
+                            <td>
+                                <div class="ca-name" th:text="${ca.tenCa}"></div>
+                                <div class="ca-time"
+                                     th:text="${ca.gioBatDau + ' - ' + ca.gioKetThuc}"></div>
+                            </td>
+
+                            <td th:each="ngay : ${listNgay}"
+                                th:classappend="${ngay == today} ? 'cell-today'">
+
+                                <th:block th:with="
+                                        listCC = ${chamCongData != null
+                                                  and chamCongData.get(ngay) != null
+                                                  and chamCongData.get(ngay).get(ca) != null
+                                                  ? chamCongData.get(ngay).get(ca)
+                                                  : null}">
+
+                                    <div th:if="${listCC != null and !listCC.isEmpty()}">
+                                        <div th:each="cc : ${listCC}" class="nv-card"
+                                             th:data-machamcong="${cc.maChamCong}"
+                                             th:data-manhanvien="${cc.nhanVien != null ? cc.nhanVien.maNhanVien : ''}"
+                                             th:data-ngay="${#temporals.format(cc.ngayChamCong, 'yyyy-MM-dd')}"
+                                             th:data-maca="${cc.caLamViec != null ? cc.caLamViec.maCa : ''}">
+                                            <!-- Nút xóa -->
+                                            <button type="button" class="btn-delete-schedule"
+                                                    onclick="confirmDeleteSchedule(this)"
+                                                    title="Xóa lịch này">
+                                                <i class="bi bi-x"></i>
+                                            </button>
+
+                                            <div class="nv-avatar">
+                                                <i class="bi bi-person"></i>
+                                            </div>
+                                            <div class="nv-ten"
+                                                 th:text="${cc.nhanVien != null ? cc.nhanVien.hoTen : ''}">
+                                            </div>
+                                            <div class="nv-ma"
+                                                 th:text="${cc.nhanVien != null ? cc.nhanVien.maNhanVien : ''}">
+                                            </div>
+                                            <span class="nv-status"
+                                                  th:classappend="${cc.trangThai == true ? 'status-upcoming' : (cc.trangThai == false and cc.gioVao != null ? 'status-past' : 'status-absent')}"
+                                                  th:text="${cc.trangThai == true ? 'Sắp tới' : (cc.trangThai == false and cc.gioVao != null ? 'Đã qua' : 'Vắng')}">
+                                            </span>
+                                            <div class="nv-gio"
+                                                 th:if="${cc.gioVao != null}">
+                                                <i class="bi bi-clock"></i>
+                                                <span th:text="${cc.gioVao}"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div th:if="${listCC == null or listCC.isEmpty()}" class="cell-empty">
+                                        <i class="bi bi-dash"></i>
+                                    </div>
+
+                                </th:block>
+                            </td>
+
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="empty-schedule"
+                     th:if="${listNgay == null or listNgay.isEmpty()}">
+                    <i class="bi bi-calendar-x"></i>
+                    <p style="font-size:14px">Không có dữ liệu lịch làm việc</p>
+                    <p style="font-size:12.5px;color:#B0B7C3">Vui lòng chọn khoảng thời gian và tìm kiếm</p>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- ── MODAL TẠO LỊCH HÀNG LOẠT ── -->
+<div class="modal fade" id="modalTaoLich" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl-custom">
+        <div class="modal-content modal-content-custom">
+            <div class="modal-header modal-header-custom">
+                <h5 class="modal-title">
+                    <i class="bi bi-calendar-plus me-2" style="color:#E53935"></i>
+                    Phân ca hàng loạt
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body modal-body-custom">
+                <!-- Alert -->
+                <div id="modalAlert" class="modal-alert"></div>
+
+                <div class="row">
+                    <!-- Left: Nhân viên + Ca -->
+                    <div class="col-md-4">
+                        <!-- Nhân viên -->
+                        <div class="mb-3">
+                            <label class="filter-label">Nhân viên <span class="text-danger">*</span></label>
+                            <select id="modalSelectNhanVien" class="form-select" onchange="updateModalSummary()">
+                                <option value="">-- Chọn nhân viên --</option>
+                                <option th:each="nv : ${listNhanVien}"
+                                        th:value="${nv.maNhanVien}"
+                                th:text="${nv.hoTen + ' - ' + nv.maNhanVien }">
+                                </option>
+                            </select>
+                        </div>
+
+                        <!-- Ca làm việc -->
+                        <div>
+                            <label class="filter-label">Ca làm việc <span class="text-danger">*</span></label>
+                            <div class="ca-list-modal" id="modalCaList">
+                                <div th:each="ca : ${allCa}"
+                                     class="ca-item-modal"
+                                     th:data-caid="${ca.maCa}"
+                                     onclick="toggleModalCa(this)">
+                                    <input type="checkbox"
+                                           th:value="${ca.maCa}"
+                                           onclick="event.stopPropagation()">
+                                    <span th:text="${ca.tenCa}"></span>
+                                    <span class="ca-time-modal"
+                                          th:text="${#temporals.format(ca.gioBatDau,'HH:mm') + '-' + #temporals.format(ca.gioKetThuc,'HH:mm')}">
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right: Chọn ngày -->
+                    <div class="col-md-8">
+                        <div class="week-nav-modal">
+                            <button class="week-nav-btn-modal" onclick="changeModalWeek(-1)">
+                                <i class="bi bi-chevron-left"></i>
+                            </button>
+                            <div class="week-range" id="modalWeekRange">
+                                <span id="modalTuNgayText"></span>
+                                –
+                                <span id="modalDenNgayText"></span>
+                            </div>
+                            <button class="week-nav-btn-modal" onclick="changeModalWeek(1)">
+                                <i class="bi bi-chevron-right"></i>
+                            </button>
+                        </div>
+
+                        <div class="date-section-title mb-3">
+                            <i class="bi bi-calendar-week" style="color:#E53935"></i>
+                            Chọn ngày theo tuần
+                        </div>
+
+                        <div class="day-grid-modal" id="modalDayGrid">
+                            <!-- Sẽ được render bằng JS -->
+                        </div>
+
+                        <div style="margin-top:14px">
+                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="selectModalAllDays()">
+                                <i class="bi bi-check-all"></i> Chọn tất cả
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm ms-2" onclick="clearModalAllDays()">
+                                <i class="bi bi-x-circle"></i> Bỏ chọn
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer modal-footer-custom">
+                <div class="pca-summary me-auto">
+                    <i class="bi bi-check-circle-fill text-success"></i>
+                    Đã chọn
+                    <span class="count-pill" id="modalCountPill">0</span>
+                    lượt phân ca
+                </div>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn-save" id="modalBtnSave" onclick="taoLichModal()">
+                    <i class="bi bi-plus-circle"></i>
+                    Thêm mới (<span id="modalSaveCount">0</span>)
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── MODAL XÁC NHẬN XÓA ── -->
+<div class="modal fade modal-confirm-delete" id="modalConfirmDelete" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title">
+                    <i class="bi bi-exclamation-triangle-fill text-danger me-2"></i>
+                    Xác nhận xóa
+                </h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-0">Bạn có chắc chắn muốn xóa lịch làm việc này?</p>
+                <small class="text-muted" id="deleteInfo"></small>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-danger btn-sm" id="btnConfirmDelete" onclick="executeDelete()">
+                    <i class="bi bi-trash"></i> Xóa
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    // ── CSRF ──
+    const csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute('content') || '';
+    const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content') || 'X-CSRF-TOKEN';
+
+    // ── BIẾN TOÀN CỤC ──
+    let modalWeekOffset = 0;
+    let modalNgays = [];
+    let currentDeleteTarget = null;
+
+    // ── MODAL TẠO LỊCH ──
+    function moModalTaoLich() {
+        modalWeekOffset = 0;
+        renderModalWeek();
+        const modal = new bootstrap.Modal(document.getElementById('modalTaoLich'));
+        modal.show();
+    }
+
+    function renderModalWeek() {
+        const today = new Date();
+        const startOfWeek = new Date(today);
+        startOfWeek.setDate(today.getDate() - today.getDay() + 1 + (modalWeekOffset * 7)); // Thứ 2
+        const endOfWeek = new Date(startOfWeek);
+        endOfWeek.setDate(startOfWeek.getDate() + 6);
+
+        document.getElementById('modalTuNgayText').textContent = formatDate(startOfWeek);
+        document.getElementById('modalDenNgayText').textContent = formatDate(endOfWeek);
+
+        // Render day grid
+        const grid = document.getElementById('modalDayGrid');
+        grid.innerHTML = '';
+        modalNgays = [];
+
+        for (let i = 0; i < 7; i++) {
+            const date = new Date(startOfWeek);
+            date.setDate(startOfWeek.getDate() + i);
+            const dateStr = date.toISOString().split('T')[0];
+            modalNgays.push(dateStr);
+
+            const isToday = date.toDateString() === new Date().toDateString();
+            const dayNames = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'CN'];
+            const dayName = dayNames[i];
+
+            const div = document.createElement('div');
+            div.className = 'day-card-modal' + (isToday ? ' today' : '');
+            div.dataset.ngay = dateStr;
+            div.onclick = function() { toggleModalDay(this); };
+
+            div.innerHTML = `
+                <div class="day-checkbox-modal"></div>
+                <div class="day-info-modal">
+                    <div class="day-name-modal">${dayName}</div>
+                    <div class="day-date-modal">${formatDate(date)}</div>
+                </div>
+            `;
+            grid.appendChild(div);
+        }
+        updateModalSummary();
+    }
+
+    function changeModalWeek(delta) {
+        modalWeekOffset += delta;
+        renderModalWeek();
+    }
+
+    function toggleModalDay(el) {
+        el.classList.toggle('selected');
+        updateModalSummary();
+    }
+
+    function toggleModalCa(el) {
+        el.classList.toggle('selected');
+        const cb = el.querySelector('input[type=checkbox]');
+        if (cb) cb.checked = el.classList.contains('selected');
+        updateModalSummary();
+    }
+
+    function selectModalAllDays() {
+        document.querySelectorAll('#modalDayGrid .day-card-modal').forEach(d => d.classList.add('selected'));
+        updateModalSummary();
+    }
+
+    function clearModalAllDays() {
+        document.querySelectorAll('#modalDayGrid .day-card-modal').forEach(d => d.classList.remove('selected'));
+        updateModalSummary();
+    }
+
+    function getModalSelectedCaIds() {
+        return [...document.querySelectorAll('#modalCaList .ca-item-modal.selected')]
+            .map(el => parseInt(el.dataset.caid))
+            .filter(id => !isNaN(id));
+    }
+
+    function getModalSelectedNgays() {
+        return [...document.querySelectorAll('#modalDayGrid .day-card-modal.selected')]
+            .map(el => el.dataset.ngay)
+            .filter(ngay => ngay);
+    }
+
+    function updateModalSummary() {
+        const selectEl = document.getElementById('modalSelectNhanVien');
+        const maNV = selectEl ? selectEl.value : '';
+        const caIds = getModalSelectedCaIds();
+        const ngays = getModalSelectedNgays();
+
+        const count = (maNV && caIds.length > 0 && ngays.length > 0)
+            ? caIds.length * ngays.length
+            : 0;
+
+        const countPill = document.getElementById('modalCountPill');
+        const saveCount = document.getElementById('modalSaveCount');
+        if (countPill) countPill.textContent = count;
+        if (saveCount) saveCount.textContent = count;
+    }
+
+    function formatDate(date) {
+        const d = String(date.getDate()).padStart(2, '0');
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const y = date.getFullYear();
+        return `${d}/${m}/${y}`;
+    }
+
+    function taoLichModal() {
+        const selectEl = document.getElementById('modalSelectNhanVien');
+        const maNV = selectEl ? selectEl.value : null; // Lấy thẳng value, KHÔNG parse
+        const caIds = getModalSelectedCaIds();
+        const ngays = getModalSelectedNgays();
+
+        console.log('maNV (String):', maNV);
+        console.log('caIds:', caIds);
+        console.log('ngays:', ngays);
+
+        if (!maNV) return showModalAlert('error', 'Vui lòng chọn nhân viên!');
+        if (caIds.length === 0) return showModalAlert('error', 'Vui lòng chọn ít nhất 1 ca làm việc!');
+        if (ngays.length === 0) return showModalAlert('error', 'Vui lòng chọn ít nhất 1 ngày!');
+
+        const danhSach = [];
+        ngays.forEach(ngay => {
+            caIds.forEach(maCa => {
+                danhSach.push({
+                    maNhanVien: maNV,  // String, không parseInt
+                    maCa: maCa,        // Integer
+                    ngay: ngay         // String
+                });
+            });
+        });
+
+        const payload = {
+            danhSachNhanVien: danhSach
+        };
+
+        console.log('Payload gửi đi:', JSON.stringify(payload));
+
+        const btn = document.getElementById('modalBtnSave');
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Đang lưu...';
+        }
+
+        fetch('/giao-ca/tao-lich-hang-loat', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                [csrfHeader]: csrfToken
+            },
+            body: JSON.stringify(payload)
+        })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    showModalAlert('success', data.message || 'Tạo lịch thành công!');
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1500);
+                } else {
+                    showModalAlert('error', data.message || 'Có lỗi xảy ra');
+                }
+            })
+            .catch(err => {
+                console.error('Error:', err);
+                showModalAlert('error', 'Lỗi kết nối: ' + err.message);
+            })
+            .finally(() => {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="bi bi-plus-circle"></i> Thêm mới (<span id="modalSaveCount">0</span>)';
+                }
+            });
+    }
+
+    function showModalAlert(type, msg) {
+        const box = document.getElementById('modalAlert');
+        if (!box) return;
+        box.className = 'modal-alert ' + (type === 'success' ? 'modal-alert-success' : 'modal-alert-error');
+        box.innerHTML = '<i class="bi bi-' + (type === 'success' ? 'check-circle-fill' : 'exclamation-circle-fill') + '"></i> ' + msg;
+        box.style.display = 'flex';
+        setTimeout(() => { box.style.display = 'none'; }, 4000);
+    }
+
+    // ── XÓA LỊCH ──
+    let deleteTarget = null;
+
+    function confirmDeleteSchedule(btn) {
+        const card = btn.closest('.nv-card');
+        if (!card) return;
+
+        const maChamCong = card.dataset.machamcong;
+        const tenNV = card.querySelector('.nv-ten')?.textContent || '';
+        const ngay = card.dataset.ngay || '';
+        const maCa = card.dataset.maca || '';
+
+        if (!maChamCong) {
+            alert('Không tìm thấy mã chấm công!');
+            return;
+        }
+
+        deleteTarget = {
+            maChamCong: maChamCong,
+            maNhanVien: card.dataset.manhanvien,
+            ngay: ngay,
+            maCa: maCa,
+            card: card,
+            tenNV: tenNV
+        };
+
+        document.getElementById('deleteInfo').textContent = `${tenNV} - ngày ${ngay}`;
+        const modal = new bootstrap.Modal(document.getElementById('modalConfirmDelete'));
+        modal.show();
+    }
+
+    function executeDelete() {
+        if (!deleteTarget) return;
+
+        const btn = document.getElementById('btnConfirmDelete');
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Đang xóa...';
+        }
+
+        fetch('/giao-ca/xoa-lich', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                [csrfHeader]: csrfToken
+            },
+            body: JSON.stringify({ maChamCong: deleteTarget.maChamCong })
+        })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    // Xóa card khỏi UI
+                    if (deleteTarget.card) {
+                        deleteTarget.card.remove();
+                    }
+                    // Đóng modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('modalConfirmDelete'));
+                    if (modal) modal.hide();
+                    // Hiển thị thông báo
+                    alert('Xóa lịch thành công!');
+                } else {
+                    alert('Lỗi: ' + data.message);
+                }
+            })
+            .catch(err => {
+                console.error('Error:', err);
+                alert('Lỗi kết nối: ' + err.message);
+            })
+            .finally(() => {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="bi bi-trash"></i> Xóa';
+                }
+                deleteTarget = null;
+            });
+    }
+
+    // ── KHỞI TẠO ──
+    document.addEventListener('DOMContentLoaded', function() {
+        // Gán sự kiện cho modal khi đóng
+        document.getElementById('modalTaoLich')?.addEventListener('hidden.bs.modal', function() {
+            // Reset trạng thái
+            document.querySelectorAll('#modalCaList .ca-item-modal').forEach(el => {
+                el.classList.remove('selected');
+                const cb = el.querySelector('input[type=checkbox]');
+                if (cb) cb.checked = false;
+            });
+            document.querySelectorAll('#modalDayGrid .day-card-modal').forEach(el => {
+                el.classList.remove('selected');
+            });
+            const select = document.getElementById('modalSelectNhanVien');
+            if (select) select.value = '';
+            updateModalSummary();
+            const alert = document.getElementById('modalAlert');
+            if (alert) {
+                alert.style.display = 'none';
+                alert.className = 'modal-alert';
+            }
+        });
+    });
+    /*]]>*/
+</script>
+</body>
+</html>

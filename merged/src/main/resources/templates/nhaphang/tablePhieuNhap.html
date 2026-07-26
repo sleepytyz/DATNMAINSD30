@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Table Phiếu Nhập</title>
+</head>
+<body>
+
+<div th:fragment="table">
+
+    <style>
+        .table-card {
+            background: #fff;
+            border-radius: 10px;
+            border: 1px solid #E5E7EB;
+            overflow: hidden;
+        }
+        .table-wrap { overflow-x: auto; }
+
+        .table-nhaphang {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13.5px;
+        }
+        .table-nhaphang thead { background: #FAFAFA; }
+        .table-nhaphang th {
+            padding: 11px 14px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 12.5px;
+            color: #6B7280;
+            border-bottom: 1px solid #E5E7EB;
+            white-space: nowrap;
+        }
+        .table-nhaphang td {
+            padding: 12px 14px;
+            border-bottom: 1px solid #E5E7EB;
+            vertical-align: middle;
+        }
+        .table-nhaphang tbody tr:last-child td { border-bottom: none; }
+        .table-nhaphang tbody tr:hover td     { background: #FAFBFF; cursor: pointer; }
+
+        /* Product cell */
+        .product-cell { display: flex; align-items: center; gap: 10px; }
+        .product-thumb {
+            width: 44px; height: 44px; border-radius: 6px;
+            background: #F5F6FA; border: 1px solid #E5E7EB;
+            display: flex; align-items: center; justify-content: center;
+            color: #C4C9D4; font-size: 20px; flex-shrink: 0;
+        }
+        .product-name { font-weight: 600; font-size: 13px; }
+        .product-meta { font-size: 11.5px; color: #6B7280; margin-top: 2px; }
+
+        /* Code link */
+        .code-link { color: #E53935; font-weight: 700; text-decoration: none; }
+        .code-link:hover { text-decoration: underline; }
+
+        /* NCC */
+        .ncc-main { font-weight: 500; font-size: 13px; }
+        .ncc-sub  { font-size: 11.5px; color: #6B7280; }
+
+        /* Status badges */
+        .tag-status {
+            display: inline-block; padding: 3px 10px; border-radius: 20px;
+            font-size: 11.5px; font-weight: 600; white-space: nowrap;
+        }
+        .tag-cho  { background: #FFF7ED; color: #C2410C; border: 1px solid #FED7AA; }
+        .tag-xac  { background: #ECFDF5; color: #065F46; border: 1px solid #6EE7B7; }
+        .tag-nhap { background: #EFF6FF; color: #1E40AF; border: 1px solid #BFDBFE; }
+        .tag-huy  { background: #FEF2F2; color: #991B1B; border: 1px solid #FECACA; }
+
+        /* Action buttons */
+        .action-btns { display: flex; gap: 6px; }
+        .icon-btn {
+            width: 30px; height: 30px; border-radius: 6px;
+            border: 1.5px solid #E5E7EB; background: #fff;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; font-size: 14px; color: #6B7280;
+            transition: border-color .15s, color .15s; text-decoration: none;
+        }
+        .icon-btn:hover { border-color: #E53935; color: #E53935; }
+
+        /* Pagination */
+        .pagination-bar {
+            padding: 12px 16px;
+            border-top: 1px solid #E5E7EB;
+            display: flex; align-items: center; justify-content: space-between;
+            font-size: 12.5px; color: #6B7280;
+        }
+        .page-btns { display: flex; gap: 4px; align-items: center; }
+        .page-btn {
+            width: 28px; height: 28px; border-radius: 5px;
+            border: 1.5px solid #E5E7EB; background: #fff;
+            cursor: pointer; font-size: 12.5px;
+            display: flex; align-items: center; justify-content: center;
+            color: #1A1A1A; text-decoration: none; transition: background .12s;
+        }
+        .page-btn:hover  { background: #F5F6FA; }
+        .page-btn.active { background: #E53935; border-color: #E53935; color: #fff; font-weight: 700; }
+        .page-btn.disabled { opacity: .4; pointer-events: none; }
+    </style>
+
+    <div class="table-card">
+        <div class="table-wrap">
+            <table class="table-nhaphang">
+                <thead>
+                    <tr>
+                        <th>Sản phẩm</th>
+                        <th>Mã nhập hàng</th>
+                        <th>Nhà cung cấp</th>
+                        <th>Ngày tạo</th>
+                        <th>Trạng thái</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="pnh : ${phieuNhapHangs}">
+
+                        <!-- Sản phẩm đại diện -->
+                        <td>
+                            <div class="product-cell">
+                                <div class="product-thumb">
+                                    <i class="bi bi-box-seam"></i>
+                                </div>
+                                <div>
+                                    <div class="product-name" th:text="${pnh.tenNhaCungCap}"></div>
+                                    <div class="product-meta"
+                                         th:text="${'Mã: ' + pnh.maPhieuNhap}"></div>
+                                </div>
+                            </div>
+                        </td>
+
+                        <!-- Mã phiếu -->
+                        <td>
+                            <a class="code-link"
+                               th:href="@{/nhap-hang/detail/{id}(id=${pnh.maPhieuNhap})}"
+                               th:text="${pnh.maPhieuNhap}"></a>
+                        </td>
+
+                        <!-- Nhà cung cấp -->
+                        <td>
+                            <div class="ncc-main" th:text="${pnh.tenNhaCungCap}"></div>
+                        </td>
+
+                        <!-- Ngày tạo -->
+                        <td th:text="${pnh.ngayNhap}"></td>
+
+                        <!-- Trạng thái -->
+                        <td>
+                            <span class="tag-status"
+                                  th:classappend="${pnh.trangThai == 'Chờ xử lý'}   ? 'tag-cho'
+                                               : (${pnh.trangThai == 'Đã xác nhận'} ? 'tag-xac'
+                                               : (${pnh.trangThai == 'Đã nhập kho'} ? 'tag-nhap'
+                                               : 'tag-huy'))"
+                                  th:text="${pnh.trangThai}">
+                            </span>
+                        </td>
+
+                        <!-- Thao tác -->
+                        <td>
+                            <div class="action-btns">
+                                <a class="icon-btn"
+                                   title="Xem chi tiết"
+                                   th:href="@{/nhap-hang/detail/{id}(id=${pnh.maPhieuNhap})}">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a class="icon-btn"
+                                   title="Chỉnh sửa"
+                                   th:href="@{/nhap-hang/update/{id}(id=${pnh.maPhieuNhap})}">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                            </div>
+                        </td>
+
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagination-bar">
+            <span th:text="${'Hiển thị ' + (page.number * page.size + 1)
+                            + ' – ' + (page.number * page.size + phieuNhapHangs.size())
+                            + ' của ' + page.totalElements + ' kết quả'}">
+            </span>
+
+            <div class="page-btns">
+                <a class="page-btn" th:classappend="${page.first} ? 'disabled'"
+                   th:href="@{/nhap-hang/index(page=0)}">
+                    <i class="bi bi-chevron-bar-left"></i>
+                </a>
+                <a class="page-btn" th:classappend="${page.first} ? 'disabled'"
+                   th:href="@{/nhap-hang/index(page=${page.number - 1})}">
+                    <i class="bi bi-chevron-left"></i>
+                </a>
+                <a class="page-btn"
+                   th:each="i : ${#numbers.sequence(0, page.totalPages - 1)}"
+                   th:text="${i + 1}"
+                   th:classappend="${i == page.number} ? 'active'"
+                   th:href="@{/nhap-hang/index(page=${i})}">
+                </a>
+                <a class="page-btn" th:classappend="${page.last} ? 'disabled'"
+                   th:href="@{/nhap-hang/index(page=${page.number + 1})}">
+                    <i class="bi bi-chevron-right"></i>
+                </a>
+                <a class="page-btn" th:classappend="${page.last} ? 'disabled'"
+                   th:href="@{/nhap-hang/index(page=${page.totalPages - 1})}">
+                    <i class="bi bi-chevron-bar-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+</body>
+</html>

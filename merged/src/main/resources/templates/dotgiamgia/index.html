@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"  xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Quản lý đợt giảm giá - FS Shop</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
+    <meta name="successMess" th:content="${successMess}">
+    <meta name="errorMess" th:content="${errorMess}">
+
+    <style>
+        /* ===== TOAST ===== */
+        .toast-container-custom {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            max-width: 420px;
+            width: 100%;
+        }
+        .toast-custom {
+            background: #fff;
+            border-radius: 12px;
+            padding: 16px 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+            border-left: 5px solid #dc3545;
+            animation: slideInRight 0.4s ease;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        .toast-custom.success { border-left-color: #28a745; }
+        .toast-custom.warning { border-left-color: #ffc107; }
+        .toast-custom .toast-icon { font-size: 1.5rem; flex-shrink: 0; margin-top: 2px; }
+        .toast-custom .toast-content { flex: 1; }
+        .toast-custom .toast-title { font-weight: 700; font-size: 0.95rem; color: #2d3748; }
+        .toast-custom .toast-message { font-size: 0.85rem; color: #6c757d; margin-top: 2px; }
+        .toast-custom .toast-close {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            color: #adb5bd;
+            cursor: pointer;
+            padding: 0 4px;
+            transition: color 0.2s;
+        }
+        .toast-custom .toast-close:hover { color: #dc3545; }
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideOutRight {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+
+        /* ===== CUSTOM CSS ===== */
+        .content-wrapper {
+            width: calc(100% - 250px);
+        }
+
+        .card-custom {
+            border-radius: 16px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        .card-custom:hover {
+            box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.08) !important;
+        }
+
+        .card-header-custom {
+            background: linear-gradient(135deg, #c92327 0%, #a01a1e 100%);
+            border: none;
+            padding: 14px 24px;
+        }
+        .card-header-custom h5 {
+            font-weight: 700;
+            font-size: 1rem;
+            letter-spacing: 0.3px;
+            color: white;
+        }
+        .card-header-custom .bi {
+            font-size: 1.2rem;
+        }
+
+        /* Filter form */
+        .filter-form {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #e9ecef;
+        }
+        .filter-form .form-label {
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: #2d3748;
+            margin-bottom: 4px;
+        }
+        .filter-form .form-control,
+        .filter-form .form-select {
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            font-size: 0.9rem;
+            padding: 8px 12px;
+            transition: all 0.3s ease;
+        }
+        .filter-form .form-control:focus,
+        .filter-form .form-select:focus {
+            border-color: #c92327 !important;
+            box-shadow: 0 0 0 0.2rem rgba(201, 35, 39, 0.12) !important;
+        }
+
+        /* ===== TOOLBAR ===== */
+        .toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 16px;
+            padding: 12px 16px;
+            background: #fff;
+            border-radius: 12px;
+            border: 1px solid #e9ecef;
+        }
+        .toolbar .toolbar-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .toolbar .toolbar-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .toolbar .btn-toolbar {
+            border-radius: 8px;
+            padding: 8px 18px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            text-decoration: none;
+            border: none;
+            color: white;
+        }
+        .toolbar .btn-add {
+            background: #c92327;
+        }
+        .toolbar .btn-add:hover {
+            background: #a01a1e;
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(201, 35, 39, 0.3);
+        }
+        .toolbar .btn-export {
+            background: #28a745;
+        }
+        .toolbar .btn-export:hover {
+            background: #1e7e34;
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+        }
+        .toolbar .btn-reset-toolbar {
+            background: #6c757d;
+            color: white;
+        }
+        .toolbar .btn-reset-toolbar:hover {
+            background: #5a6268;
+            color: white;
+            transform: translateY(-1px);
+        }
+
+        /* Table */
+        .table-card {
+            background: #fff;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+            border: 1px solid #e9ecef;
+        }
+        .table-custom {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+            table-layout: fixed;
+        }
+        .table-custom thead {
+            background: linear-gradient(135deg, #f8f9fa 0%, #f1f3f5 100%);
+            border-bottom: 2px solid #e9ecef;
+        }
+        .table-custom thead th {
+            padding: 12px 8px;
+            font-weight: 700;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #495057;
+            border-bottom: none;
+            white-space: nowrap;
+            text-align: center;
+        }
+        .table-custom tbody tr {
+            transition: all 0.2s ease;
+            border-bottom: 1px solid #f1f3f5;
+        }
+        .table-custom tbody tr:hover {
+            background: #fff5f5 !important;
+        }
+        .table-custom tbody td {
+            padding: 10px 8px;
+            vertical-align: middle;
+            color: #2d3748;
+            text-align: center;
+            word-break: break-word;
+            font-size: 0.85rem;
+        }
+
+        /* ===== ĐỘ RỘNG CÁC CỘT ===== */
+        .table-custom .col-stt { width: 45px; min-width: 45px; max-width: 45px; }
+        .table-custom .col-ma { width: 85px; min-width: 85px; max-width: 85px; }
+        .table-custom .col-ten { width: 180px; min-width: 180px; max-width: 180px; }
+        .table-custom .col-giatri { width: 80px; min-width: 80px; max-width: 80px; }
+        .table-custom .col-ngay { width: 95px; min-width: 95px; max-width: 95px; }
+        .table-custom .col-trangthai { width: 120px; min-width: 120px; max-width: 120px; }
+        .table-custom .col-hanhdong { width: 155px; min-width: 155px; max-width: 155px; }
+
+        .table-custom .text-left { text-align: left; }
+
+        /* Badge */
+        .badge-status {
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+        }
+        .badge-status.active { background: #d4edda; color: #155724; }
+        .badge-status.pending { background: #fff3cd; color: #856404; }
+        .badge-status.stopped { background: #f8d7da; color: #721c24; }
+        .badge-status.cancelled { background: #e2e3e5; color: #383d41; }
+
+        .badge-discount {
+            background: #fff5f5;
+            color: #c92327;
+            border: 1px solid #fcc;
+            padding: 3px 14px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 0.8rem;
+        }
+
+        /* ===== NÚT HÀNH ĐỘNG - RÕ RÀNG HƠN ===== */
+        .btn-action {
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            border: none;
+            font-size: 0.9rem;
+            text-decoration: none;
+            color: white;
+            font-weight: 600;
+        }
+        .btn-action i {
+            font-size: 1rem;
+        }
+        .btn-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+            color: white;
+        }
+        .btn-action-success { background: #28a745; }
+        .btn-action-success:hover { background: #1e7e34; }
+
+        .btn-action-danger { background: #dc3545; }
+        .btn-action-danger:hover { background: #b02a37; }
+
+        .btn-action-warning { background: #ffc107; color: #212529; }
+        .btn-action-warning:hover { background: #e0a800; color: #212529; }
+
+        .btn-action-info { background: #17a2b8; }
+        .btn-action-info:hover { background: #117a8b; }
+
+        .btn-action-secondary { background: #6c757d; }
+        .btn-action-secondary:hover { background: #5a6268; }
+
+        /* Stats */
+        .stats-bar {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+        .stats-item {
+            background: #f8f9fa;
+            padding: 8px 18px;
+            border-radius: 10px;
+            border: 1px solid #e9ecef;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.88rem;
+        }
+        .stats-item .num {
+            font-weight: 700;
+            color: #c92327;
+            font-size: 1rem;
+        }
+
+        /* Footer table */
+        .table-footer {
+            background: #f8f9fa;
+            padding: 12px 20px;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .table-footer .info-text {
+            font-size: 0.88rem;
+            color: #6c757d;
+        }
+        .table-footer .info-text strong {
+            color: #2d3748;
+        }
+
+        /* Pagination */
+        .pagination-custom {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            flex-wrap: wrap;
+        }
+        .pagination-custom .page-item { display: inline-block; }
+        .pagination-custom .page-item .page-link {
+            border: none;
+            border-radius: 8px;
+            padding: 6px 14px;
+            color: #495057;
+            font-weight: 600;
+            font-size: 0.85rem;
+            transition: all 0.3s ease;
+            background: transparent;
+            min-width: 36px;
+            text-align: center;
+            text-decoration: none;
+            display: block;
+        }
+        .pagination-custom .page-item .page-link:hover {
+            background: #fff5f5;
+            color: #c92327;
+        }
+        .pagination-custom .page-item.active .page-link {
+            background: linear-gradient(135deg, #c92327, #a01a1e);
+            color: white;
+            box-shadow: 0 2px 8px rgba(201, 35, 39, 0.3);
+        }
+        .pagination-custom .page-item.disabled .page-link {
+            color: #adb5bd;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+        .pagination-custom .page-item .page-link i {
+            font-size: 0.8rem;
+        }
+
+        /* Select2 override */
+        .select2-container .select2-selection--single {
+            height: 38px !important;
+            border-radius: 8px !important;
+            border: 1px solid #e0e0e0 !important;
+        }
+        .select2-container .select2-selection--single .select2-selection__rendered {
+            line-height: 36px !important;
+            padding-left: 12px !important;
+            font-size: 0.9rem;
+        }
+        .select2-container .select2-selection--single .select2-selection__arrow {
+            height: 36px !important;
+        }
+        .select2-container--open .select2-dropdown {
+            border-radius: 8px !important;
+            border-color: #c92327 !important;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .table-custom .col-ten { width: 150px; min-width: 150px; max-width: 150px; }
+            .table-custom .col-ngay { width: 85px; min-width: 85px; max-width: 85px; }
+            .table-custom .col-hanhdong { width: 140px; min-width: 140px; max-width: 140px; }
+            .btn-action { width: 30px; height: 30px; font-size: 0.8rem; }
+        }
+        @media (max-width: 992px) {
+            .table-custom .col-ten { width: 120px; min-width: 120px; max-width: 120px; }
+            .table-custom .col-ngay { width: 75px; min-width: 75px; max-width: 75px; }
+            .table-custom .col-hanhdong { width: 125px; min-width: 125px; max-width: 125px; }
+            .btn-action { width: 28px; height: 28px; font-size: 0.75rem; }
+            .toolbar { flex-direction: column; align-items: stretch; }
+            .toolbar .toolbar-left, .toolbar .toolbar-right { justify-content: center; }
+        }
+        @media (max-width: 768px) {
+            .content-wrapper { width: 100%; }
+            .table-custom { font-size: 0.78rem; table-layout: auto; }
+            .table-custom thead th, .table-custom tbody td { padding: 6px 5px; }
+            .table-custom .col-stt { width: 30px; min-width: 30px; max-width: 30px; }
+            .table-custom .col-ma { width: 65px; min-width: 65px; max-width: 65px; }
+            .table-custom .col-ten { width: 90px; min-width: 90px; max-width: 90px; }
+            .table-custom .col-giatri { width: 60px; min-width: 60px; max-width: 60px; }
+            .table-custom .col-ngay { width: 65px; min-width: 65px; max-width: 65px; }
+            .table-custom .col-trangthai { width: 90px; min-width: 90px; max-width: 90px; }
+            .table-custom .col-hanhdong { width: 110px; min-width: 110px; max-width: 110px; }
+            .btn-action { width: 26px; height: 26px; font-size: 0.7rem; }
+            .table-footer { flex-direction: column; align-items: flex-start; gap: 8px; }
+            .pagination-custom .page-item .page-link { padding: 4px 10px; font-size: 0.75rem; min-width: 30px; }
+            .badge-status { font-size: 0.6rem; padding: 3px 10px; }
+            .badge-discount { font-size: 0.65rem; padding: 2px 10px; }
+        }
+        @media (max-width: 576px) {
+            .filter-form { padding: 12px; }
+            .table-custom { font-size: 0.7rem; }
+            .table-custom thead th, .table-custom tbody td { padding: 4px 4px; }
+            .table-custom .col-stt { width: 25px; min-width: 25px; max-width: 25px; }
+            .table-custom .col-ma { width: 55px; min-width: 55px; max-width: 55px; }
+            .table-custom .col-ten { width: 70px; min-width: 70px; max-width: 70px; }
+            .table-custom .col-giatri { width: 50px; min-width: 50px; max-width: 50px; }
+            .table-custom .col-ngay { width: 60px; min-width: 60px; max-width: 60px; }
+            .table-custom .col-trangthai { width: 75px; min-width: 75px; max-width: 75px; }
+            .table-custom .col-hanhdong { width: 95px; min-width: 95px; max-width: 95px; }
+            .btn-action { width: 24px; height: 24px; font-size: 0.65rem; border-radius: 6px; }
+            .toolbar .btn-toolbar { font-size: 0.75rem; padding: 5px 12px; }
+            .stats-item { font-size: 0.7rem; padding: 4px 12px; }
+            .stats-item .num { font-size: 0.8rem; }
+            .badge-status { font-size: 0.55rem; padding: 2px 8px; }
+            .badge-discount { font-size: 0.6rem; padding: 2px 8px; }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="wrapper">
+    <div sec:authorize="hasRole('ADMIN')">
+        <div th:replace="fragments/sidebaradmin :: sidebar-admin"></div>
+    </div>
+
+    <div sec:authorize="hasRole('STAFF')">
+        <div th:replace="fragments/sidebarstaff :: sidebar-staff"></div>
+    </div>
+
+    <div class="content-wrapper">
+        <div th:replace="~{fragments/header :: header('Quản lý đợt giảm giá', 'Đợt giảm giá')}"></div>
+
+        <div class="content-body px-3 py-3">
+
+            <!-- Toast Container -->
+            <div class="toast-container-custom" id="toastContainer"></div>
+
+
+
+            <!-- Filter Card -->
+            <div class="card card-custom mb-4 shadow-sm border-0">
+                <div class="card-header-custom">
+                    <h5 class="mb-0 d-flex align-items-center gap-2 py-1">
+                        <i class="bi bi-funnel-fill"></i>
+                        <span>Bộ lọc & Tìm kiếm</span>
+                    </h5>
+                </div>
+
+                <div class="card-body bg-white p-4">
+                    <form id="filterForm" th:action="@{/dot-giam-gia/hien-thi}" method="get" class="filter-form">
+                        <div class="row g-3">
+                            <!-- Từ khóa -->
+                            <div class="col-lg-3 col-md-6 col-sm-12">
+                                <label class="form-label">
+                                    <i class="bi bi-search text-danger me-1"></i>Từ khóa
+                                </label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" placeholder="Mã hoặc tên..."
+                                           name="keyword" th:value="${keyword}" onkeyup="handleEnter(event)">
+                                    <button class="btn btn-danger" type="submit">
+                                        <i class="bi bi-search me-1"></i>Tìm
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Trạng thái -->
+                            <div class="col-lg-2 col-md-6 col-sm-12">
+                                <label class="form-label">
+                                    <i class="bi bi-tag-fill text-danger me-1"></i>Trạng thái
+                                </label>
+                                <select name="trangThai" class="form-select" onchange="this.form.submit()">
+                                    <option value="">-- Tất cả --</option>
+                                    <option value="Sắp hoạt động" th:selected="${trangThai == 'Sắp hoạt động'}"> Sắp hoạt động</option>
+                                    <option value="Hoạt động" th:selected="${trangThai == 'Hoạt động'}"> Hoạt động</option>
+                                    <option value="Ngừng hoạt động" th:selected="${trangThai == 'Ngừng hoạt động'}"> Ngừng hoạt động</option>
+                                    <option value="Đã huỷ" th:selected="${trangThai == 'Đã huỷ'}"> Đã huỷ</option>
+                                </select>
+                            </div>
+
+                            <!-- Từ ngày -->
+                            <div class="col-lg-2 col-md-6 col-sm-12">
+                                <label class="form-label">
+                                    <i class="bi bi-calendar-event text-danger me-1"></i>Từ ngày
+                                </label>
+                                <input type="datetime-local" name="tuNgay" th:value="${tuNgay}" class="form-control" onchange="autoFilterDate()">
+                            </div>
+
+                            <!-- Đến ngày -->
+                            <div class="col-lg-2 col-md-6 col-sm-12">
+                                <label class="form-label">
+                                    <i class="bi bi-calendar-event text-danger me-1"></i>Đến ngày
+                                </label>
+                                <input type="datetime-local" name="denNgay" th:value="${denNgay}" class="form-control" onchange="autoFilterDate()">
+                            </div>
+
+                            <!-- Button reset -->
+                            <div class="col-lg-3 col-md-12 col-sm-12 d-flex align-items-end">
+                                <a th:href="@{/dot-giam-gia/hien-thi}" class="btn btn-outline-secondary w-100">
+                                    <i class="bi bi-arrow-clockwise me-1"></i>Xóa bộ lọc
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- ===== TOOLBAR ===== -->
+            <div class="toolbar">
+                <div class="toolbar-left">
+                    <a th:href="@{/chi-tiet-dot-giam-gia/them-moi(page=${currentPage})}" class="btn-toolbar btn-add">
+                        <i class="bi bi-plus-circle"></i>Thêm mới
+                    </a>
+                    <a th:href="@{/dot-giam-gia/export-excel(
+                        keyword=${keyword},
+                        trangThai=${trangThai},
+                        tuNgay=${tuNgay},
+                        denNgay=${denNgay}
+                    )}"
+                       class="btn-toolbar btn-export">
+                        <i class="bi bi-file-earmark-excel"></i>Xuất Excel
+                    </a>
+                </div>
+                <div class="toolbar-right">
+                    <a th:href="@{/dot-giam-gia/hien-thi}" class="btn-toolbar btn-reset-toolbar">
+                        <i class="bi bi-arrow-counterclockwise"></i>Reset
+                    </a>
+                </div>
+            </div>
+
+            <!-- Table -->
+            <div class="table-card">
+                <div class="table-responsive">
+                    <table class="table-custom">
+                        <thead>
+                        <tr>
+                            <th class="col-stt">#</th>
+                            <th class="col-ma">Mã</th>
+                            <th class="col-ten">Tên đợt giảm giá</th>
+                            <th class="col-giatri">Giá trị</th>
+                            <th class="col-ngay">Bắt đầu</th>
+                            <th class="col-ngay">Kết thúc</th>
+                            <th class="col-trangthai">Trạng thái</th>
+                            <th class="col-hanhdong">Hành động</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="dgg, stt : ${listDGG}">
+                            <td class="col-stt text-center fw-semibold" th:text="${stt.index + 1 + (currentPage * 5)}"></td>
+                            <td class="col-ma">
+                                <span class="fw-semibold text-danger" th:text="${dgg.maGiamGia}"></span>
+                            </td>
+                            <td class="col-ten" th:text="${dgg.tenGiamGia}"></td>
+                            <td class="col-giatri">
+                                <span class="badge-discount" th:text="${dgg.giaTriGiam} + '%'"></span>
+                            </td>
+                            <td class="col-ngay" th:text="${#temporals.format(dgg.ngayBatDau,'dd/MM/yyyy')}"></td>
+                            <td class="col-ngay" th:text="${#temporals.format(dgg.ngayKetThuc,'dd/MM/yyyy')}"></td>
+                            <td class="col-trangthai">
+                                <span class="badge-status"
+                                      th:classappend="
+                                        ${dgg.trangThai == 'Hoạt động'} ? 'active' :
+                                        (${dgg.trangThai == 'Sắp hoạt động'} ? 'pending' :
+                                        (${dgg.trangThai == 'Đã huỷ'} ? 'cancelled' :
+                                        'stopped'))"
+                                      th:text="${dgg.trangThai}">
+                                </span>
+                            </td>
+                            <td class="col-hanhdong">
+                                <div class="d-flex align-items-center justify-content-center gap-1">
+
+                                    <!-- Sắp hoạt động -->
+                                    <th:block th:if="${dgg.trangThai == 'Sắp hoạt động'}">
+                                        <a class="btn-action btn-action-success"
+                                           th:href="@{/dot-giam-gia/activate/{id}(id=${dgg.maGiamGia}, page=${currentPage})}"
+                                           onclick="return confirm('Kích hoạt sớm?')"
+                                           title="Kích hoạt sớm">
+                                            <i class="bi bi-play-fill"></i>
+                                        </a>
+                                        <a class="btn-action btn-action-danger"
+                                           th:href="@{/dot-giam-gia/edit/{id}(id=${dgg.maGiamGia}, page=${currentPage})}"
+                                           title="Sửa">
+                                            <i class="bi bi-pencil-square"></i>
+                                        </a>
+                                        <a class="btn-action btn-action-warning"
+                                           th:href="@{/dot-giam-gia/cancel/{id}(id=${dgg.maGiamGia}, page=${currentPage})}"
+                                           onclick="return confirmCancel()"
+                                           title="Huỷ">
+                                            <i class="bi bi-x-circle"></i>
+                                        </a>
+                                    </th:block>
+
+                                    <!-- Hoạt động -->
+                                    <th:block th:if="${dgg.trangThai == 'Hoạt động'}">
+                                        <a class="btn-action btn-action-info"
+                                           th:href="@{/dot-giam-gia/detail/{id}(id=${dgg.maGiamGia}, page=${currentPage})}"
+                                           title="Xem chi tiết">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <a class="btn-action btn-action-secondary"
+                                           th:href="@{/dot-giam-gia/stop/{id}(id=${dgg.maGiamGia}, page=${currentPage})}"
+                                           onclick="return confirm('Ngừng hoạt động?')"
+                                           title="Ngừng hoạt động">
+                                            <i class="bi bi-stop-circle"></i>
+                                        </a>
+                                    </th:block>
+
+                                    <!-- Đã huỷ / Ngừng hoạt động -->
+                                    <th:block th:if="${dgg.trangThai == 'Đã huỷ' or dgg.trangThai == 'Ngừng hoạt động'}">
+                                        <a class="btn-action btn-action-info"
+                                           th:href="@{/dot-giam-gia/detail/{id}(id=${dgg.maGiamGia}, page=${currentPage})}"
+                                           title="Xem chi tiết">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                    </th:block>
+
+                                </div>
+                            </td>
+                        </tr>
+
+                        <!-- Empty state -->
+                        <tr th:if="${#lists.isEmpty(listDGG)}">
+                            <td colspan="8" class="text-center text-muted py-4">
+                                <i class="bi bi-inbox" style="font-size: 2rem; display: block; margin-bottom: 8px;"></i>
+                                Không có đợt giảm giá nào
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Table Footer with Pagination -->
+                <div class="table-footer" th:if="${totalPages > 0}">
+                    <div class="info-text">
+                        <i class="bi bi-database me-1"></i>
+                        Tổng: <strong th:text="${totalItems}">0</strong>
+                        <span class="mx-1">|</span>
+                        Trang <strong th:text="${currentPage + 1}">1</strong> / <strong th:text="${totalPages}">1</strong>
+                    </div>
+
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination-custom">
+                            <!-- First -->
+                            <li class="page-item" th:classappend="${currentPage == 0} ? 'disabled'">
+                                <a class="page-link" th:href="@{/dot-giam-gia/hien-thi(
+                                    page=0,
+                                    keyword=${keyword},
+                                    trangThai=${trangThai},
+                                    tuNgay=${tuNgay},
+                                    denNgay=${denNgay}
+                                )}">
+                                    <i class="bi bi-chevron-double-left"></i>
+                                </a>
+                            </li>
+
+                            <!-- Prev -->
+                            <li class="page-item" th:classappend="${currentPage == 0} ? 'disabled'">
+                                <a class="page-link" th:href="@{/dot-giam-gia/hien-thi(
+                                    page=${currentPage - 1},
+                                    keyword=${keyword},
+                                    trangThai=${trangThai},
+                                    tuNgay=${tuNgay},
+                                    denNgay=${denNgay}
+                                )}">
+                                    <i class="bi bi-chevron-left"></i>
+                                </a>
+                            </li>
+
+                            <!-- Pages -->
+                            <li class="page-item" th:each="i : ${#numbers.sequence(0, totalPages - 1)}"
+                                th:if="${i >= 0 && i < totalPages && (
+                                    (i >= currentPage - 2 && i <= currentPage + 2) ||
+                                    i == 0 ||
+                                    i == totalPages - 1
+                                )}"
+                                th:classappend="${currentPage == i} ? 'active' : ''">
+
+                                <span class="page-link" th:if="${i == 2 && currentPage > 3}" style="border: none; background: transparent; cursor: default;">...</span>
+
+                                <a class="page-link" th:unless="${i == 2 && currentPage > 3}"
+                                   th:href="@{/dot-giam-gia/hien-thi(
+                                       page=${i},
+                                       keyword=${keyword},
+                                       trangThai=${trangThai},
+                                       tuNgay=${tuNgay},
+                                       denNgay=${denNgay}
+                                   )}"
+                                   th:text="${i + 1}">
+                                </a>
+
+                                <span class="page-link" th:if="${i == totalPages - 3 && currentPage < totalPages - 4}" style="border: none; background: transparent; cursor: default;">...</span>
+                            </li>
+
+                            <!-- Next -->
+                            <li class="page-item" th:classappend="${currentPage + 1 >= totalPages} ? 'disabled'">
+                                <a class="page-link" th:href="@{/dot-giam-gia/hien-thi(
+                                    page=${currentPage + 1},
+                                    keyword=${keyword},
+                                    trangThai=${trangThai},
+                                    tuNgay=${tuNgay},
+                                    denNgay=${denNgay}
+                                )}">
+                                    <i class="bi bi-chevron-right"></i>
+                                </a>
+                            </li>
+
+                            <!-- Last -->
+                            <li class="page-item" th:classappend="${currentPage + 1 >= totalPages} ? 'disabled'">
+                                <a class="page-link" th:href="@{/dot-giam-gia/hien-thi(
+                                    page=${totalPages - 1},
+                                    keyword=${keyword},
+                                    trangThai=${trangThai},
+                                    tuNgay=${tuNgay},
+                                    denNgay=${denNgay}
+                                )}">
+                                    <i class="bi bi-chevron-double-right"></i>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Scripts -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    // =============================================
+    // TOAST
+    // =============================================
+    function showToast(message, type, title) {
+        var container = document.getElementById('toastContainer');
+        if (!container) return;
+
+        var icons = {
+            error: 'bi bi-x-circle-fill text-danger',
+            success: 'bi bi-check-circle-fill text-success',
+            warning: 'bi bi-exclamation-triangle-fill text-warning'
+        };
+
+        var titles = {
+            error: 'Lỗi!',
+            success: 'Thành công!',
+            warning: 'Cảnh báo!'
+        };
+
+        var toast = document.createElement('div');
+        toast.className = 'toast-custom ' + type;
+        toast.innerHTML = `
+            <div class="toast-icon">
+                <i class="${icons[type] || icons.error}"></i>
+            </div>
+            <div class="toast-content">
+                <div class="toast-title">${title || titles[type] || 'Thông báo'}</div>
+                <div class="toast-message">${message}</div>
+            </div>
+            <button class="toast-close" onclick="this.closest('.toast-custom').remove()">
+                <i class="bi bi-x"></i>
+            </button>
+        `;
+
+        container.appendChild(toast);
+
+        setTimeout(function() {
+            if (toast.parentNode) {
+                toast.style.animation = 'slideOutRight 0.3s ease forwards';
+                setTimeout(function() { toast.remove(); }, 300);
+            }
+        }, 5000);
+    }
+
+    // =============================================
+    // CONFIRM CANCEL
+    // =============================================
+    function confirmCancel() {
+        return confirm('Bạn có chắc chắn muốn huỷ đợt giảm giá này?');
+    }
+
+    // =============================================
+    // AUTO FILTER DATE
+    // =============================================
+    function autoFilterDate() {
+        var from = document.querySelector("[name='tuNgay']").value;
+        var to = document.querySelector("[name='denNgay']").value;
+        if (from || to) {
+            document.getElementById("filterForm").submit();
+        }
+    }
+
+    function handleEnter(event) {
+        if (event.key === "Enter") {
+            document.getElementById("filterForm").submit();
+        }
+    }
+
+    // =============================================
+    // DOM READY
+    // =============================================
+    document.addEventListener("DOMContentLoaded", function() {
+        var successMsg = document.querySelector('meta[name="successMess"]')?.getAttribute('content') || '';
+        var errorMsg = document.querySelector('meta[name="errorMess"]')?.getAttribute('content') || '';
+
+        if (successMsg && successMsg !== '' && successMsg !== 'null' && successMsg !== 'undefined') {
+            showToast(successMsg, 'success');
+        }
+        if (errorMsg && errorMsg !== '' && errorMsg !== 'null' && errorMsg !== 'undefined') {
+            showToast(errorMsg, 'error');
+        }
+    });
+
+    // Select2 init
+    $(document).ready(function() {
+        $('.select2-search').select2({
+            placeholder: "Chọn...",
+            allowClear: true,
+            width: '100%',
+            dropdownParent: $('body')
+        });
+    });
+</script>
+
+</body>
+</html>

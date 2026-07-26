@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/client-layout :: head('Sản phẩm')}"></head>
+<body>
+<header th:replace="~{fragments/client-layout :: header}"></header>
+
+<div class="fs-container">
+    <nav class="fs-breadcrumb">
+        <a th:href="@{/}">Trang chủ</a> <i class="bi bi-chevron-right"></i> <b>Sản phẩm</b>
+        <b th:if="${fQ != null}" th:text="' • Từ khoá: “' + ${fQ} + '”'"></b>
+    </nav>
+
+    <div class="fs-listing">
+        <!-- ================= BỘ LỌC ================= -->
+        <aside class="fs-filter">
+            <form th:action="@{/cua-hang/san-pham}" method="get" id="fsFilterForm">
+                <input type="hidden" name="q" th:value="${fQ}">
+                <input type="hidden" name="sapXep" th:value="${fSapXep}">
+                <h3><i class="bi bi-funnel"></i> Bộ lọc</h3>
+
+                <div class="fs-filter-group">
+                    <b>Danh mục</b>
+                    <label><input type="radio" name="danhMuc" value="" th:checked="${fDanhMuc == null}"> Tất cả</label>
+                    <label th:each="dm : ${danhMucs}">
+                        <input type="radio" name="danhMuc" th:value="${dm.maDanhMuc}"
+                               th:checked="${dm.maDanhMuc == fDanhMuc}">
+                        <span th:text="${dm.tenDanhMuc}">Giày chạy</span>
+                    </label>
+                </div>
+
+                <div class="fs-filter-group">
+                    <b>Thương hiệu</b>
+                    <label><input type="radio" name="thuongHieu" value="" th:checked="${fThuongHieu == null}"> Tất cả</label>
+                    <label th:each="t : ${thuongHieus}">
+                        <input type="radio" name="thuongHieu" th:value="${t.maThuongHieu}"
+                               th:checked="${t.maThuongHieu == fThuongHieu}">
+                        <span th:text="${t.tenThuongHieu}">Nike</span>
+                    </label>
+                </div>
+
+                <div class="fs-filter-group">
+                    <b>Kiểu giày</b>
+                    <label><input type="radio" name="kieuGiay" value="" th:checked="${fKieuGiay == null}"> Tất cả</label>
+                    <label th:each="k : ${kieuGiays}">
+                        <input type="radio" name="kieuGiay" th:value="${k.maKieuGiay}"
+                               th:checked="${k.maKieuGiay == fKieuGiay}">
+                        <span th:text="${k.tenKieuGiay}">Cổ thấp</span>
+                    </label>
+                </div>
+
+                <div class="fs-filter-group">
+                    <b>Khoảng giá (₫)</b>
+                    <div class="fs-filter-price">
+                        <input type="number" name="giaTu" min="0" step="1000" placeholder="Từ" th:value="${fGiaTu}">
+                        <span>–</span>
+                        <input type="number" name="giaDen" min="0" step="1000" placeholder="Đến" th:value="${fGiaDen}">
+                    </div>
+                </div>
+
+                <div class="fs-filter-group" th:if="${mauCoSan != null && !mauCoSan.isEmpty()}">
+                    <b>Màu sắc</b>
+                    <label><input type="radio" name="mauSac" value="" th:checked="${fMauSac == null}"> Tất cả</label>
+                    <label th:each="m : ${mauCoSan}">
+                        <input type="radio" name="mauSac" th:value="${m}" th:checked="${m == fMauSac}">
+                        <span th:text="${m}">Đen</span>
+                    </label>
+                </div>
+
+                <div class="fs-filter-group" th:if="${sizeCoSan != null && !sizeCoSan.isEmpty()}">
+                    <b>Kích thước</b>
+                    <div class="fs-size-chips">
+                        <label>
+                            <input type="radio" name="kichThuoc" value="" th:checked="${fKichThuoc == null}">
+                            <span>Tất cả</span>
+                        </label>
+                        <label th:each="s : ${sizeCoSan}">
+                            <input type="radio" name="kichThuoc" th:value="${s}" th:checked="${s == fKichThuoc}">
+                            <span th:text="${s}">40</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="fs-filter-group">
+                    <b>Khác</b>
+                    <label><input type="checkbox" name="khuyenMai" value="true" th:checked="${fKhuyenMai}"> Đang khuyến mãi</label>
+                    <label><input type="checkbox" name="conHang" value="true" th:checked="${fConHang}"> Chỉ hiện còn hàng</label>
+                </div>
+
+                <div class="fs-filter-actions">
+                    <button type="submit" class="fs-btn fs-btn-primary fs-btn-block">
+                        <i class="bi bi-funnel-fill"></i> Áp dụng bộ lọc</button>
+                    <a th:href="@{/cua-hang/san-pham}" class="fs-btn fs-btn-outline fs-btn-block">
+                        <i class="bi bi-x-circle"></i> Xoá bộ lọc</a>
+                </div>
+            </form>
+        </aside>
+
+        <!-- ================= KẾT QUẢ ================= -->
+        <div>
+            <div class="fs-toolbar">
+                <span class="kq" th:if="${!kq.rong}">
+                    Hiển thị <b th:text="${kq.tuPhanTu} + '–' + ${kq.denPhanTu}">1–12</b>
+                    trong <b th:text="${kq.tongPhanTu}">36</b> sản phẩm
+                </span>
+                <span class="kq" th:if="${kq.rong}">Không có sản phẩm nào</span>
+                <select id="fsSapXep" aria-label="Sắp xếp">
+                    <option value="moi-nhat"  th:selected="${fSapXep == 'moi-nhat'}">Mới nhất</option>
+                    <option value="ban-chay"  th:selected="${fSapXep == 'ban-chay'}">Bán chạy</option>
+                    <option value="gia-tang"  th:selected="${fSapXep == 'gia-tang'}">Giá: thấp → cao</option>
+                    <option value="gia-giam"  th:selected="${fSapXep == 'gia-giam'}">Giá: cao → thấp</option>
+                    <option value="danh-gia"  th:selected="${fSapXep == 'danh-gia'}">Đánh giá cao</option>
+                    <option value="giam-sau"  th:selected="${fSapXep == 'giam-sau'}">Giảm giá sâu</option>
+                </select>
+            </div>
+
+            <div class="fs-grid fs-grid-3" th:if="${!kq.rong}">
+                <th:block th:each="c : ${kq.noiDung}">
+                    <div th:replace="~{fragments/client-layout :: card(${c}, ${yeuThichSet != null && yeuThichSet.contains(c.maSanPham)})}"></div>
+                </th:block>
+            </div>
+
+            <div class="fs-empty" th:if="${kq.rong}">
+                <i class="bi bi-search"></i>
+                <h3>Không tìm thấy sản phẩm phù hợp</h3>
+                <p>Hãy thử nới lỏng bộ lọc hoặc dùng từ khoá khác nhé.</p>
+                <a th:href="@{/cua-hang/san-pham}" class="fs-btn fs-btn-primary">Xem tất cả sản phẩm</a>
+            </div>
+
+            <!-- Phân trang: giữ nguyên toàn bộ bộ lọc đang áp dụng -->
+            <nav class="fs-pagination" th:if="${kq.tongTrang > 1}">
+                <a class="fs-page" th:classappend="${!kq.coTrangTruoc} ? ' disabled'"
+                   th:href="@{/cua-hang/san-pham(danhMuc=${fDanhMuc},thuongHieu=${fThuongHieu},kieuGiay=${fKieuGiay},q=${fQ},giaTu=${fGiaTu},giaDen=${fGiaDen},mauSac=${fMauSac},kichThuoc=${fKichThuoc},khuyenMai=${fKhuyenMai},conHang=${fConHang},sapXep=${fSapXep},page=${kq.trangHienTai - 1})}">
+                    <i class="bi bi-chevron-left"></i></a>
+                <a th:each="p : ${#numbers.sequence(0, kq.tongTrang - 1)}"
+                   class="fs-page" th:classappend="${p == kq.trangHienTai} ? ' active'"
+                   th:text="${p + 1}"
+                   th:href="@{/cua-hang/san-pham(danhMuc=${fDanhMuc},thuongHieu=${fThuongHieu},kieuGiay=${fKieuGiay},q=${fQ},giaTu=${fGiaTu},giaDen=${fGiaDen},mauSac=${fMauSac},kichThuoc=${fKichThuoc},khuyenMai=${fKhuyenMai},conHang=${fConHang},sapXep=${fSapXep},page=${p})}">1</a>
+                <a class="fs-page" th:classappend="${!kq.coTrangSau} ? ' disabled'"
+                   th:href="@{/cua-hang/san-pham(danhMuc=${fDanhMuc},thuongHieu=${fThuongHieu},kieuGiay=${fKieuGiay},q=${fQ},giaTu=${fGiaTu},giaDen=${fGiaDen},mauSac=${fMauSac},kichThuoc=${fKichThuoc},khuyenMai=${fKhuyenMai},conHang=${fConHang},sapXep=${fSapXep},page=${kq.trangHienTai + 1})}">
+                    <i class="bi bi-chevron-right"></i></a>
+            </nav>
+        </div>
+    </div>
+</div>
+
+<footer th:replace="~{fragments/client-layout :: footer}"></footer>
+<div th:replace="~{fragments/client-layout :: toast}"></div>
+<th:block th:replace="~{fragments/client-layout :: scripts}"></th:block>
+<script>
+    // Đổi sắp xếp: giữ nguyên mọi tham số lọc hiện tại, về trang đầu
+    document.getElementById('fsSapXep').addEventListener('change', function () {
+        var url = new URL(window.location.href);
+        url.searchParams.set('sapXep', this.value);
+        url.searchParams.set('page', '0');
+        window.location.href = url.toString();
+    });
+
+    // BỘ LỌC TỰ ÁP DỤNG NGAY KHI CHỌN: mọi radio / checkbox trong form lọc
+    // vừa đổi giá trị là gửi form luôn (không cần bấm "Áp dụng bộ lọc").
+    // Riêng 2 ô khoảng giá vẫn dùng nút Áp dụng (hoặc phím Enter) để gõ xong mới lọc.
+    (function () {
+        var form = document.getElementById('fsFilterForm');
+        if (!form) return;
+        form.querySelectorAll('input[type=radio], input[type=checkbox]').forEach(function (inp) {
+            inp.addEventListener('change', function () { form.submit(); });
+        });
+    })();
+</script>
+</body>
+</html>

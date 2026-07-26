@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<!--
+  Bộ fragment dùng chung cho TOÀN BỘ website bán hàng FS Shoes:
+  head(title) • header • footer • toast • scripts • card(c, daThich) • sao(diem) • taikhoanMenu(tab)
+-->
+<head th:fragment="head(title)">
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/jpeg" th:href="@{/storefront/img/logo.jpg}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${title} + ' | FS Shoes'">FS Shoes</title>
+    <meta name="_csrf" th:if="${_csrf != null}" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:if="${_csrf != null}" th:content="${_csrf.headerName}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" th:href="@{/storefront/css/storefront.css}">
+</head>
+<body>
+
+<!-- ============================== HEADER ============================== -->
+<header th:fragment="header" class="fs-header" id="fsHeader">
+    <div class="fs-topbar">
+        <div class="fs-container fs-topbar-inner">
+            <span><i class="bi bi-truck"></i> Miễn phí vận chuyển cho đơn từ <b>500.000₫</b></span>
+            <span class="fs-topbar-links">
+                <a th:href="@{/theo-doi-don-hang}"><i class="bi bi-geo-alt"></i> Theo dõi đơn hàng</a>
+                <a th:href="@{/lien-he}"><i class="bi bi-headset"></i> Hỗ trợ</a>
+            </span>
+        </div>
+    </div>
+
+    <div class="fs-container fs-header-main">
+        <a th:href="@{/}" class="fs-logo" aria-label="FS Shoes - Trang chủ">
+            <img class="fs-logo-img" th:src="@{/storefront/img/logo.jpg}" alt="FS Shoes logo">
+            <span class="fs-logo-text">FS<em>SHOES</em></span>
+        </a>
+
+        <div class="fs-search" id="fsSearchBox">
+            <form th:action="@{/cua-hang/san-pham}" method="get" autocomplete="off">
+                <i class="bi bi-search"></i>
+                <input type="text" name="q" id="fsSearchInput" placeholder="Tìm giày thể thao, thương hiệu..."
+                       th:value="${fQ}">
+                <button type="submit">Tìm kiếm</button>
+            </form>
+            <div class="fs-search-suggest" id="fsSearchSuggest"></div>
+        </div>
+
+        <div class="fs-header-actions">
+            <a th:href="@{/cua-hang/yeu-thich}" class="fs-action" title="Sản phẩm yêu thích">
+                <i class="bi bi-heart"></i><span class="fs-action-label">Yêu thích</span>
+            </a>
+
+            <div class="fs-action fs-account" tabindex="0">
+                <i class="bi bi-person-circle"></i>
+                <span class="fs-action-label" sec:authorize="!isAuthenticated()">Tài khoản</span>
+                <span class="fs-action-label" sec:authorize="isAuthenticated()" sec:authentication="name">Tài khoản</span>
+                <div class="fs-account-menu">
+                    <th:block sec:authorize="!isAuthenticated()">
+                        <a th:href="@{/login}"><i class="bi bi-box-arrow-in-right"></i> Đăng nhập</a>
+                        <a th:href="@{/register}"><i class="bi bi-person-plus"></i> Đăng ký</a>
+                    </th:block>
+                    <th:block sec:authorize="hasRole('USER')">
+                        <a th:href="@{/ca-nhan}"><i class="bi bi-person"></i> Hồ sơ của tôi</a>
+                        <a th:href="@{/ca-nhan/don-hang}"><i class="bi bi-receipt"></i> Đơn hàng của tôi</a>
+                        <a th:href="@{/ca-nhan/voucher}"><i class="bi bi-ticket-perforated"></i> Voucher của tôi</a>
+                        <form th:action="@{/logout}" method="post" class="fs-logout-form">
+                            <button type="submit"><i class="bi bi-box-arrow-right"></i> Đăng xuất</button>
+                        </form>
+                    </th:block>
+                    <th:block sec:authorize="hasAnyRole('ADMIN','STAFF')">
+                        <a th:href="@{/}"><i class="bi bi-speedometer2"></i> Trang quản trị</a>
+                        <form th:action="@{/logout}" method="post" class="fs-logout-form">
+                            <button type="submit"><i class="bi bi-box-arrow-right"></i> Đăng xuất</button>
+                        </form>
+                    </th:block>
+                </div>
+            </div>
+
+            <a th:href="@{/gio-hang}" class="fs-action fs-cart" title="Giỏ hàng">
+                <i class="bi bi-bag"></i>
+                <span class="fs-badge" id="fsGioBadge" th:text="${gioHangSoLuong != null ? gioHangSoLuong : 0}">0</span>
+                <span class="fs-action-label">Giỏ hàng</span>
+            </a>
+        </div>
+    </div>
+
+    <nav class="fs-nav">
+        <div class="fs-container fs-nav-inner">
+            <a th:href="@{/}">Trang chủ</a>
+            <div class="fs-nav-drop">
+                <a th:href="@{/cua-hang/san-pham}">Sản phẩm <i class="bi bi-chevron-down"></i></a>
+                <div class="fs-nav-menu" th:if="${danhMucMenu != null}">
+                    <a th:each="dm : ${danhMucMenu}"
+                       th:href="@{/cua-hang/san-pham(danhMuc=${dm.maDanhMuc})}"
+                       th:text="${dm.tenDanhMuc}">Danh mục</a>
+                </div>
+            </div>
+            <a th:href="@{/khuyen-mai}">Khuyến mãi</a>
+            <a th:href="@{/cua-hang/san-pham(sapXep='ban-chay')}">Bán chạy</a>
+            <a th:href="@{/danh-gia}">Đánh giá</a>
+            <a th:href="@{/gioi-thieu}">Giới thiệu</a>
+            <a th:href="@{/lien-he}">Liên hệ</a>
+            <a th:href="@{/theo-doi-don-hang}" class="fs-nav-track"><i class="bi bi-truck"></i> Theo dõi đơn</a>
+        </div>
+    </nav>
+</header>
+
+<!-- ============================== FOOTER ============================== -->
+<footer th:fragment="footer" class="fs-footer">
+    <div class="fs-container fs-footer-grid">
+        <div>
+            <a th:href="@{/}" class="fs-logo fs-logo-footer">
+                <span class="fs-logo-badge"><i class="bi bi-lightning-charge-fill"></i></span>
+                <span class="fs-logo-text">FS<em>SHOES</em></span>
+            </a>
+            <p class="fs-footer-desc">Cửa hàng giày thể thao nam chính hãng — chất lượng thật,
+                giá tốt, giao nhanh toàn quốc.</p>
+            <div class="fs-footer-social">
+                <a href="#" aria-label="Facebook"><i class="bi bi-facebook"></i></a>
+                <a href="#" aria-label="Instagram"><i class="bi bi-instagram"></i></a>
+                <a href="#" aria-label="Tiktok"><i class="bi bi-tiktok"></i></a>
+                <a href="#" aria-label="Youtube"><i class="bi bi-youtube"></i></a>
+            </div>
+        </div>
+        <div>
+            <h4>Mua sắm</h4>
+            <a th:href="@{/cua-hang/san-pham}">Tất cả sản phẩm</a>
+            <a th:href="@{/khuyen-mai}">Đang khuyến mãi</a>
+            <a th:href="@{/cua-hang/san-pham(sapXep='ban-chay')}">Bán chạy nhất</a>
+            <a th:href="@{/cua-hang/yeu-thich}">Sản phẩm yêu thích</a>
+        </div>
+        <div>
+            <h4>Hỗ trợ khách hàng</h4>
+            <a th:href="@{/theo-doi-don-hang}">Theo dõi đơn hàng</a>
+            <a th:href="@{/danh-gia}">Đánh giá sản phẩm</a>
+            <a th:href="@{/lien-he}">Liên hệ hỗ trợ</a>
+            <a th:href="@{/gioi-thieu}">Về FS Shoes</a>
+        </div>
+        <div>
+            <h4>Liên hệ</h4>
+            <p><i class="bi bi-geo-alt"></i> 13 Trịnh Văn Bô, Nam Từ Liêm, Hà Nội</p>
+            <p><i class="bi bi-telephone"></i> 0344 552 008</p>
+            <p><i class="bi bi-envelope"></i> hotro@fsshoes.vn</p>
+            <p><i class="bi bi-clock"></i> 8:00 – 21:30 (T2 – CN)</p>
+        </div>
+    </div>
+    <div class="fs-footer-bottom">
+        <div class="fs-container">
+            <span>© 2025 FS Shoes — Dự án tốt nghiệp. Giao hàng COD & chuyển khoản VietQR.</span>
+            <span class="fs-footer-pay"><i class="bi bi-cash-coin"></i> COD <i class="bi bi-qr-code"></i> VietQR</span>
+        </div>
+    </div>
+</footer>
+
+<!-- ============================== TOAST ============================== -->
+<div th:fragment="toast" id="fsToasts" class="fs-toasts" aria-live="polite"></div>
+
+<!-- ============================== SCRIPTS ============================== -->
+<th:block th:fragment="scripts">
+    <script th:src="@{/storefront/js/storefront.js}"></script>
+    <script th:src="@{/storefront/js/tro-ly.js}"></script>
+</th:block>
+
+<!-- ====================== CARD SẢN PHẨM (fragment) ====================== -->
+<div th:fragment="card(c, daThich)" class="fs-card reveal">
+    <div class="fs-card-media">
+        <a th:href="@{/cua-hang/san-pham/{id}(id=${c.maSanPham}, bt=${c.maBienTheHienThi})}">
+            <img th:src="${c.anh}" th:alt="${c.tenSanPham}" loading="lazy"
+                 onerror="this.src='/storefront/img/no-image.svg'">
+        </a>
+        <div class="fs-card-badges">
+            <span class="fs-badge-sale" th:if="${c.phanTramGiam != null && c.phanTramGiam > 0}"
+                  th:text="'-' + ${c.phanTramGiam} + '%'">-20%</span>
+            <span class="fs-badge-hot" th:if="${c.banChay}"><i class="bi bi-fire"></i> Bán chạy</span>
+            <span class="fs-badge-new" th:if="${c.moiVe}">Mới</span>
+        </div>
+        <span class="fs-card-soldout" th:if="${!c.conHang}">Hết hàng</span>
+        <button type="button" class="fs-card-heart js-yeu-thich"
+                th:classappend="${daThich} ? ' active'"
+                th:attr="data-ma=${c.maSanPham}" title="Yêu thích">
+            <i class="bi" th:classappend="${daThich} ? ' bi-heart-fill' : ' bi-heart'"></i>
+        </button>
+        <a th:href="@{/cua-hang/san-pham/{id}(id=${c.maSanPham}, bt=${c.maBienTheHienThi})}" class="fs-card-quick">
+            <i class="bi bi-bag-plus"></i> Chọn mua
+        </a>
+    </div>
+    <div class="fs-card-body">
+        <div class="fs-card-brand" th:text="${c.tenThuongHieu}">Nike</div>
+        <a class="fs-card-name" th:href="@{/cua-hang/san-pham/{id}(id=${c.maSanPham}, bt=${c.maBienTheHienThi})}"
+           th:text="${c.tenSanPham}">Tên sản phẩm</a>
+        <div class="fs-card-meta">
+            <span class="fs-stars-mini" th:if="${c.soLuotDanhGia > 0}">
+                <i class="bi bi-star-fill"></i>
+                <b th:text="${#numbers.formatDecimal(c.diemTrungBinh, 1, 1)}">4.5</b>
+                <span th:text="'(' + ${c.soLuotDanhGia} + ')'">(12)</span>
+            </span>
+            <span class="fs-card-sold" th:if="${c.daBan > 0}" th:text="'Đã bán ' + ${c.daBan}">Đã bán 30</span>
+        </div>
+        <div class="fs-card-price">
+            <span class="fs-price" th:text="${#numbers.formatDecimal(c.giaSauGiam, 0, 'POINT', 0, 'COMMA')} + '₫'">1.200.000₫</span>
+            <span class="fs-price-old" th:if="${c.phanTramGiam != null && c.phanTramGiam > 0}"
+                  th:text="${#numbers.formatDecimal(c.giaGoc, 0, 'POINT', 0, 'COMMA')} + '₫'">1.500.000₫</span>
+        </div>
+        <div class="fs-card-colors" th:if="${c.tenMauSacs != null && !c.tenMauSacs.isEmpty()}"
+             th:text="${#strings.listJoin(c.tenMauSacs, ' • ')}">Đen • Trắng</div>
+    </div>
+</div>
+
+<!-- ====================== SAO ĐÁNH GIÁ (fragment) ====================== -->
+<span th:fragment="sao(diem)" class="fs-stars" th:with="d=${diem != null ? diem : 0}">
+    <i th:each="i : ${#numbers.sequence(1,5)}" class="bi"
+       th:classappend="${d >= i} ? ' bi-star-fill' : (${d >= i - 0.5} ? ' bi-star-half' : ' bi-star')"></i>
+</span>
+
+<!-- ====================== MENU TÀI KHOẢN (fragment) ====================== -->
+<aside th:fragment="taikhoanMenu(tab)" class="fs-account-side">
+    <div class="fs-account-side-head">
+        <i class="bi bi-person-circle"></i>
+        <div>
+            <small>Xin chào,</small>
+            <b sec:authentication="name">khachhang</b>
+        </div>
+    </div>
+    <a th:href="@{/ca-nhan}" th:classappend="${tab == 'ho-so'} ? ' active'">
+        <i class="bi bi-person"></i> Hồ sơ cá nhân</a>
+    <a th:href="@{/ca-nhan/don-hang}" th:classappend="${tab == 'don-hang'} ? ' active'">
+        <i class="bi bi-receipt"></i> Đơn hàng của tôi</a>
+    <a th:href="@{/ca-nhan/dia-chi}" th:classappend="${tab == 'dia-chi'} ? ' active'">
+        <i class="bi bi-geo-alt"></i> Sổ địa chỉ</a>
+    <a th:href="@{/ca-nhan/voucher}" th:classappend="${tab == 'voucher'} ? ' active'">
+        <i class="bi bi-ticket-perforated"></i> Voucher của tôi</a>
+    <a th:href="@{/ca-nhan/doi-mat-khau}" th:classappend="${tab == 'doi-mat-khau'} ? ' active'">
+        <i class="bi bi-shield-lock"></i> Đổi mật khẩu</a>
+    <form th:action="@{/logout}" method="post">
+        <button type="submit"><i class="bi bi-box-arrow-right"></i> Đăng xuất</button>
+    </form>
+</aside>
+
+</body>
+</html>

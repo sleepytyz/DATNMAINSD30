@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Thông báo ngừng chương trình giảm giá</title>
+</head>
+<body style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
+<div style="max-width: 600px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 10px; border-top: 5px solid #dc3545;">
+
+  <div style="text-align: center; margin-bottom: 20px;">
+    <h2 style="color: #dc3545; margin: 0;">❌ Rất tiếc!</h2>
+    <p style="color: #666; margin: 5px 0 0;">Chương trình giảm giá đã bị ngừng hoạt động sớm</p>
+  </div>
+
+  <div style="background: #fff5f5; padding: 15px; border-left: 4px solid #dc3545; margin: 20px 0; border-radius: 5px;">
+    <p style="font-size: 16px; font-weight: bold; margin: 0 0 10px; color: #333;">
+      📌 Chương trình: <span th:text="${voucher.tenGiamGia}" style="color: #dc3545;"></span>
+    </p>
+
+    <div style="margin: 15px 0; padding: 15px; border: 2px dashed #dc3545; text-align: center; background-color: #ffffff; border-radius: 8px;">
+      <p style="margin: 0; color: #555; font-size: 14px;">Mã giảm giá của bạn:</p>
+      <h1 style="margin: 5px 0; color: #dc3545; letter-spacing: 3px; font-size: 28px;" th:text="${voucher.maGiamGia}">CODE123</h1>
+    </div>
+
+    <table style="width: 100%; border-collapse: collapse; margin: 10px 0;">
+      <tr>
+        <td style="padding: 6px 0; color: #555; font-size: 14px;">Giá trị giảm:</td>
+        <td style="padding: 6px 0; text-align: right; font-weight: bold; color: #dc3545; font-size: 14px;"
+            th:text="${#numbers.formatDecimal(voucher.giaTri, 0, 'POINT', 0, 'COMMA')} +
+                    (voucher.loaiGiamGia == 'PhanTram' ? '%' : 'đ')">
+        </td>
+      </tr>
+      <tr>
+        <td style="padding: 6px 0; color: #555; font-size: 14px;">Đơn tối thiểu:</td>
+        <td style="padding: 6px 0; text-align: right; font-weight: bold; color: #333; font-size: 14px;"
+            th:text="${#numbers.formatDecimal(voucher.donToiThieu, 0, 'POINT', 0, 'COMMA')} + 'đ'">
+        </td>
+      </tr>
+      <tr th:if="${voucher.giamToiDa != null && voucher.giamToiDa > 0}">
+        <td style="padding: 6px 0; color: #555; font-size: 14px;">Giảm tối đa:</td>
+        <td style="padding: 6px 0; text-align: right; font-weight: bold; color: #333; font-size: 14px;"
+            th:text="${#numbers.formatDecimal(voucher.giamToiDa, 0, 'POINT', 0, 'COMMA')} + 'đ'">
+        </td>
+      </tr>
+      <!-- ===== THÊM NGÀY THÁNG ===== -->
+      <tr>
+        <td style="padding: 6px 0; color: #555; font-size: 14px;">📅 Ngày bắt đầu:</td>
+        <td style="padding: 6px 0; text-align: right; font-weight: bold; color: #28a745; font-size: 14px;"
+            th:text="${#temporals.format(voucher.ngayBatDau, 'dd/MM/yyyy HH:mm')}">
+        </td>
+      </tr>
+      <tr>
+        <td style="padding: 6px 0; color: #555; font-size: 14px;">📅 Ngày kết thúc:</td>
+        <td style="padding: 6px 0; text-align: right; font-weight: bold; color: #dc3545; font-size: 14px;"
+            th:text="${#temporals.format(voucher.ngayKetThuc, 'dd/MM/yyyy HH:mm')}">
+        </td>
+      </tr>
+      <tr>
+        <td style="padding: 6px 0; color: #555; font-size: 14px;">⏳ Thời gian áp dụng:</td>
+        <td style="padding: 6px 0; text-align: right; color: #333; font-size: 13px;">
+          <span th:text="${#temporals.format(voucher.ngayBatDau, 'dd/MM/yyyy HH:mm')}" style="color: #28a745;"></span>
+          <span style="margin: 0 5px;">→</span>
+          <span th:text="${#temporals.format(voucher.ngayKetThuc, 'dd/MM/yyyy HH:mm')}" style="color: #dc3545;"></span>
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <div style="background: #fff3cd; padding: 12px 15px; border-radius: 5px; margin: 15px 0;">
+    <p style="margin: 0; color: #856404; font-size: 14px;">
+      <strong>⚠️ Lý do:</strong> Chương trình đã bị ngừng hoạt động sớm vì lý do từ hệ thống.
+    </p>
+    <p style="margin: 5px 0 0; color: #856404; font-size: 14px;">
+      💔 Rất tiếc vì sự bất tiện này! Chúng tôi sẽ có nhiều chương trình hấp dẫn hơn trong tương lai.
+    </p>
+  </div>
+
+  <div style="text-align: center; margin: 25px 0 15px;">
+    <a href="https://your-website.com" style="display: inline-block; background: #dc3545; color: #fff; padding: 10px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+      🛍️ Khám phá ưu đãi khác
+    </a>
+  </div>
+
+  <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+
+  <p style="color: #999; font-size: 12px; text-align: center; margin: 0;">
+    📧 Mọi thắc mắc xin vui lòng liên hệ hotline: <strong>1900-xxxx</strong><br>
+    <span style="display: block; margin-top: 5px;">Cảm ơn bạn đã quan tâm đến chương trình của chúng tôi!</span>
+  </p>
+
+  <div style="text-align: center; margin-top: 15px; color: #ccc; font-size: 11px;">
+    <span style="display: inline-block; margin: 0 10px;">🏢 Công ty TNHH Thương Mại</span>
+    <span style="display: inline-block; margin: 0 10px;">📞 1900-xxxx</span>
+  </div>
+</div>
+</body>
+</html>

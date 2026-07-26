@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+<div style="max-width: 600px; margin: 0 auto; border: 1px solid #ddd; padding: 20px; border-radius: 10px;">
+    <h2 style="color: #c92327;">Chào mừng bạn đến với hệ thống!</h2>
+    <p>Xin chào <strong>[[${hoTen}]]</strong>,</p>
+    <p>Tài khoản nhân viên của bạn đã được tạo thành công. Dưới đây là thông tin đăng nhập:</p>
+    <div style="background: #f4f4f4; padding: 15px; border-radius: 5px; margin: 20px 0;">
+        <p><strong>Tên đăng nhập:</strong> <span style="color: #007bff;">[[${username}]]</span></p>
+        <p><strong>Mật khẩu tạm thời:</strong> <span style="color: #007bff;">[[${password}]]</span></p>
+    </div>
+    <p>Vui lòng đăng nhập và đổi mật khẩu ngay để bảo mật thông tin.</p>
+</div>
+</body>
+</html>

@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/client-layout :: head('Thanh toán')}"></head>
+<body>
+<header th:replace="~{fragments/client-layout :: header}"></header>
+
+<div class="fs-container">
+    <nav class="fs-breadcrumb">
+        <a th:href="@{/}">Trang chủ</a> <i class="bi bi-chevron-right"></i>
+        <a th:href="@{/gio-hang}">Giỏ hàng</a> <i class="bi bi-chevron-right"></i> <b>Thanh toán</b>
+    </nav>
+
+    <div class="fs-alert fs-alert-error" th:if="${loiDatHang}">
+        <i class="bi bi-x-circle-fill"></i><span th:text="${loiDatHang}"></span></div>
+    <div class="fs-alert fs-alert-warn" th:each="c : ${gio.canhBao}">
+        <i class="bi bi-exclamation-triangle-fill"></i><span th:text="${c}"></span></div>
+
+    <form th:action="@{/thanh-toan/dat-hang}" method="post" class="fs-checkout">
+        <!-- ================= CỘT TRÁI ================= -->
+        <div>
+            <!-- Đang ở chế độ MUA NGAY -->
+            <div class="fs-alert fs-alert-info" th:if="${muaNgay}" style="margin-bottom:14px">
+                <i class="bi bi-lightning-charge-fill"></i>
+                <span>Bạn đang <b>Mua ngay</b> sản phẩm này — <b>giỏ hàng của bạn không bị thay đổi</b>.
+                    <a th:href="@{/thanh-toan/huy-mua-ngay}" style="text-decoration:underline;color:inherit">
+                        Huỷ và quay lại giỏ hàng →</a></span>
+            </div>
+
+            <!-- Địa chỉ giao hàng -->
+            <div class="fs-panel">
+                <h3><i class="bi bi-geo-alt-fill"></i> Địa chỉ giao hàng</h3>
+
+                <label class="fs-radio-card" th:each="d, st : ${diaChis}">
+                    <input type="radio" name="chonDiaChi" th:value="${d.maDiaChi}"
+                           th:attr="data-huyen=${d.maQuanHuyenGHN}, data-xa=${d.maPhuongXaGHN}"
+                           th:checked="${d.diaChiMacDinh == true || (st.first && diaChis.?[diaChiMacDinh == true].isEmpty())}">
+                    <b th:text="${d.tenNguoiNhan} + '  •  ' + ${d.soDienThoaiNguoiNhan}">Nguyễn Văn A • 0912345678</b>
+                    <span class="tag" th:if="${d.diaChiMacDinh == true}"
+                          style="position:static;margin-left:8px;background:var(--fs-primary);color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px">Mặc định</span>
+                    <div class="mota"
+                         th:text="${d.diaChiCuThe} + ', ' + ${d.phuongXa} + ', ' + ${d.quanHuyen} + ', ' + ${d.tinhThanh}">Địa chỉ</div>
+                </label>
+
+                <label class="fs-radio-card">
+                    <input type="radio" name="chonDiaChi" value="moi" id="fsRadioMoi"
+                           th:checked="${diaChis == null || diaChis.isEmpty()}">
+                    <b><i class="bi bi-plus-circle"></i> Giao đến địa chỉ mới</b>
+                    <div class="mota">Nhập thông tin người nhận bên dưới</div>
+                </label>
+
+                <div id="fsDiaChiMoi" style="display:none; margin-top:6px">
+                    <div class="fs-form-grid">
+                        <div class="fs-field"><label>Họ tên người nhận *</label>
+                            <input type="text" name="tenNguoiNhan" th:value="${khachHang.hoTen}" placeholder="Nguyễn Văn A"></div>
+                        <div class="fs-field"><label>Số điện thoại *</label>
+                            <input type="text" name="soDienThoaiNguoiNhan" th:value="${khachHang.sdt}" placeholder="09xxxxxxxx"></div>
+                        <!-- Có API Giao Hàng Nhanh: chọn theo danh mục địa giới chuẩn để tính cước thật -->
+                        <th:block th:if="${ghnBat}">
+                            <div class="fs-field"><label>Tỉnh / Thành phố *</label>
+                                <select id="fsTinh"><option value="">— Đang tải danh sách —</option></select></div>
+                            <div class="fs-field"><label>Quận / Huyện *</label>
+                                <select id="fsHuyen" disabled><option value="">— Chọn Tỉnh/Thành trước —</option></select></div>
+                            <div class="fs-field"><label>Phường / Xã *</label>
+                                <select id="fsXa" disabled><option value="">— Chọn Quận/Huyện trước —</option></select></div>
+                            <input type="hidden" name="tinhThanh" id="fsTinhTen">
+                            <input type="hidden" name="quanHuyen" id="fsHuyenTen">
+                            <input type="hidden" name="phuongXa" id="fsXaTen">
+                            <input type="hidden" name="maQuanHuyenGHN" id="fsHuyenId">
+                            <input type="hidden" name="maPhuongXaGHN" id="fsXaId">
+                        </th:block>
+                        <!-- Chưa cấu hình API: giữ nguyên 3 ô gõ tay, áp biểu phí cố định -->
+                        <th:block th:unless="${ghnBat}">
+                            <div class="fs-field"><label>Tỉnh / Thành phố *</label>
+                                <input type="text" name="tinhThanh" placeholder="Hà Nội"></div>
+                            <div class="fs-field"><label>Quận / Huyện *</label>
+                                <input type="text" name="quanHuyen" placeholder="Nam Từ Liêm"></div>
+                            <div class="fs-field"><label>Phường / Xã *</label>
+                                <input type="text" name="phuongXa" placeholder="Phương Canh"></div>
+                        </th:block>
+                        <div class="fs-field"><label>Địa chỉ cụ thể *</label>
+                            <input type="text" name="diaChiCuThe" placeholder="Số 13 Trịnh Văn Bô"></div>
+                    </div>
+                    <label class="fs-check"><input type="checkbox" name="luuDiaChi" value="true" checked>
+                        Lưu vào sổ địa chỉ của tôi</label>
+                    <label class="fs-check"><input type="checkbox" name="datMacDinh" value="true">
+                        Đặt làm địa chỉ mặc định</label>
+                </div>
+            </div>
+
+            <!-- Phương thức thanh toán -->
+            <div class="fs-panel">
+                <h3><i class="bi bi-wallet2"></i> Phương thức thanh toán</h3>
+                <label class="fs-radio-card">
+                    <input type="radio" name="phuongThucThanhToan" value="Tiền mặt khi nhận hàng (COD)" checked>
+                    <b><i class="bi bi-cash-coin"></i> Thanh toán khi nhận hàng (COD)</b>
+                    <div class="mota">Kiểm tra hàng rồi mới trả tiền cho nhân viên giao hàng.</div>
+                </label>
+                <label class="fs-radio-card">
+                    <input type="radio" name="phuongThucThanhToan" value="Chuyển khoản ngân hàng (VietQR)">
+                    <b><i class="bi bi-qr-code-scan"></i> Chuyển khoản ngân hàng (VietQR)</b>
+                    <div class="mota">Sau khi đặt hàng, hệ thống hiển thị mã QR đúng số tiền — bạn chuyển khoản rồi bấm “Tôi đã chuyển khoản”; quầy đối soát và duyệt đơn.</div>
+                </label>
+                <label class="fs-radio-card" th:if="${vnpayBat}">
+                    <input type="radio" name="phuongThucThanhToan" value="Thanh toán online VNPay (ATM/QR)">
+                    <b><i class="bi bi-credit-card-2-front"></i> Thanh toán online qua VNPay
+                        <span class="fs-tag-sandbox">SANDBOX</span></b>
+                    <div class="mota">Cổng thanh toán VNPay môi trường thử nghiệm — <b>không mất tiền thật</b>.
+                        Thanh toán xong, hệ thống xác minh chữ ký giao dịch và đơn tự chuyển
+                        <b>Đã xác nhận</b>. Thẻ test: NCB 9704198526191432198.</div>
+                </label>
+            </div>
+
+            <!-- Ghi chú -->
+            <div class="fs-panel">
+                <h3><i class="bi bi-chat-left-text"></i> Ghi chú cho đơn hàng</h3>
+                <div class="fs-field">
+                    <textarea name="ghiChu" rows="3" maxlength="500"
+                              placeholder="VD: Giao giờ hành chính, gọi trước khi giao..."></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= CỘT PHẢI: ĐƠN HÀNG ================= -->
+        <aside class="fs-panel" style="position:sticky; top:130px">
+            <h3><i class="bi bi-bag-check"></i> Đơn hàng của bạn
+                <span style="margin-left:auto;font-size:12.5px;color:var(--fs-muted)"
+                      th:text="${gio.tongSoLuong} + ' sản phẩm'">3 sản phẩm</span></h3>
+
+            <div class="fs-mini-line" th:each="l : ${gio.dongHang}" th:if="${l.conHopLe}">
+                <img th:src="${l.anh}" alt="" onerror="this.src='/storefront/img/no-image.svg'">
+                <div>
+                    <div class="ten" th:text="${l.tenSanPham}">Tên sản phẩm</div>
+                    <div class="pl" th:text="${l.tenMauSac} + ' / ' + ${l.tenKichThuoc} + '  ×' + ${l.soLuong}">Đen / 42 ×2</div>
+                </div>
+                <div class="tt" th:text="${#numbers.formatDecimal(l.thanhTien,0,'POINT',0,'COMMA')} + '₫'">2.400.000₫</div>
+            </div>
+
+            <div class="fs-sum-row" style="margin-top:10px"><span>Tạm tính</span>
+                <span th:text="${#numbers.formatDecimal(gio.tongTienHang,0,'POINT',0,'COMMA')} + '₫'">2.400.000₫</span></div>
+            <div class="fs-sum-row save" th:if="${gio.soTienGiamVoucher.signum() > 0}">
+                <span>Voucher <b th:text="${gio.voucherApDung != null ? gio.voucherApDung.tenGiamGia : ''}"></b></span>
+                <span th:text="'-' + ${#numbers.formatDecimal(gio.soTienGiamVoucher,0,'POINT',0,'COMMA')} + '₫'">-50.000₫</span></div>
+            <div class="fs-sum-row"><span>Phí vận chuyển
+                    <span class="fs-ghn-tag" th:if="${ghnBat}"><i class="bi bi-truck"></i> GHN</span></span>
+                <span>
+                    <s id="fsPhiShipGoc" style="color:var(--fs-muted);margin-right:6px"
+                       th:if="${gio.tienShip.signum() == 0 && gio.phiShipGoc != null && gio.phiShipGoc.signum() > 0}"
+                       th:text="${#numbers.formatDecimal(gio.phiShipGoc,0,'POINT',0,'COMMA')} + '₫'">43.999₫</s>
+                    <span id="fsPhiShip"
+                          th:text="${gio.tienShip.signum() > 0 ? #numbers.formatDecimal(gio.tienShip,0,'POINT',0,'COMMA') + '₫' : 'Miễn phí'}">Miễn phí</span>
+                </span></div>
+            <div class="fs-ship-note" id="fsGhiChuShip"
+                 th:text="${gio.nguonPhiShip == 'GHN'} ? 'Cước tính theo Giao Hàng Nhanh cho tuyến bạn chọn.'
+                          : (${gio.nguonPhiShip == 'FREESHIP'}
+                             ? (${gio.phiShipGoc != null && gio.phiShipGoc.signum() > 0}
+                                ? 'Cước GHN tuyến này là ' + ${#numbers.formatDecimal(gio.phiShipGoc,0,'POINT',0,'COMMA')} + '₫ — cửa hàng tài trợ toàn bộ.'
+                                : 'Đơn đạt mốc miễn phí vận chuyển.')
+                          : (${ghnBat} ? 'Chọn đủ Tỉnh/Quận-Huyện/Phường-Xã để tính cước chính xác.' : ''))"></div>
+            <div class="fs-sum-row total"><span>Tổng thanh toán</span>
+                <b id="fsTongThanhToan" th:text="${#numbers.formatDecimal(gio.tongThanhToan,0,'POINT',0,'COMMA')} + '₫'">2.350.000₫</b></div>
+
+            <!-- ===== MÃ GIẢM GIÁ (áp dụng ngay tại đây) ===== -->
+            <div class="fs-vc-box">
+                <div class="fs-vc-head"><i class="bi bi-ticket-perforated-fill"></i> Mã giảm giá</div>
+
+                <div class="fs-alert fs-alert-error" th:if="${loiVoucher}" style="margin:0 0 8px">
+                    <i class="bi bi-exclamation-circle"></i><span th:text="${loiVoucher}"></span></div>
+                <div class="fs-alert fs-alert-success" th:if="${thongBaoVoucher}" style="margin:0 0 8px">
+                    <i class="bi bi-check-circle"></i><span th:text="${thongBaoVoucher}"></span></div>
+                <!-- Thông báo động (AJAX) — không tải lại trang -->
+                <div id="fsVcBao" style="display:none;margin:0 0 8px"></div>
+
+                <!-- Đang áp dụng -->
+                <div class="fs-vc-dang" id="fsVcDang" th:if="${gio.voucherApDung != null}">
+                    <div>
+                        <b id="fsVcTen" th:text="${gio.voucherApDung.tenGiamGia}">FSSALE10</b>
+                        <small id="fsVcGiam" th:text="'-' + ${#numbers.formatDecimal(gio.soTienGiamVoucher,0,'POINT',0,'COMMA')} + '₫'">-50.000₫</small>
+                    </div>
+                    <button type="button" class="fs-vc-bo" onclick="fsGuiVoucher('/thanh-toan/bo-voucher')">Bỏ mã</button>
+                </div>
+
+                <!-- Nhập / chọn mã -->
+                <div id="fsVcNhapBox" th:if="${gio.voucherApDung == null}">
+                    <div class="fs-vc-nhap">
+                        <input type="text" id="fsVcMa" placeholder="Nhập mã giảm giá..." autocomplete="off">
+                        <button type="button" class="fs-btn fs-btn-outline"
+                                onclick="fsGuiVoucher('/thanh-toan/ap-dung-voucher', document.getElementById('fsVcMa').value)">
+                            Áp dụng</button>
+                    </div>
+                    <div class="fs-vc-goiy" th:if="${voucherKhaDung != null && !voucherKhaDung.isEmpty()}">
+                        <small>Mã khả dụng của bạn — bấm để dùng:</small>
+                        <div class="fs-vc-chips">
+                            <button type="button" class="fs-vc-chip" th:each="v : ${voucherKhaDung}"
+                                    th:attr="onclick=|fsGuiVoucher('/thanh-toan/ap-dung-voucher','${v.tenGiamGia}')|">
+                                <b th:text="${v.tenGiamGia}">FSSALE10</b>
+                                <span th:text="${v.loaiGiamGia != null && v.loaiGiamGia.contains('%')} ?
+                                      ('-' + ${#numbers.formatDecimal(v.giaTriGiam,0,'POINT',0,'COMMA')} + '%')
+                                      : ('-' + ${#numbers.formatDecimal(v.giaTriGiam,0,'POINT',0,'COMMA')} + '₫')">-10%</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="fs-btn fs-btn-primary fs-btn-lg fs-btn-block" style="margin-top:14px">
+                <i class="bi bi-bag-heart"></i> Đặt hàng</button>
+            <p style="font-size:12px;color:var(--fs-muted);margin-top:10px;text-align:center">
+                Đơn sẽ xuất hiện ngay tại quầy quản lý với trạng thái <b>“Chờ xác nhận”</b>.
+                Bạn có thể huỷ khi đơn chưa được xác nhận.</p>
+        </aside>
+    </form>
+</div>
+
+<footer th:replace="~{fragments/client-layout :: footer}"></footer>
+<div th:replace="~{fragments/client-layout :: toast}"></div>
+<th:block th:replace="~{fragments/client-layout :: scripts}"></th:block>
+<script>
+    // Gửi yêu cầu áp dụng / bỏ voucher (form POST riêng để không đụng form đặt hàng)
+    // Áp dụng / bỏ voucher KHÔNG TẢI LẠI TRANG: gọi AJAX rồi cập nhật tại chỗ, nhờ vậy
+    // địa chỉ đang chọn, phương thức thanh toán và ghi chú của khách không bị mất.
+    var fsVcDangGui = false;
+    function fsGuiVoucher(url, ma) {
+        var boMa = url.indexOf('bo-voucher') >= 0;
+        if (!boMa && (!ma || !ma.trim())) {
+            if (window.fsToast) fsToast('Vui lòng nhập mã giảm giá.', 'err');
+            return;
+        }
+        if (fsVcDangGui) return;
+        fsVcDangGui = true;
+
+        // Kèm địa chỉ đang chọn để tổng tiền trả về khớp với cước đang hiển thị
+        var huyen = '', xa = '';
+        var r = document.querySelector('input[name=chonDiaChi]:checked');
+        if (r) {
+            if (r.value === 'moi') {
+                var h = document.getElementById('fsHuyenId'), x = document.getElementById('fsXaId');
+                huyen = h ? h.value : ''; xa = x ? x.value : '';
+            } else {
+                huyen = r.dataset.huyen || ''; xa = r.dataset.xa || '';
+            }
+        }
+
+        var du = new URLSearchParams();
+        du.append('hanhDong', boMa ? 'bo' : 'ap-dung');
+        if (ma) du.append('maVoucher', ma.trim());
+        if (huyen) du.append('maQuanHuyenGHN', huyen);
+        if (xa) du.append('maPhuongXaGHN', xa);
+
+        var dau = { 'Content-Type': 'application/x-www-form-urlencoded' };
+        var meta = document.querySelector('meta[name=_csrf]');
+        var metaTen = document.querySelector('meta[name=_csrf_header]');
+        if (meta && metaTen) dau[metaTen.getAttribute('content')] = meta.getAttribute('content');
+
+        fetch('/thanh-toan/voucher-ajax', { method: 'POST', headers: dau, body: du.toString() })
+            .then(function (res) { return res.ok ? res.json() : Promise.reject(res.status); })
+            .then(function (d) {
+                fsVeVoucher(d);
+                if (window.fsToast) fsToast(d.thongBao, d.thanhCong ? 'ok' : 'err');
+            })
+            .catch(function () {
+                if (window.fsToast) fsToast('Không kết nối được máy chủ, vui lòng thử lại.', 'err');
+            })
+            .then(function () { fsVcDangGui = false; });
+    }
+
+    // Vẽ lại khối voucher + khối tiền theo dữ liệu máy chủ trả về
+    function fsVeVoucher(d) {
+        var dang = document.getElementById('fsVcDang');
+        var nhap = document.getElementById('fsVcNhapBox');
+        var bao = document.getElementById('fsVcBao');
+
+        if (bao) {
+            bao.style.display = '';
+            bao.className = 'fs-alert ' + (d.thanhCong ? 'fs-alert-success' : 'fs-alert-error');
+            bao.innerHTML = '<i class="bi ' + (d.thanhCong ? 'bi-check-circle' : 'bi-exclamation-circle') + '"></i><span></span>';
+            bao.querySelector('span').textContent = d.thongBao || '';
+        }
+        if (!d.thanhCong) return;
+
+        if (d.coVoucher) {
+            if (dang) {
+                dang.style.display = '';
+                var t = document.getElementById('fsVcTen'), g = document.getElementById('fsVcGiam');
+                if (t) t.textContent = d.tenVoucher || '';
+                if (g) g.textContent = d.giamVoucherText || '';
+            }
+            if (nhap) nhap.style.display = 'none';
+        } else {
+            if (dang) dang.style.display = 'none';
+            if (nhap) nhap.style.display = '';
+            var o = document.getElementById('fsVcMa');
+            if (o) o.value = '';
+        }
+        var dv = document.getElementById('fsDongVoucher');
+        if (dv) {
+            dv.style.display = d.coVoucher ? '' : 'none';
+            var spans = dv.querySelectorAll('span, b');
+            if (spans.length && d.giamVoucherText) spans[spans.length - 1].textContent = d.giamVoucherText;
+        }
+        var tt = document.getElementById('fsTamTinh');
+        if (tt && d.tongTienHangText) tt.textContent = d.tongTienHangText;
+        var ps = document.getElementById('fsPhiShip');
+        if (ps && d.phiShipText) ps.textContent = d.phiShipText;
+        var tg = document.getElementById('fsTongThanhToan');
+        if (tg && d.tongThanhToanText) tg.textContent = d.tongThanhToanText;
+    }
+
+    // Hiện / ẩn form địa chỉ mới theo lựa chọn
+    (function () {
+        var box = document.getElementById('fsDiaChiMoi');
+        function capNhat() {
+            var moi = document.getElementById('fsRadioMoi');
+            box.style.display = (moi && moi.checked) ? '' : 'none';
+        }
+        document.querySelectorAll('input[name=chonDiaChi]').forEach(function (r) {
+            r.addEventListener('change', capNhat);
+        });
+        capNhat();
+    })();
+
+    // ===== GIAO HÀNG NHANH: nạp Tỉnh/Huyện/Xã và tính lại CƯỚC ngay khi chọn =====
+    (function () {
+        var API = '/api/giao-hang';
+        var elTinh = document.getElementById('fsTinh');
+        var elHuyen = document.getElementById('fsHuyen');
+        var elXa = document.getElementById('fsXa');
+        var oPhi = document.getElementById('fsPhiShip');
+        var oTong = document.getElementById('fsTongThanhToan');
+        var oNote = document.getElementById('fsGhiChuShip');
+
+        function lay(url) {
+            return fetch(url, { headers: { 'Accept': 'application/json' } })
+                .then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); });
+        }
+        function nap(sel, ds, nhac) {
+            if (!sel) return;
+            sel.innerHTML = '';
+            var o0 = document.createElement('option');
+            o0.value = ''; o0.textContent = nhac;
+            sel.appendChild(o0);
+            (ds || []).forEach(function (x) {
+                var o = document.createElement('option');
+                o.value = x.id; o.textContent = x.ten;
+                sel.appendChild(o);
+            });
+            sel.disabled = !(ds && ds.length);
+        }
+        function ghi(id, giaTri) {
+            var o = document.getElementById(id);
+            if (o) o.value = giaTri == null ? '' : giaTri;
+        }
+        function tenDangChon(sel) {
+            return (sel && sel.selectedIndex > 0) ? sel.options[sel.selectedIndex].textContent : '';
+        }
+
+        var dangTinh = false;
+        function tinhCuoc(huyen, xa) {
+            if (dangTinh) return;
+            dangTinh = true;
+            if (oNote) oNote.textContent = 'Đang tính cước vận chuyển…';
+            var q = (huyen && xa) ? ('?huyen=' + encodeURIComponent(huyen) + '&xa=' + encodeURIComponent(xa)) : '';
+            lay(API + '/phi-ship' + q).then(function (d) {
+                if (oPhi) oPhi.textContent = d.phiShipText;
+                var oGoc = document.getElementById('fsPhiShipGoc');
+                if (oGoc) {
+                    var hienGoc = d.mienPhi && d.phiShipGocText;
+                    oGoc.textContent = hienGoc ? d.phiShipGocText : '';
+                    oGoc.style.display = hienGoc ? '' : 'none';
+                }
+                if (oTong) oTong.textContent = d.tongThanhToanText;
+                if (oNote) oNote.textContent = d.ghiChu || '';
+            }).catch(function () {
+                if (oNote) oNote.textContent = 'Không tính được cước lúc này — tạm áp biểu phí mặc định.';
+            }).then(function () { dangTinh = false; });
+        }
+
+        // Tính lại theo lựa chọn địa chỉ hiện tại (địa chỉ đã lưu hoặc địa chỉ mới)
+        function theoLuaChon() {
+            var r = document.querySelector('input[name=chonDiaChi]:checked');
+            if (!r) return;
+            if (r.value === 'moi') {
+                var h = document.getElementById('fsHuyenId');
+                var x = document.getElementById('fsXaId');
+                tinhCuoc(h ? h.value : '', x ? x.value : '');
+            } else {
+                tinhCuoc(r.dataset.huyen || '', r.dataset.xa || '');
+            }
+        }
+        document.querySelectorAll('input[name=chonDiaChi]').forEach(function (r) {
+            r.addEventListener('change', theoLuaChon);
+        });
+
+        if (elTinh) {
+            lay(API + '/tinh-thanh')
+                .then(function (ds) { nap(elTinh, ds, '— Chọn Tỉnh/Thành phố —'); })
+                .catch(function () { nap(elTinh, [], '— Không tải được danh sách —'); });
+
+            elTinh.addEventListener('change', function () {
+                ghi('fsTinhTen', tenDangChon(elTinh));
+                ghi('fsHuyenTen', ''); ghi('fsHuyenId', '');
+                ghi('fsXaTen', ''); ghi('fsXaId', '');
+                nap(elXa, [], '— Chọn Quận/Huyện trước —');
+                if (!elTinh.value) { nap(elHuyen, [], '— Chọn Tỉnh/Thành trước —'); return; }
+                nap(elHuyen, [], '— Đang tải —');
+                lay(API + '/quan-huyen?tinh=' + encodeURIComponent(elTinh.value))
+                    .then(function (ds) { nap(elHuyen, ds, '— Chọn Quận/Huyện —'); })
+                    .catch(function () { nap(elHuyen, [], '— Không tải được —'); });
+            });
+
+            elHuyen.addEventListener('change', function () {
+                ghi('fsHuyenTen', tenDangChon(elHuyen));
+                ghi('fsHuyenId', elHuyen.value);
+                ghi('fsXaTen', ''); ghi('fsXaId', '');
+                if (!elHuyen.value) { nap(elXa, [], '— Chọn Quận/Huyện trước —'); return; }
+                nap(elXa, [], '— Đang tải —');
+                lay(API + '/phuong-xa?huyen=' + encodeURIComponent(elHuyen.value))
+                    .then(function (ds) { nap(elXa, ds, '— Chọn Phường/Xã —'); })
+                    .catch(function () { nap(elXa, [], '— Không tải được —'); });
+            });
+
+            elXa.addEventListener('change', function () {
+                ghi('fsXaTen', tenDangChon(elXa));
+                ghi('fsXaId', elXa.value);
+                if (elXa.value) theoLuaChon();
+            });
+        }
+    })();
+</script>
+</body>
+</html>

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/client-layout :: head('Săn khuyến mãi')}"></head>
+<body>
+<header th:replace="~{fragments/client-layout :: header}"></header>
+
+<!-- ============ HERO SỰ KIỆN ============ -->
+<section class="fs-km-hero">
+    <div class="fs-container">
+        <div class="fs-km-hero-inner">
+            <div class="fs-km-badge"><i class="bi bi-lightning-charge-fill"></i> ĐANG DIỄN RA</div>
+            <h1>SĂN <em>KHUYẾN MÃI</em></h1>
+            <p th:if="${tongSanPhamSale > 0}">
+                <b th:text="${tongSanPhamSale}">8</b> sản phẩm đang giảm giá trong
+                <b th:text="${dsDot.size()}">2</b> chương trình — giá đã áp dụng trực tiếp,
+                bấm vào là mở đúng biến thể đang giảm.</p>
+            <p th:if="${tongSanPhamSale == 0}">Hiện chưa có chương trình nào đang chạy — quay lại sau nhé!</p>
+        </div>
+    </div>
+</section>
+
+<!-- ============ TỪNG ĐỢT GIẢM GIÁ ============ -->
+<section class="fs-km-dot" th:each="dot, i : ${dsDot}">
+    <div class="fs-container">
+        <div class="fs-km-dot-head">
+            <div class="fs-km-dot-off">
+                <span th:text="'-' + ${dot.phanTram} + '%'">-25%</span>
+            </div>
+            <div class="fs-km-dot-info">
+                <h2 th:text="${dot.ten}">Flash Sale cuối tuần</h2>
+                <p th:if="${dot.moTa != null && !#strings.isEmpty(dot.moTa)}" th:text="${dot.moTa}"></p>
+                <div class="fs-km-dot-time" th:classappend="${dot.sapHet} ? ' gap'">
+                    <i class="bi bi-alarm"></i>
+                    <span th:if="${dot.conLai > 0}"
+                          th:text="'Còn ' + ${dot.conLai} + ' ngày — kết thúc ' + ${dot.ketThuc}">Còn 3 ngày</span>
+                    <span th:if="${dot.conLai == 0}"
+                          th:text="'NGÀY CUỐI — kết thúc hôm nay (' + ${dot.ketThuc} + ')'">Ngày cuối</span>
+                </div>
+            </div>
+            <div class="fs-km-dot-dem" th:text="${dot.cards.size()} + ' sản phẩm'">4 sản phẩm</div>
+        </div>
+
+        <div class="fs-sale-track">
+            <a class="fs-sale-card" th:each="c : ${dot.cards}"
+               th:href="@{/cua-hang/san-pham/{id}(id=${c.maSanPham}, bt=${c.maBienTheHienThi})}">
+                <span class="fs-sale-off" th:text="'-' + ${c.phanTramGiam} + '%'">-25%</span>
+                <div class="fs-sale-img">
+                    <img th:src="${c.anh}" th:alt="${c.tenSanPham}" loading="lazy"
+                         onerror="this.src='/storefront/img/no-image.svg'">
+                </div>
+                <div class="fs-sale-info">
+                    <small th:text="${c.tenThuongHieu}">NIKE</small>
+                    <b th:text="${c.tenSanPham}">Tên sản phẩm</b>
+                    <div class="fs-sale-price">
+                        <span class="now" th:text="${#numbers.formatDecimal(c.giaSauGiam,0,'POINT',0,'COMMA')} + '₫'">899.000₫</span>
+                        <s th:text="${#numbers.formatDecimal(c.giaGoc,0,'POINT',0,'COMMA')} + '₫'">1.200.000₫</s>
+                    </div>
+                    <div class="fs-sale-bar">
+                        <div class="fill" th:style="'width:' + ${c.phanTramGiam > 60 ? 92 : (30 + c.phanTramGiam)} + '%'"></div>
+                    </div>
+                    <small class="fs-sale-sold">
+                        <i class="bi bi-fire"></i>
+                        <span th:text="${c.daBan > 0 ? 'Đã bán ' + c.daBan + ' — nhanh kẻo lỡ!' : 'Vừa mở bán — nhanh tay!'}">Đã bán 12</span>
+                    </small>
+                </div>
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- ============ TRỐNG ============ -->
+<section class="fs-section" th:if="${dsDot.isEmpty()}">
+    <div class="fs-container" style="text-align:center;padding:46px 0 30px">
+        <div style="font-size:52px;color:var(--fs-muted)"><i class="bi bi-balloon"></i></div>
+        <h2 style="margin:10px 0 6px">Chưa có chương trình giảm giá nào đang chạy</h2>
+        <p style="color:var(--fs-muted);margin-bottom:18px">
+            Theo dõi trang chủ hoặc săn mã voucher ở giỏ hàng để không bỏ lỡ ưu đãi mới nhé!</p>
+        <a th:href="@{/cua-hang/san-pham}" class="fs-btn fs-btn-primary fs-btn-lg">
+            <i class="bi bi-bag"></i> Xem tất cả sản phẩm</a>
+    </div>
+</section>
+
+<!-- ============ MẸO ============ -->
+<section class="fs-section" th:if="${!dsDot.isEmpty()}">
+    <div class="fs-container">
+        <div class="fs-km-meo">
+            <i class="bi bi-ticket-perforated-fill"></i>
+            <div>
+                <b>Mẹo tiết kiệm kép:</b> giá trên đã áp dụng đợt giảm — bạn vẫn có thể
+                <b>nhập thêm mã voucher</b> ở giỏ hàng để giảm tiếp trên tổng đơn.
+            </div>
+            <a th:href="@{/cua-hang/san-pham(khuyenMai=true)}" class="fs-btn fs-btn-outline">
+                Xem dạng danh sách <i class="bi bi-arrow-right"></i></a>
+        </div>
+    </div>
+</section>
+
+<footer th:replace="~{fragments/client-layout :: footer}"></footer>
+<div th:replace="~{fragments/client-layout :: toast}"></div>
+<th:block th:replace="~{fragments/client-layout :: scripts}"></th:block>
+</body>
+</html>

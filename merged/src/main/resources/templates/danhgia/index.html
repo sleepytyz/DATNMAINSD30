@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/client-layout :: head(${sp.tenSanPham})}"></head>
+<body>
+<header th:replace="~{fragments/client-layout :: header}"></header>
+
+<div class="fs-container">
+    <nav class="fs-breadcrumb">
+        <a th:href="@{/}">Trang chủ</a> <i class="bi bi-chevron-right"></i>
+        <a th:href="@{/cua-hang/san-pham}">Sản phẩm</a> <i class="bi bi-chevron-right"></i>
+        <a th:if="${sp.danhMucSanPham != null}"
+           th:href="@{/cua-hang/san-pham(danhMuc=${sp.danhMucSanPham.maDanhMuc})}"
+           th:text="${sp.danhMucSanPham.tenDanhMuc}">Danh mục</a>
+        <i th:if="${sp.danhMucSanPham != null}" class="bi bi-chevron-right"></i>
+        <b th:text="${sp.tenSanPham}">Tên sản phẩm</b>
+    </nav>
+
+    <!-- Thông báo sau khi gửi đánh giá -->
+    <div class="fs-alert fs-alert-success" th:if="${thongBaoDanhGia}">
+        <i class="bi bi-check-circle-fill"></i><span th:text="${thongBaoDanhGia}"></span></div>
+    <div class="fs-alert fs-alert-error" th:if="${loiDanhGia}">
+        <i class="bi bi-x-circle-fill"></i><span th:text="${loiDanhGia}"></span></div>
+
+    <!-- ================= KHỐI CHÍNH ================= -->
+    <div class="fs-detail">
+        <!-- Gallery -->
+        <div>
+            <div class="fs-gallery-main">
+                <img id="fsMainImg" th:src="${card.anh}" th:alt="${sp.tenSanPham}"
+                     onerror="this.src='/storefront/img/no-image.svg'">
+            </div>
+            <div class="fs-gallery-thumbs" id="fsThumbs"></div>
+        </div>
+
+        <!-- Thông tin -->
+        <div>
+            <div class="fs-detail-brand" th:text="${card.tenThuongHieu}">NIKE</div>
+            <h1 th:text="${sp.tenSanPham}">Tên sản phẩm</h1>
+            <div class="fs-detail-meta">
+                <span th:replace="~{fragments/client-layout :: sao(${thongKeDanhGia.diemTrungBinh})}"></span>
+                <span th:if="${thongKeDanhGia.tongLuot > 0}"
+                      th:text="${#numbers.formatDecimal(thongKeDanhGia.diemTrungBinh,1,1)} + ' (' + ${thongKeDanhGia.tongLuot} + ' đánh giá)'">4.5 (12 đánh giá)</span>
+                <span th:if="${thongKeDanhGia.tongLuot == 0}">Chưa có đánh giá</span>
+                <span th:if="${card.daBan > 0}"><i class="bi bi-bag-check"></i> Đã bán <b th:text="${card.daBan}">30</b></span>
+                <span>Mã: <b th:text="${sp.maSanPham}">SP001</b></span>
+            </div>
+
+            <div class="fs-detail-price">
+                <span class="now" id="fsGiaNow"
+                      th:text="${#numbers.formatDecimal(card.giaSauGiam,0,'POINT',0,'COMMA')} + '₫'">1.200.000₫</span>
+                <span class="old" id="fsGiaOld"
+                      th:style="${card.phanTramGiam == null || card.phanTramGiam == 0} ? 'display:none'"
+                      th:text="${#numbers.formatDecimal(card.giaGoc,0,'POINT',0,'COMMA')} + '₫'">1.500.000₫</span>
+                <span class="off" id="fsOffBadge"
+                      th:style="${card.phanTramGiam == null || card.phanTramGiam == 0} ? 'display:none'"
+                      th:text="'-' + ${card.phanTramGiam} + '%'">-20%</span>
+            </div>
+
+            <div class="fs-opt">
+                <b>Màu sắc: <span id="fsTenMau">—</span></b>
+                <div class="fs-chips" id="fsMauChips"></div>
+            </div>
+            <div class="fs-opt">
+                <b>Kích thước: <span id="fsTenSize">—</span></b>
+                <div class="fs-chips" id="fsSizeChips"></div>
+            </div>
+            <div class="fs-stock-line" id="fsStockLine">Vui lòng chọn kích thước để xem tồn kho.</div>
+
+            <!-- ===== TẤT CẢ BIẾN THỂ ĐANG GIẢM GIÁ (JS bơm) ===== -->
+            <div id="fsSaleVariants" style="display:none">
+                <div class="fs-sv-title"><i class="bi bi-lightning-charge-fill"></i>
+                    Các biến thể đang giảm giá</div>
+                <div class="fs-sv-list" id="fsSaleVariantList"></div>
+            </div>
+
+            <div class="fs-buy-row">
+                <div class="fs-qty">
+                    <button type="button" id="fsQtyMinus" aria-label="Giảm">−</button>
+                    <input type="number" id="fsQty" value="1" min="1">
+                    <button type="button" id="fsQtyPlus" aria-label="Tăng">+</button>
+                </div>
+                <button type="button" id="fsBtnThem" class="fs-btn fs-btn-outline" disabled>
+                    <i class="bi bi-bag-plus"></i> Thêm vào giỏ</button>
+                <button type="button" id="fsBtnMua" class="fs-btn fs-btn-primary" disabled>
+                    <i class="bi bi-lightning-charge-fill"></i> Mua ngay</button>
+                <button type="button" class="fs-card-heart js-yeu-thich" style="position:static"
+                        th:classappend="${daYeuThich} ? ' active'"
+                        th:attr="data-ma=${sp.maSanPham}" title="Yêu thích">
+                    <i class="bi" th:classappend="${daYeuThich} ? ' bi-heart-fill' : ' bi-heart'"></i>
+                </button>
+            </div>
+
+            <div class="fs-policy">
+                <span><i class="bi bi-shield-check"></i> Cam kết chính hãng 100%</span>
+                <span><i class="bi bi-truck"></i> Freeship đơn từ 500.000₫</span>
+                <span><i class="bi bi-broadcast"></i> Theo dõi đơn thời gian thực</span>
+                <span><i class="bi bi-qr-code-scan"></i> COD hoặc chuyển khoản VietQR</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= TABS: MÔ TẢ + ĐÁNH GIÁ ================= -->
+    <div class="fs-tabs" id="danh-gia">
+        <div class="fs-tab-head">
+            <button type="button" class="active" data-tab="tabMoTa">Mô tả sản phẩm</button>
+            <button type="button" data-tab="tabDanhGia"
+                    th:text="'Đánh giá (' + ${thongKeDanhGia.tongLuot} + ')'">Đánh giá (12)</button>
+        </div>
+
+        <div class="fs-tab-panel active" id="tabMoTa">
+            <p class="fs-mota" th:if="${sp.moTa != null && !#strings.isEmpty(sp.moTa)}" th:text="${sp.moTa}"></p>
+            <p class="fs-mota" th:if="${sp.moTa == null || #strings.isEmpty(sp.moTa)}">
+                Sản phẩm chính hãng thuộc bộ sưu tập của FS Shoes. Thiết kế hiện đại, chất liệu bền bỉ,
+                phù hợp cả tập luyện lẫn phối đồ hằng ngày.</p>
+        </div>
+
+        <div class="fs-tab-panel" id="tabDanhGia">
+            <!-- Tổng quan điểm -->
+            <div class="fs-review-sum" th:if="${thongKeDanhGia.tongLuot > 0}">
+                <div class="fs-review-score">
+                    <b th:text="${#numbers.formatDecimal(thongKeDanhGia.diemTrungBinh,1,1)}">4.5</b>
+                    <span th:replace="~{fragments/client-layout :: sao(${thongKeDanhGia.diemTrungBinh})}"></span>
+                    <small th:text="${thongKeDanhGia.tongLuot} + ' lượt đánh giá'">12 lượt đánh giá</small>
+                </div>
+                <div class="fs-review-bars">
+                    <div class="fs-rbar"><span>5 sao</span><div class="track"><div class="fill" th:style="'width:' + ${thongKeDanhGia.pt5} + '%'"></div></div><span th:text="${thongKeDanhGia.sao5}">8</span></div>
+                    <div class="fs-rbar"><span>4 sao</span><div class="track"><div class="fill" th:style="'width:' + ${thongKeDanhGia.pt4} + '%'"></div></div><span th:text="${thongKeDanhGia.sao4}">3</span></div>
+                    <div class="fs-rbar"><span>3 sao</span><div class="track"><div class="fill" th:style="'width:' + ${thongKeDanhGia.pt3} + '%'"></div></div><span th:text="${thongKeDanhGia.sao3}">1</span></div>
+                    <div class="fs-rbar"><span>2 sao</span><div class="track"><div class="fill" th:style="'width:' + ${thongKeDanhGia.pt2} + '%'"></div></div><span th:text="${thongKeDanhGia.sao2}">0</span></div>
+                    <div class="fs-rbar"><span>1 sao</span><div class="track"><div class="fill" th:style="'width:' + ${thongKeDanhGia.pt1} + '%'"></div></div><span th:text="${thongKeDanhGia.sao1}">0</span></div>
+                </div>
+            </div>
+
+            <!-- Form gửi đánh giá -->
+            <div class="fs-review-form" th:if="${coTheDanhGia}">
+                <b><i class="bi bi-pencil-square"></i> Bạn đã mua sản phẩm này — hãy chia sẻ cảm nhận!</b>
+                <form th:action="@{/danh-gia/gui}" method="post">
+                    <input type="hidden" name="maSanPham" th:value="${sp.maSanPham}">
+                    <input type="hidden" name="soSao" id="fsSoSao" value="5">
+                    <div class="fs-star-pick" id="fsStarPick">
+                        <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i>
+                        <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i>
+                    </div>
+                    <textarea name="noiDung" maxlength="1000"
+                              placeholder="Chất lượng giày thế nào? Form giày có chuẩn size không?..."></textarea>
+                    <div style="margin-top:12px">
+                        <button type="submit" class="fs-btn fs-btn-primary">
+                            <i class="bi bi-send"></i> Gửi đánh giá</button>
+                    </div>
+                </form>
+            </div>
+            <div class="fs-alert fs-alert-info" th:if="${!coTheDanhGia}">
+                <i class="bi bi-info-circle-fill"></i>
+                <span>Chỉ khách hàng đã mua và <b>nhận hàng thành công</b> mới có thể đánh giá sản phẩm này
+                (mỗi đơn đánh giá một lần).</span>
+            </div>
+
+            <!-- Danh sách đánh giá -->
+            <div th:if="${danhGias != null && !danhGias.isEmpty()}">
+                <div class="fs-review-item" th:each="d : ${danhGias}">
+                    <div class="fs-review-ava"
+                         th:text="${d.khachHang != null && d.khachHang.hoTen != null ? #strings.substring(d.khachHang.hoTen,0,1) : '?'}">A</div>
+                    <div>
+                        <b th:text="${d.khachHang != null ? d.khachHang.hoTen : 'Khách hàng'}">Nguyễn Văn A</b>
+                        <span class="fs-review-verified"> <i class="bi bi-patch-check-fill"></i> Đã mua hàng</span>
+                        <div>
+                            <span th:replace="~{fragments/client-layout :: sao(${d.soSao})}"></span>
+                            <span class="khi" th:if="${d.ngayDanhGia != null}"
+                                  th:text="' • ' + ${#temporals.format(d.ngayDanhGia, 'dd/MM/yyyy HH:mm')}"> • 01/01/2025</span>
+                        </div>
+                        <p th:if="${d.noiDung != null && !#strings.isEmpty(d.noiDung)}" th:text="${d.noiDung}">Nội dung đánh giá</p>
+                    </div>
+                </div>
+            </div>
+            <div class="fs-empty" th:if="${danhGias == null || danhGias.isEmpty()}" style="border:0">
+                <i class="bi bi-chat-square-heart"></i>
+                <h3>Chưa có đánh giá nào</h3>
+                <p>Hãy là người đầu tiên đánh giá sản phẩm này sau khi mua hàng nhé!</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= SẢN PHẨM LIÊN QUAN ================= -->
+    <section class="fs-section" th:if="${lienQuan != null && !lienQuan.isEmpty()}" style="padding-top:0">
+        <div class="fs-section-head">
+            <div><h2><i class="bi bi-collection"></i> Sản phẩm liên quan</h2>
+                <p>Cùng danh mục, có thể bạn sẽ thích</p></div>
+        </div>
+        <div class="fs-grid">
+            <th:block th:each="c : ${lienQuan}">
+                <div th:replace="~{fragments/client-layout :: card(${c}, false)}"></div>
+            </th:block>
+        </div>
+    </section>
+</div>
+
+<footer th:replace="~{fragments/client-layout :: footer}"></footer>
+<div th:replace="~{fragments/client-layout :: toast}"></div>
+<th:block th:replace="~{fragments/client-layout :: scripts}"></th:block>
+<script th:inline="javascript">
+    /* Danh sách biến thể (màu/size/giá/tồn/ảnh) được bơm từ server */
+    window.FS_BIEN_THE = /*[[${bienThe}]]*/ [];
+    window.FS_BT_CHON = /*[[${btChon}]]*/ null;
+</script>
+<script th:src="@{/storefront/js/chi-tiet.js}"></script>
+</body>
+</html>

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Nhập hàng - FS Shop</title>
+
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+
+    <!-- CSS chung -->
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+
+    <style>
+        /* ── OVERRIDE / NHAP HANG SPECIFIC ── */
+        .page-title   { font-size: 22px; font-weight: 700; }
+        .page-sub     { font-size: 13px; color: #6B7280; margin-top: 2px; }
+
+        /* Status tabs */
+        .status-bar   { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+        .tab-btn {
+            padding: 7px 18px; border-radius: 6px; font-size: 13px; font-weight: 500;
+            border: 1.5px solid #E5E7EB; background: #fff; cursor: pointer;
+            color: #1A1A1A; transition: border-color .15s, background .15s;
+        }
+        .tab-btn:hover  { border-color: #9CA3AF; }
+        .tab-btn.active { border-color: #1A1A1A; background: #1A1A1A; color: #fff; }
+        .export-btn {
+            margin-left: auto; padding: 7px 16px; border-radius: 6px; font-size: 13px;
+            font-weight: 500; border: 1.5px solid #E5E7EB; background: #fff;
+            cursor: pointer; display: flex; align-items: center; gap: 6px;
+        }
+        .export-btn:hover { border-color: #9CA3AF; }
+
+        /* Filter bar */
+        .filter-bar   { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+        .filter-wrap  { position: relative; flex: 1; min-width: 200px; max-width: 300px; }
+        .filter-wrap i { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: #6B7280; font-size: 14px; }
+        .filter-wrap input {
+            width: 100%; padding: 8px 12px 8px 34px;
+            border: 1.5px solid #E5E7EB; border-radius: 6px; font-size: 13px; outline: none;
+        }
+        .filter-wrap input:focus { border-color: #9CA3AF; }
+        .filter-select {
+            padding: 8px 32px 8px 12px; border: 1.5px solid #E5E7EB;
+            border-radius: 6px; font-size: 13px; background: #fff;
+            min-width: 160px; cursor: pointer; outline: none;
+            appearance: none; -webkit-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: right 10px center;
+        }
+        .filter-select:focus { border-color: #9CA3AF; }
+        .date-wrap {
+            display: flex; align-items: center; gap: 6px;
+            border: 1.5px solid #E5E7EB; border-radius: 6px;
+            padding: 0 12px; background: #fff; min-width: 200px;
+        }
+        .date-wrap i   { color: #6B7280; font-size: 14px; }
+        .date-wrap input { border: none; outline: none; font-size: 13px; padding: 8px 0; background: transparent; }
+
+        /* Layout khi panel mở */
+        .page-main { display: flex; gap: 20px; align-items: flex-start; }
+        .left-col  { flex: 1; min-width: 0; }
+        .right-col { width: 300px; flex-shrink: 0; }
+    </style>
+</head>
+
+<body>
+<div class="wrapper">
+
+    <div th:replace="~{fragments/sidebaradmin :: sidebar-admin}"></div>
+
+    <div class="content-wrapper">
+
+        <div th:replace="fragments/header :: header('Nhập hàng', 'Nhập hàng')"></div>
+
+        <div class="content-body">
+
+            <!-- Page heading -->
+            <div class="mb-3">
+                <div class="page-title">Nhập hàng</div>
+                <div class="page-sub">Quản lý các đơn nhập hàng từ nhà cung cấp</div>
+            </div>
+
+            <!-- Status tabs -->
+            <div class="status-bar">
+                <a th:href="@{/nhap-hang/filter(trangThai='Chờ xử lý')}"
+                   th:classappend="${trangThai == 'Chờ xử lý'} ? 'active' : ''"
+                   class="tab-btn">Chờ xử lý</a>
+                <a th:href="@{/nhap-hang/filter(trangThai='Đang vận chuyển')}"
+                   th:classappend="${trangThai == 'Đang vận chuyển'} ? 'active' : ''"
+                   class="tab-btn">Đang vận chuyển</a>
+                <a th:href="@{/nhap-hang/filter(trangThai='Đã nhận')}"
+                   th:classappend="${trangThai == 'Đã nhận'} ? 'active' : ''"
+                   class="tab-btn">Đã nhận</a>
+                <a th:href="@{/nhap-hang/filter(trangThai='Đã hủy')}"
+                   th:classappend="${trangThai == 'Đã hủy'} ? 'active' : ''"
+                   class="tab-btn">Đã hủy</a>
+                <button class="export-btn">
+                    <i class="bi bi-download"></i> Xuất file
+                </button>
+            </div>
+
+            <!-- Filter bar (bạn wire logic sau) -->
+            <div class="filter-bar">
+                <div class="filter-wrap">
+                    <i class="bi bi-search"></i>
+                    <input type="text" id="searchInput" placeholder="Tìm theo tên, mã đơn, NCC...">
+                </div>
+                <select class="filter-select" id="nccFilter">
+                    <option value="">Nhà cung cấp</option>
+                </select>
+                <div class="date-wrap">
+                    <i class="bi bi-calendar3"></i>
+                    <input type="text" placeholder="Chọn khoảng thời gian">
+                </div>
+            </div>
+
+            <!-- Nội dung chính: table + detail panel -->
+            <div class="page-main">
+
+                <!-- Bảng danh sách phiếu nhập -->
+                <div class="left-col">
+                    <div th:replace="nhaphang/tablePhieuNhap :: table"></div>
+                </div>
+
+                <!-- Chi tiết phiếu nhập (hiện khi click Xem) -->
+                <div class="right-col" id="detailCol" th:if="${ctNhapHang != null}">
+                    <div th:replace="nhaphang/formCTNhapHang :: formCTNhapHang"></div>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    function filterStatus(status, btn) {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        // TODO: wire AJAX hoặc form submit để lọc theo trạng thái
+    }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/client-layout :: head('Kết quả tra cứu đơn hàng')}"></head>
+<body>
+<header th:replace="~{fragments/client-layout :: header}"></header>
+
+<div class="fs-container" style="max-width:860px"
+     th:with="b=${hoaDon.trangThai == 'Chờ thanh toán' || hoaDon.trangThai == 'Chờ xác nhận' ? 1 :
+                 (hoaDon.trangThai == 'Đã xác nhận' ? 2 :
+                 (hoaDon.trangThai == 'Đang giao' ? 3 :
+                 (hoaDon.trangThai == 'Đã giao' ? 4 : 0)))}">
+    <nav class="fs-breadcrumb">
+        <a th:href="@{/}">Trang chủ</a> <i class="bi bi-chevron-right"></i>
+        <a th:href="@{/theo-doi-don-hang}">Theo dõi đơn hàng</a> <i class="bi bi-chevron-right"></i>
+        <b th:text="${hoaDon.maHoaDon}">HD001</b>
+    </nav>
+
+    <div class="fs-panel">
+        <h2 style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:20px;font-weight:800">
+            <i class="bi bi-truck" style="color:var(--fs-primary)"></i>
+            Đơn <span th:text="${hoaDon.maHoaDon}">HD001</span>
+            <span id="fsTTChip" class="fs-tt"
+                  th:classappend="${hoaDon.trangThai == 'Chờ thanh toán' || hoaDon.trangThai == 'Chờ xác nhận'} ? ' fs-tt-cho' :
+                                  (${hoaDon.trangThai == 'Đã xác nhận'} ? ' fs-tt-xacnhan' :
+                                  (${hoaDon.trangThai == 'Đang giao'} ? ' fs-tt-giao' :
+                                  (${hoaDon.trangThai == 'Đã giao'} ? ' fs-tt-xong' : ' fs-tt-huy')))"
+                  th:text="${hoaDon.trangThai}">Chờ xác nhận</span>
+        </h2>
+        <p style="color:var(--fs-muted);font-size:13px;margin-top:4px">
+            <i class="bi bi-broadcast"></i> Trang này kết nối trực tiếp với quầy quản lý —
+            trạng thái sẽ <b>tự nhảy</b> khi đơn được xử lý, không cần bấm tải lại.</p>
+
+        <div class="fs-cancelled" id="fsHuyNote" th:style="${hoaDon.trangThai != 'Đã huỷ'} ? 'display:none'">
+            <i class="bi bi-x-octagon-fill"></i> Đơn hàng đã huỷ. Nếu cần hỗ trợ, vui lòng gọi 0344 552 008.
+        </div>
+
+        <div class="fs-timeline" id="fsTimeline">
+            <div class="fs-step" data-buoc="1"
+                 th:classappend="${b > 1 || b == 4} ? ' done' : (${b == 1} ? ' now' : '')">
+                <div class="dot"><i class="bi bi-hourglass-split"></i></div><b>Chờ xác nhận</b></div>
+            <div class="fs-step" data-buoc="2"
+                 th:classappend="${b > 2 || b == 4} ? ' done' : (${b == 2} ? ' now' : '')">
+                <div class="dot"><i class="bi bi-check2-circle"></i></div><b>Đã xác nhận</b></div>
+            <div class="fs-step" data-buoc="3"
+                 th:classappend="${b == 4} ? ' done' : (${b == 3} ? ' now' : '')">
+                <div class="dot"><i class="bi bi-truck"></i></div><b>Đang giao</b></div>
+            <div class="fs-step" data-buoc="4" th:classappend="${b == 4} ? ' done'">
+                <div class="dot"><i class="bi bi-box-seam"></i></div><b>Đã giao</b></div>
+        </div>
+
+        <div class="fs-sum-row"><span>Thời gian đặt</span>
+            <b th:text="${hoaDon.ngayTao != null ? #temporals.format(hoaDon.ngayTao,'HH:mm dd/MM/yyyy') : '—'}">—</b></div>
+        <div class="fs-sum-row"><span>Người nhận</span>
+            <b th:text="${hoaDon.maKhachHang != null ? hoaDon.maKhachHang.hoTen : '—'}">—</b></div>
+        <div class="fs-sum-row"><span>Giao đến</span>
+            <b style="text-align:right;max-width:70%" th:text="${hoaDon.diaChiGiaoHang}">—</b></div>
+        <div class="fs-sum-row"><span>Thanh toán</span><b th:text="${hoaDon.phuongThucThanhToan}">COD</b></div>
+    </div>
+
+    <div class="fs-panel">
+        <h3><i class="bi bi-box"></i> Sản phẩm trong đơn</h3>
+        <div class="fs-mini-line" th:each="ct : ${chiTiet}">
+            <img th:src="${ct.sanPhamChiTiet != null && ct.sanPhamChiTiet.anhDaiDien != null
+                          ? '/images/' + ct.sanPhamChiTiet.anhDaiDien : '/storefront/img/no-image.svg'}"
+                 alt="" onerror="this.src='/storefront/img/no-image.svg'">
+            <div>
+                <div class="ten" th:text="${ct.sanPhamChiTiet != null && ct.sanPhamChiTiet.sanPham != null
+                                            ? ct.sanPhamChiTiet.sanPham.tenSanPham : 'Sản phẩm'}">Tên</div>
+                <div class="pl">
+                    <span th:if="${ct.sanPhamChiTiet != null && ct.sanPhamChiTiet.mauSac != null}"
+                          th:text="${ct.sanPhamChiTiet.mauSac.tenMauSac}"></span> /
+                    <span th:if="${ct.sanPhamChiTiet != null && ct.sanPhamChiTiet.kichThuoc != null}"
+                          th:text="${ct.sanPhamChiTiet.kichThuoc.tenKichThuoc}"></span>
+                    <span th:text="' ×' + ${ct.soLuong}"></span>
+                </div>
+            </div>
+            <div class="tt" th:text="${#numbers.formatDecimal(ct.thanhTien,0,'POINT',0,'COMMA')} + '₫'">—</div>
+        </div>
+        <div class="fs-sum-row" style="margin-top:8px"><span>Phí vận chuyển</span>
+            <span th:text="${hoaDon.tienShip != null && hoaDon.tienShip.signum() > 0
+                            ? #numbers.formatDecimal(hoaDon.tienShip,0,'POINT',0,'COMMA') + '₫' : 'Miễn phí'}">—</span></div>
+        <div class="fs-sum-row total"><span>Tổng thanh toán</span>
+            <b th:text="${#numbers.formatDecimal(hoaDon.tongTien,0,'POINT',0,'COMMA')} + '₫'">—</b></div>
+    </div>
+
+    <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin:6px 0 44px">
+        <a th:href="@{/theo-doi-don-hang}" class="fs-btn fs-btn-outline">
+            <i class="bi bi-search"></i> Tra cứu đơn khác</a>
+        <a th:href="@{/cua-hang/san-pham}" class="fs-btn fs-btn-primary">
+            <i class="bi bi-bag"></i> Tiếp tục mua sắm</a>
+    </div>
+</div>
+
+<footer th:replace="~{fragments/client-layout :: footer}"></footer>
+<div th:replace="~{fragments/client-layout :: toast}"></div>
+<th:block th:replace="~{fragments/client-layout :: scripts}"></th:block>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+<script th:inline="javascript">
+    fsKetNoiDonHang(/*[[${hoaDon.maHoaDon}]]*/ '');
+</script>
+</body>
+</html>

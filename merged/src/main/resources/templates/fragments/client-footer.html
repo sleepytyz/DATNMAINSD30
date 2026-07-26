@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<footer th:fragment="footer" class="fs-footer">
+    <div class="fs-container fs-footer-grid">
+        <div>
+            <h4>FS Shoes</h4>
+            <p class="fs-muted" style="color:#9A9CA5;">Chuyên giày thể thao nam chính hãng — phong cách, bền bỉ, giá tốt mỗi ngày.</p>
+            <div class="fs-footer-social">
+                <a href="#"><i class="bi bi-facebook"></i></a>
+                <a href="#"><i class="bi bi-instagram"></i></a>
+                <a href="#"><i class="bi bi-tiktok"></i></a>
+            </div>
+        </div>
+        <div>
+            <h4>Mua sắm</h4>
+            <ul>
+                <li><a th:href="@{/cua-hang/san-pham}">Tất cả sản phẩm</a></li>
+                <li><a th:href="@{/gio-hang}">Giỏ hàng</a></li>
+                <li><a th:href="@{/ca-nhan/don-hang}">Tra cứu đơn hàng</a></li>
+            </ul>
+        </div>
+        <div>
+            <h4>Hỗ trợ</h4>
+            <ul>
+                <li><a href="#">Chính sách đổi trả</a></li>
+                <li><a href="#">Hướng dẫn chọn size</a></li>
+                <li><a href="#">Liên hệ</a></li>
+            </ul>
+        </div>
+        <div>
+            <h4>Liên hệ</h4>
+            <ul>
+                <li><i class="bi bi-geo-alt"></i> 123 Đường ABC, Hà Nội</li>
+                <li><i class="bi bi-telephone"></i> 1900 1234</li>
+                <li><i class="bi bi-envelope"></i> support@fsshoes.vn</li>
+            </ul>
+        </div>
+    </div>
+    <div class="fs-footer-bottom">© 2026 FS Shoes. All rights reserved.</div>
+</footer>
+</body>
+</html>

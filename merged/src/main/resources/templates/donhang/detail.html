@@ -1,0 +1,1182 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Chi Tiết Đơn Hàng - FS Shop</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+
+    <style>
+        /* ===== TOAST ===== */
+        .toast-container-custom {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 99999;
+            max-width: 420px;
+            width: 100%;
+        }
+        .toast-custom {
+            background: #fff;
+            border-radius: 12px;
+            padding: 16px 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+            border-left: 5px solid #dc3545;
+            animation: slideInRight 0.4s ease;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        .toast-custom.success { border-left-color: #28a745; }
+        .toast-custom.warning { border-left-color: #ffc107; }
+        .toast-custom .toast-icon { font-size: 1.5rem; flex-shrink: 0; margin-top: 2px; }
+        .toast-custom .toast-content { flex: 1; }
+        .toast-custom .toast-title { font-weight: 700; font-size: 0.95rem; color: #2d3748; }
+        .toast-custom .toast-message { font-size: 0.85rem; color: #6c757d; margin-top: 2px; }
+        .toast-custom .toast-close {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            color: #adb5bd;
+            cursor: pointer;
+            padding: 0 4px;
+            transition: color 0.2s;
+        }
+        .toast-custom .toast-close:hover { color: #dc3545; }
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideOutRight {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+
+        /* ===== MODAL CONFIRM CUSTOM ===== */
+        .modal-confirm-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            z-index: 99998;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease;
+        }
+        .modal-confirm-overlay.show {
+            display: flex;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .modal-confirm-box {
+            background: #fff;
+            border-radius: 20px;
+            max-width: 480px;
+            width: 95%;
+            padding: 32px 28px 24px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideUp 0.3s ease;
+            position: relative;
+        }
+        @keyframes slideUp {
+            from { transform: translateY(30px) scale(0.95); opacity: 0; }
+            to { transform: translateY(0) scale(1); opacity: 1; }
+        }
+        .modal-confirm-box .modal-icon {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.2rem;
+            margin: 0 auto 16px;
+        }
+        .modal-confirm-box .modal-icon.warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .modal-confirm-box .modal-icon.danger {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .modal-confirm-box .modal-icon.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .modal-confirm-box .modal-icon.info {
+            background: #cce5ff;
+            color: #004085;
+        }
+        .modal-confirm-box .modal-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #2d3748;
+            text-align: center;
+            margin-bottom: 8px;
+        }
+        .modal-confirm-box .modal-message {
+            font-size: 0.95rem;
+            color: #6c757d;
+            text-align: center;
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+        .modal-confirm-box .modal-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .modal-confirm-box .modal-actions .btn {
+            border-radius: 10px;
+            padding: 10px 32px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            min-width: 120px;
+            border: none;
+        }
+        .modal-confirm-box .modal-actions .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+        }
+        .modal-confirm-box .modal-actions .btn-cancel {
+            background: #e9ecef;
+            color: #495057;
+        }
+        .modal-confirm-box .modal-actions .btn-cancel:hover {
+            background: #dee2e6;
+        }
+        .modal-confirm-box .modal-actions .btn-confirm-action {
+            background: #c92327;
+            color: #fff;
+        }
+        .modal-confirm-box .modal-actions .btn-confirm-action:hover {
+            background: #a01a1e;
+        }
+        .modal-confirm-box .modal-actions .btn-confirm-action.warning {
+            background: #ffc107;
+            color: #212529;
+        }
+        .modal-confirm-box .modal-actions .btn-confirm-action.warning:hover {
+            background: #e0a800;
+        }
+        .modal-confirm-box .modal-actions .btn-confirm-action.success {
+            background: #28a745;
+            color: #fff;
+        }
+        .modal-confirm-box .modal-actions .btn-confirm-action.success:hover {
+            background: #1e7e34;
+        }
+        .modal-confirm-box .modal-actions .btn-confirm-action.danger {
+            background: #dc3545;
+            color: #fff;
+        }
+        .modal-confirm-box .modal-actions .btn-confirm-action.danger:hover {
+            background: #bd2130;
+        }
+        .modal-confirm-box .modal-actions .btn-confirm-action:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        /* ===== CONTENT ===== */
+        .content-wrapper {
+            width: calc(100% - 250px);
+        }
+        .content-body {
+            padding: 20px;
+        }
+
+        /* ===== CARD ===== */
+        .detail-card {
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid #e9ecef;
+            background: #fff;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+        }
+        .detail-card .card-header-custom {
+            background: linear-gradient(135deg, #c92327 0%, #a01a1e 100%);
+            border: none;
+            padding: 14px 24px;
+        }
+        .detail-card .card-header-custom h5 {
+            font-weight: 700;
+            font-size: 1rem;
+            letter-spacing: 0.3px;
+            color: white;
+            margin: 0;
+        }
+
+        /* ===== BADGE STATUS ===== */
+        .badge-status {
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .badge-status.cho-xac-nhan { background: #fff3cd; color: #856404; }
+        .badge-status.da-xac-nhan { background: #cce5ff; color: #004085; }
+        .badge-status.dang-giao { background: #d1ecf1; color: #0c5460; }
+        .badge-status.hoan-thanh { background: #d4edda; color: #155724; }
+        .badge-status.da-huy { background: #f8d7da; color: #721c24; }
+
+        /* ===== STEPPER ===== */
+        .status-stepper {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .status-stepper .step-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            color: #adb5bd;
+            font-weight: 500;
+        }
+        .status-stepper .step-item .step-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #e9ecef;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #adb5bd;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+        .status-stepper .step-item.active .step-icon {
+            background: #c92327;
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(201, 35, 39, 0.3);
+        }
+        .status-stepper .step-item.completed .step-icon {
+            background: #28a745;
+            color: #fff;
+        }
+        .status-stepper .step-item.active {
+            color: #c92327;
+        }
+        .status-stepper .step-item.completed {
+            color: #28a745;
+        }
+        .status-stepper .step-connector {
+            flex: 1;
+            height: 3px;
+            background: #e9ecef;
+            min-width: 20px;
+            border-radius: 2px;
+        }
+        .status-stepper .step-connector.completed {
+            background: #28a745;
+        }
+
+        /* ===== THÔNG TIN ĐƠN HÀNG ===== */
+        .order-header {
+            padding: 16px 24px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .order-header .order-status {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: #2d3748;
+        }
+        .order-header .order-sub {
+            font-size: 0.85rem;
+            color: #6c757d;
+        }
+
+        /* ===== INFO TABLE ===== */
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .info-table td {
+            padding: 14px 20px;
+            vertical-align: top;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .info-table td:not(:last-child) {
+            border-right: 1px solid #e9ecef;
+        }
+        .info-table .section-title {
+            font-weight: 700;
+            font-size: 0.75rem;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #c92327;
+            margin-bottom: 12px;
+            display: inline-block;
+        }
+        .info-table .info-row {
+            display: flex;
+            padding: 6px 0;
+            align-items: flex-start;
+            border-bottom: 1px dashed #f1f3f5;
+        }
+        .info-table .info-row:last-child {
+            border-bottom: none;
+        }
+        .info-table .label {
+            color: #6c757d;
+            font-size: 0.85rem;
+            font-weight: 500;
+            width: 110px;
+            flex-shrink: 0;
+        }
+        .info-table .value {
+            color: #2d3748;
+            font-size: 0.9rem;
+            font-weight: 500;
+            flex: 1;
+        }
+        .info-table .value.fw-bold {
+            font-weight: 700;
+        }
+        .info-table .value.text-danger {
+            color: #c92327;
+        }
+        .info-table .value.text-success {
+            color: #28a745;
+        }
+
+        /* ===== PAYMENT INFO ===== */
+        .payment-info {
+            padding: 14px 24px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .payment-info .payment-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .payment-info .payment-label {
+            font-size: 0.85rem;
+            color: #6c757d;
+        }
+        .payment-info .payment-value {
+            font-weight: 700;
+            font-size: 0.95rem;
+            color: #2d3748;
+        }
+        .payment-info .payment-value.text-success {
+            color: #28a745;
+        }
+        .payment-info .payment-value.text-danger {
+            color: #c92327;
+        }
+        .payment-info .payment-value.text-warning {
+            color: #ffc107;
+        }
+
+        /* ===== STATS ROW ===== */
+        .stats-row {
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 24px;
+            background: #fff;
+            border-bottom: 1px solid #e9ecef;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .stats-row .stat-item {
+            text-align: center;
+            padding: 4px 12px;
+        }
+        .stats-row .stat-item .stat-label {
+            font-size: 0.75rem;
+            color: #6c757d;
+            font-weight: 500;
+        }
+        .stats-row .stat-item .stat-value {
+            font-weight: 700;
+            font-size: 1.05rem;
+            color: #2d3748;
+        }
+        .stats-row .stat-item .stat-value.text-danger {
+            color: #c92327;
+        }
+        .stats-row .stat-item .stat-value.text-success {
+            color: #28a745;
+        }
+
+        /* ===== PRODUCT TABLE ===== */
+        .product-table-wrap {
+            padding: 16px 24px;
+        }
+        .product-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.88rem;
+        }
+        .product-table thead {
+            background: #f8f9fa;
+            border-bottom: 2px solid #e9ecef;
+        }
+        .product-table thead th {
+            padding: 10px 12px;
+            font-weight: 700;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #495057;
+            border-bottom: none;
+        }
+        .product-table tbody tr {
+            border-bottom: 1px solid #f1f3f5;
+            transition: all 0.2s ease;
+        }
+        .product-table tbody tr:hover {
+            background: #fff5f5 !important;
+        }
+        .product-table tbody td {
+            padding: 10px 12px;
+            vertical-align: middle;
+            color: #2d3748;
+        }
+        .product-table .product-name {
+            font-weight: 600;
+        }
+        .product-table .product-variant {
+            font-size: 0.8rem;
+            color: #6c757d;
+        }
+
+        /* ===== ACTION BUTTONS ===== */
+        .action-section {
+            padding: 16px 24px;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+        .btn-action {
+            border-radius: 8px;
+            padding: 8px 20px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        .btn-action:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+        .btn-back {
+            background: #6c757d;
+            color: white;
+        }
+        .btn-back:hover {
+            background: #5a6268;
+            color: white;
+        }
+        .btn-action .spinner-border-sm {
+            width: 1rem;
+            height: 1rem;
+            border-width: 0.15em;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .content-wrapper { width: 100%; }
+            .info-table td { display: block; width: 100%; border-bottom: none; padding: 10px 16px; }
+            .info-table td:not(:last-child) { border-right: none; border-bottom: 1px solid #e9ecef; }
+            .info-table tr { display: block; }
+            .info-table .section-title { padding-top: 4px; }
+            .status-stepper { padding: 12px 16px; flex-wrap: wrap; }
+            .status-stepper .step-item { font-size: 0.7rem; }
+            .status-stepper .step-item .step-icon { width: 28px; height: 28px; font-size: 0.7rem; }
+            .product-table { font-size: 0.75rem; }
+            .product-table thead th, .product-table tbody td { padding: 6px 8px; }
+            .stats-row { padding: 10px 16px; }
+            .stats-row .stat-item .stat-value { font-size: 0.9rem; }
+            .action-section { padding: 12px 16px; }
+            .order-header { padding: 12px 16px; }
+            .payment-info { padding: 12px 16px; flex-direction: column; align-items: flex-start; }
+            .payment-info .payment-item { width: 100%; }
+            .info-table .info-row { flex-direction: column; gap: 2px; }
+            .info-table .label { width: 100%; }
+            .modal-confirm-box { padding: 24px 20px; }
+            .modal-confirm-box .modal-actions .btn { padding: 8px 20px; min-width: 80px; font-size: 0.8rem; }
+        }
+        @media (max-width: 576px) {
+            .status-stepper .step-connector { min-width: 10px; }
+            .status-stepper .step-item .step-icon { width: 24px; height: 24px; font-size: 0.6rem; }
+            .btn-action { font-size: 0.75rem; padding: 5px 12px; }
+        }
+    </style>
+
+</head>
+<body>
+
+<div class="wrapper">
+
+    <div sec:authorize="hasRole('ADMIN')">
+        <div th:replace="~{fragments/sidebaradmin :: sidebar-admin}"></div>
+    </div>
+
+    <div sec:authorize="hasRole('STAFF')">
+        <div th:replace="~{fragments/sidebarstaff :: sidebar-staff}"></div>
+    </div>
+
+    <div class="content-wrapper">
+
+        <div th:replace="~{fragments/header :: header('Chi Tiết Đơn Hàng', 'Đơn hàng')}"></div>
+
+        <div class="content-body">
+
+            <!-- Toast Container -->
+            <div class="toast-container-custom" id="toastContainer"></div>
+
+            <!-- ===== MODAL CONFIRM CUSTOM ===== -->
+            <div class="modal-confirm-overlay" id="modalConfirm">
+                <div class="modal-confirm-box">
+                    <div class="modal-icon warning" id="modalIcon">
+                        <i class="bi bi-exclamation-triangle"></i>
+                    </div>
+                    <div class="modal-title" id="modalTitle">Xác nhận</div>
+                    <div class="modal-message" id="modalMessage">Bạn có chắc chắn muốn thực hiện hành động này?</div>
+                    <div class="modal-actions">
+                        <button class="btn btn-cancel" id="modalCancel">
+                            <i class="bi bi-x-circle me-1"></i> Hủy
+                        </button>
+                        <button class="btn btn-confirm-action" id="modalConfirmBtn">
+                            <i class="bi bi-check-circle me-1"></i> Xác nhận
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== NUT QUAY LAI ===== -->
+            <div class="mb-3">
+                <a href="/donhang/index" class="btn-action btn-back">
+                    <i class="bi bi-arrow-left"></i> Quay lại danh sách
+                </a>
+            </div>
+
+            <!-- ===== CHI TIET DON HANG ===== -->
+            <div class="detail-card" th:if="${hd != null}">
+
+                <!-- ===== HEADER ===== -->
+                <div class="card-header-custom d-flex justify-content-between align-items-center flex-wrap">
+                    <h5>
+                        <i class="bi bi-receipt-cutoff me-2"></i>
+                        Chi Tiết Đơn Hàng
+                        <span class="ms-2 badge bg-light text-dark fs-6" th:text="'#' + ${hd.maHoaDon}"></span>
+                    </h5>
+                    <span class="badge-status"
+                          th:classappend="
+                            ${hd.trangThai == 'Chờ xác nhận'} ? 'cho-xac-nhan' :
+                            (${hd.trangThai == 'Đã xác nhận'} ? 'da-xac-nhan' :
+                            (${hd.trangThai == 'Đang giao'} ? 'dang-giao' :
+                            (${hd.trangThai == 'Đã giao'} ? 'hoan-thanh' :
+                            'da-huy')))"
+                          th:text="${hd.trangThai}">
+                    </span>
+                </div>
+
+                <!-- ===== STEPPER TRẠNG THÁI ===== -->
+                <div class="status-stepper">
+                    <div class="step-item"
+                         th:classappend="
+                            ${hd != null && (hd.trangThai == 'Chờ xác nhận' || hd.trangThai == 'Đã xác nhận' || hd.trangThai == 'Đang giao' || hd.trangThai == 'Đã giao')} ? ' active completed' :
+                            (${hd.trangThai == 'Đã huỷ'} ? 'completed' : '')">
+                        <span class="step-icon"><i class="fas fa-clock"></i></span>
+                        <span>Chờ xác nhận</span>
+                    </div>
+                    <div class="step-connector"
+                         th:classappend="
+                            ${hd != null && (hd.trangThai == 'Đã xác nhận' || hd.trangThai == 'Đang giao' || hd.trangThai == 'Đã giao')} ? 'completed' : ''">
+                    </div>
+                    <div class="step-item"
+                         th:classappend="
+                            ${hd != null && (hd.trangThai == 'Đã xác nhận' || hd.trangThai == 'Đang giao' || hd.trangThai == 'Đã giao')} ? ' active completed' :
+                            (${hd.trangThai == 'Đã huỷ'} ? 'completed' : '')">
+                        <span class="step-icon"><i class="fas fa-check-circle"></i></span>
+                        <span>Đã xác nhận</span>
+                    </div>
+                    <div class="step-connector"
+                         th:classappend="
+                            ${hd != null && (hd.trangThai == 'Đang giao' || hd.trangThai == 'Đã giao')} ? 'completed' : ''">
+                    </div>
+                    <div class="step-item"
+                         th:classappend="
+                            ${hd != null && (hd.trangThai == 'Đang giao' || hd.trangThai == 'Đã giao')} ? ' active completed' :
+                            (${hd.trangThai == 'Đã huỷ'} ? 'completed' : '')">
+                        <span class="step-icon"><i class="fas fa-truck"></i></span>
+                        <span>Đang giao</span>
+                    </div>
+                    <div class="step-connector"
+                         th:classappend="
+                            ${hd != null && hd.trangThai == 'Đã giao'} ? 'completed' : ''">
+                    </div>
+                    <div class="step-item"
+                         th:classappend="
+                            ${hd != null && hd.trangThai == 'Đã giao'} ? ' active completed' :
+                            (${hd.trangThai == 'Đã huỷ'} ? 'completed' : '')">
+                        <span class="step-icon"><i class="fas fa-flag-checkered"></i></span>
+                        <span>Đã giao</span>
+                    </div>
+                </div>
+
+                <!-- ===== THÔNG TIN ĐƠN HÀNG ===== -->
+                <div class="order-header">
+                    <div class="order-status" th:text="${hd.trangThai}"></div>
+                    <div class="order-sub">
+                        Đơn hàng <span th:text="${hd.loaiBan}"></span>
+                        <span class="mx-1">•</span>
+                        Mã: <span th:text="${hd.maHoaDon}"></span>
+                        <span class="mx-1">•</span>
+                        Tạo lúc: <span th:text="${#temporals.format(hd.ngayTao, 'dd/MM/yyyy HH:mm')}"></span>
+                        <span class="mx-1">•</span>
+                        NV xử lý: <span th:text="${hd.maNhanVien != null ? hd.maNhanVien.hoTen : 'Chưa có'}"></span>
+                    </div>
+                </div>
+
+                <!-- ===== BẢNG THÔNG TIN: KHÁCH HÀNG | GIAO NHẬN | GIÁ TRỊ ===== -->
+                <table class="info-table">
+                    <tr>
+                        <!-- Cột 1: Khách hàng -->
+                        <td style="width: 33.33%;">
+                            <div class="section-title"><i class="bi bi-person me-1"></i>Khách hàng</div>
+                            <div class="info-row">
+                                <span class="label">Họ tên</span>
+                                <span class="value fw-bold" th:text="${hd.maKhachHang != null ? hd.maKhachHang.hoTen : 'Khách lẻ'}"></span>
+                            </div>
+                            <div class="info-row">
+                                <span class="label">SĐT</span>
+                                <span class="value" th:text="${hd.maKhachHang != null ? hd.maKhachHang.sdt : '---'}"></span>
+                            </div>
+                            <div class="info-row" th:if="${hd.maKhachHang != null and hd.maKhachHang.email != null}">
+                                <span class="label">Email</span>
+                                <span class="value" th:text="${hd.maKhachHang.email}"></span>
+                            </div>
+                        </td>
+
+                        <td style="width: 33.33%;">
+                            <div class="section-title"><i class="bi bi-truck me-1"></i>Giao nhận</div>
+                            <div class="info-row" th:if="${hd.ghiChu != null and hd.ghiChu != ''}">
+                                <span class="label">Người nhận</span>
+                                <span class="value" th:text="${#strings.substringAfter(#strings.substringBefore(hd.ghiChu, ' | SĐT'), 'Người nhận: ')}"></span>
+                            </div>
+                            <div class="info-row" th:if="${hd.ghiChu != null and hd.ghiChu != ''}">
+                                <span class="label">SĐT nhận</span>
+                                <span class="value" th:text="${#strings.substringAfter(hd.ghiChu, 'SĐT: ')}"></span>
+                            </div>
+                            <div class="info-row" th:if="${hd.diaChiGiaoHang != null and hd.diaChiGiaoHang != ''}">
+                                <span class="label">Địa chỉ nhận</span>
+                                <span class="value" th:text="${hd.diaChiGiaoHang}"></span>
+                            </div>
+                            <div class="info-row">
+                                <span class="label">Phí vận chuyển</span>
+                                <span class="value" th:text="${hd.tienShip != null ? #numbers.formatDecimal(hd.tienShip, 0, 'COMMA', 0, 'POINT') + ' ₫' : '0 ₫'}"></span>
+                            </div>
+                        </td>
+
+                        <td style="width: 33.33%;">
+                            <div class="section-title"><i class="bi bi-cash-stack me-1"></i>Giá trị đơn</div>
+                            <div class="info-row">
+                                <span class="label">Tiền hàng</span>
+                                <span class="value fw-bold"
+                                      th:with="tongTienHang=${hd.hoaDonChiTiets != null ? #aggregates.sum(hd.hoaDonChiTiets.![donGia * soLuong]) : 0}"
+                                      th:text="${#numbers.formatDecimal(tongTienHang, 0, 'COMMA', 0, 'POINT') + ' ₫'}">
+                                </span>
+                            </div>
+
+                            <!-- ⭐ GIẢM GIÁ - ĐÚNG VỚI ENTITY GIAMGIA -->
+                            <div class="info-row" th:if="${hd.maGiamGia != null}">
+                                <span class="label">Giảm giá</span>
+                                <span class="value text-danger fw-bold" th:with="voucher=${hd.maGiamGia}">
+                                    <span th:if="${voucher.loaiGiamGia == 'PhanTram'}">
+                                        <span th:text="${#numbers.formatDecimal(voucher.giaTriGiam, 0, 'COMMA', 0, 'POINT')}"></span>%
+                                        <span th:if="${voucher.giamToiDa != null and voucher.giamToiDa > 0}">
+                                            - <span th:text="${#numbers.formatDecimal(voucher.giamToiDa, 0, 'COMMA', 0, 'POINT')}"></span>₫
+                                        </span>
+                                    </span>
+                                    <span th:if="${voucher.loaiGiamGia == 'SoTien'}">
+                                        -<span th:text="${#numbers.formatDecimal(voucher.giaTriGiam, 0, 'COMMA', 0, 'POINT')}"></span>₫
+                                    </span>
+                                    <span th:if="${voucher.loaiGiamGia == null or (voucher.loaiGiamGia != 'PhanTram' and voucher.loaiGiamGia != 'SoTien')}">
+                                        <span th:if="${voucher.giaTriGiam != null and voucher.giaTriGiam > 0}">
+                                            -<span th:text="${#numbers.formatDecimal(voucher.giaTriGiam, 0, 'COMMA', 0, 'POINT')}"></span>₫
+                                        </span>
+                                        <span th:if="${voucher.giaTriGiam == null or voucher.giaTriGiam == 0}">
+                                            <span class="text-muted">0 ₫</span>
+                                        </span>
+                                    </span>
+                                </span>
+                            </div>
+                            <div class="info-row" th:unless="${hd.maGiamGia != null}">
+                                <span class="label">Giảm giá</span>
+                                <span class="value text-muted">0 ₫</span>
+                            </div>
+
+                            <div class="info-row">
+                                <span class="label">Phí vận chuyển</span>
+                                <span class="value" th:text="${hd.tienShip != null ? #numbers.formatDecimal(hd.tienShip, 0, 'COMMA', 0, 'POINT') + ' ₫' : '0 ₫'}"></span>
+                            </div>
+                            <div class="info-row" style="border-top: 2px solid #dee2e6; padding-top: 8px; margin-top: 6px;">
+                                <span class="label fw-bold">Phải trả</span>
+                                <span class="value fw-bold text-danger fs-5" th:text="${#numbers.formatDecimal(hd.tongTien, 0, 'COMMA', 0, 'POINT') + ' ₫'}"></span>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+
+                <!-- ===== THÔNG TIN THANH TOÁN ===== -->
+                <div class="payment-info">
+                    <div class="payment-item">
+                        <span class="payment-label"><i class="bi bi-credit-card me-1"></i>Phương thức thanh toán:</span>
+                        <span class="payment-value">
+                            <span th:if="${hd.phuongThucThanhToan == 'COD'}">
+                                <i class="bi bi-cash-stack text-warning me-1"></i> COD (Thanh toán khi nhận hàng)
+                            </span>
+                            <span th:if="${hd.phuongThucThanhToan == 'Tiền mặt'}">
+                                <i class="bi bi-cash text-success me-1"></i> Tiền mặt
+                            </span>
+                            <span th:if="${hd.phuongThucThanhToan == 'Chuyển khoản'}">
+                                <i class="bi bi-bank text-primary me-1"></i> Chuyển khoản
+                            </span>
+                            <span th:if="${hd.phuongThucThanhToan == null or hd.phuongThucThanhToan == ''}">
+                                <i class="bi bi-question-circle text-muted me-1"></i> Chưa xác định
+                            </span>
+                        </span>
+                    </div>
+                    <div class="payment-item">
+                        <span class="payment-label"><i class="bi bi-clock-history me-1"></i>Ngày thanh toán:</span>
+                        <span class="payment-value" th:text="${hd.ngayThanhToan != null ? #temporals.format(hd.ngayThanhToan, 'dd/MM/yyyy HH:mm') : 'Chưa thanh toán'}"></span>
+                    </div>
+                    <div class="payment-item">
+                        <span class="payment-label"><i class="bi bi-check-circle me-1"></i>Trạng thái thanh toán:</span>
+                        <span class="payment-value text-success"
+                              th:if="${hd.phuongThucThanhToan == 'COD' and hd.trangThai == 'Đã giao'}">
+                            <i class="bi bi-check-circle-fill me-1"></i> Đã thanh toán (COD)
+                        </span>
+                        <span class="payment-value text-warning"
+                              th:if="${hd.phuongThucThanhToan == 'COD' and hd.trangThai != 'Đã giao'}">
+                            <i class="bi bi-clock-fill me-1"></i> Chờ thanh toán (COD - Khi giao hàng)
+                        </span>
+                        <span class="payment-value text-success"
+                              th:if="${hd.phuongThucThanhToan != 'COD' and hd.ngayThanhToan != null}">
+                            <i class="bi bi-check-circle-fill me-1"></i> Đã thanh toán
+                        </span>
+                        <span class="payment-value text-danger"
+                              th:if="${hd.phuongThucThanhToan != 'COD' and hd.ngayThanhToan == null and hd.phuongThucThanhToan != null}">
+                            <i class="bi bi-x-circle-fill me-1"></i> Chưa thanh toán
+                        </span>
+                        <span class="payment-value text-muted"
+                              th:if="${hd.phuongThucThanhToan == null or hd.phuongThucThanhToan == ''}">
+                            <i class="bi bi-question-circle me-1"></i> Chưa xác định
+                        </span>
+                    </div>
+                </div>
+
+                <!-- ===== THỐNG KÊ NHANH ===== -->
+                <div class="stats-row">
+                    <div class="stat-item">
+                        <div class="stat-label">Trạng thái hiện tại</div>
+                        <div class="stat-value">
+                            <span class="badge-status"
+                                  th:classappend="
+                                    ${hd.trangThai == 'Chờ xác nhận'} ? 'cho-xac-nhan' :
+                                    (${hd.trangThai == 'Đã xác nhận'} ? 'da-xac-nhan' :
+                                    (${hd.trangThai == 'Đang giao'} ? 'dang-giao' :
+                                    (${hd.trangThai == 'Đã giao'} ? 'hoan-thanh' :
+                                    'da-huy')))"
+                                  th:text="${hd.trangThai}">
+                            </span>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Số SP</div>
+                        <div class="stat-value" th:text="${#lists.size(listsp)}">0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Đơn giá trị</div>
+                        <div class="stat-value text-danger" th:text="${#numbers.formatDecimal(hd.tongTien, 0, 'COMMA', 0, 'POINT') + ' ₫'}"></div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Còn lại</div>
+                        <div class="stat-value text-success">0 ₫</div>
+                    </div>
+                </div>
+
+                <!-- ===== SẢN PHẨM ===== -->
+                <div class="product-table-wrap">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="fw-bold text-uppercase text-muted small mb-0">
+                            <i class="bi bi-cart-check me-1"></i> Sản phẩm
+                        </h6>
+                        <span class="badge bg-secondary rounded-pill" th:text="${#lists.size(listsp)} + ' sản phẩm'"></span>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="product-table">
+                            <thead>
+                            <tr>
+                                <th style="width: 50px;">STT</th>
+                                <th>Sản phẩm</th>
+                                <th style="width: 70px; text-align: center;">SL</th>
+                                <th style="width: 130px; text-align: right;">Đơn giá</th>
+                                <th style="width: 140px; text-align: right;">Thành tiền</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="item, stt : ${listsp}">
+                                <td th:text="${stt.count}"></td>
+                                <td>
+                                    <div class="product-name" th:text="${item.sanPhamChiTiet != null && item.sanPhamChiTiet.sanPham != null ? item.sanPhamChiTiet.sanPham.tenSanPham : '—'}"></div>
+                                    <div class="product-variant">
+                                        <span th:text="${item.sanPhamChiTiet != null && item.sanPhamChiTiet.kichThuoc != null ? 'Size: ' + item.sanPhamChiTiet.kichThuoc.tenKichThuoc : ''}"></span>
+                                        <span th:if="${item.sanPhamChiTiet != null && item.sanPhamChiTiet.kichThuoc != null && item.sanPhamChiTiet.mauSac != null}"> | </span>
+                                        <span th:text="${item.sanPhamChiTiet != null && item.sanPhamChiTiet.mauSac != null ? 'Màu: ' + item.sanPhamChiTiet.mauSac.tenMauSac : ''}"></span>
+                                        <span th:if="${item.sanPhamChiTiet != null}">
+                                            <br><span class="text-muted" style="font-size: 0.7rem;">Mã: <span th:text="${item.sanPhamChiTiet.maSanPhamChiTiet}"></span></span>
+                                        </span>
+                                    </div>
+                                </td>
+                                <td class="fw-bold text-center" th:text="${item.soLuong}"></td>
+                                <td class="text-end" th:text="${item.donGia != null ? #numbers.formatDecimal(item.donGia, 0, 'COMMA', 0, 'POINT') + ' ₫' : '—'}"></td>
+                                <td class="fw-bold text-end" th:text="${item.thanhTien != null ? #numbers.formatDecimal(item.thanhTien, 0, 'COMMA', 0, 'POINT') + ' ₫' : '—'}"></td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(listsp)}">
+                                <td colspan="5" class="text-center text-muted py-4">
+                                    <i class="bi bi-cart-x fs-3 d-block mb-2"></i>
+                                    Không có sản phẩm nào
+                                </td>
+                            </tr>
+                            </tbody>
+                            <tfoot th:if="${not #lists.isEmpty(listsp)}">
+                            <tr style="background: #f8f9fa; font-weight: 700;">
+                                <td colspan="4" class="text-end">Tổng cộng:</td>
+                                <td class="text-end text-danger" th:text="${#numbers.formatDecimal(hd.tongTien, 0, 'COMMA', 0, 'POINT') + ' ₫'}"></td>
+                            </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- ===== ACTION BUTTONS ===== -->
+                <div class="action-section">
+                    <!-- Nút Xác nhận -->
+                    <a th:if="${hd != null && hd.trangThai == 'Chờ xác nhận'}"
+                       th:href="@{/donhang/suatt(mahd=${hd.maHoaDon})}"
+                       class="btn btn-success btn-action btn-confirm"
+                       data-confirm="Bạn có chắc chắn muốn xác nhận đơn hàng này?"
+                       data-success="Xác nhận đơn hàng thành công!"
+                       data-error="Xác nhận đơn hàng thất bại!"
+                       data-icon="check-circle"
+                       data-icon-color="success">
+                        <i class="bi bi-check-circle"></i> Xác nhận đơn hàng
+                    </a>
+
+                    <!-- Nút Giao hàng -->
+                    <a th:if="${hd != null && hd.trangThai == 'Đã xác nhận'}"
+                       th:href="@{/donhang/suattdg(mahd=${hd.maHoaDon})}"
+                       class="btn btn-warning text-white btn-action btn-confirm"
+                       data-confirm="Chuyển trạng thái đơn hàng này sang Đang giao hàng?"
+                       data-success="Đã chuyển sang trạng thái Đang giao hàng!"
+                       data-error="Chuyển trạng thái thất bại!"
+                       data-icon="truck"
+                       data-icon-color="warning">
+                        <i class="bi bi-truck"></i> Giao hàng
+                    </a>
+
+                    <!-- Nút Hoàn thành -->
+                    <a th:if="${hd != null && hd.trangThai == 'Đang giao'}"
+                       th:href="@{/donhang/suattdgg(mahd=${hd.maHoaDon})}"
+                       class="btn btn-primary btn-action btn-confirm"
+                       data-confirm="Xác nhận hoàn tất chu trình giao đơn hàng thành công?"
+                       data-success="Đơn hàng đã hoàn thành!"
+                       data-error="Hoàn thành đơn hàng thất bại!"
+                       data-icon="flag-checkered"
+                       data-icon-color="success">
+                        <i class="bi bi-check-circle-fill"></i> Hoàn thành
+                    </a>
+
+                    <!-- Nút Huỷ đơn -->
+                    <a th:if="${hd != null && (hd.trangThai == 'Chờ xác nhận' || hd.trangThai == 'Đã xác nhận' || hd.trangThai == 'Đang giao')}"
+                       th:href="@{/donhang/huy(mahd=${hd.maHoaDon})}"
+                       class="btn btn-danger btn-action btn-confirm"
+                       data-confirm="Huỷ đơn hàng này? Tồn kho sẽ được hoàn lại."
+                       data-success="Đã huỷ đơn hàng thành công!"
+                       data-error="Huỷ đơn hàng thất bại!"
+                       data-icon="x-octagon"
+                       data-icon-color="danger">
+                        <i class="bi bi-x-octagon"></i> Huỷ đơn
+                    </a>
+
+                    <!-- Nút In hoá đơn -->
+                    <a th:href="@{/donhang/inhoadon(mahd=${hd.maHoaDon})}"
+                       class="btn btn-secondary btn-action"
+                       target="_blank">
+                        <i class="bi bi-printer"></i> In hoá đơn
+                    </a>
+
+                </div>
+
+            </div>
+
+            <!-- ===== KHÔNG TÌM THẤY ĐƠN HÀNG ===== -->
+            <div class="text-center py-5" th:unless="${hd != null}">
+                <i class="bi bi-exclamation-triangle-fill text-warning" style="font-size: 4rem;"></i>
+                <h4 class="mt-3">Không tìm thấy đơn hàng</h4>
+                <p class="text-muted">Vui lòng quay lại danh sách và chọn đơn hàng khác</p>
+                <a href="/donhang/index" class="btn btn-primary mt-3">
+                    <i class="bi bi-arrow-left"></i> Quay lại danh sách
+                </a>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    // =============================================
+    // TOAST
+    // =============================================
+    function showToast(message, type, title) {
+        var container = document.getElementById('toastContainer');
+        if (!container) return;
+
+        var icons = {
+            error: 'bi bi-x-circle-fill text-danger',
+            success: 'bi bi-check-circle-fill text-success',
+            warning: 'bi bi-exclamation-triangle-fill text-warning',
+            info: 'bi bi-info-circle-fill text-info'
+        };
+
+        var titles = {
+            error: 'Lỗi!',
+            success: 'Thành công!',
+            warning: 'Cảnh báo!',
+            info: 'Thông tin'
+        };
+
+        var toast = document.createElement('div');
+        toast.className = 'toast-custom ' + type;
+        toast.innerHTML = `
+            <div class="toast-icon"><i class="${icons[type] || icons.success}"></i></div>
+            <div class="toast-content">
+                <div class="toast-title">${title || titles[type] || 'Thông báo'}</div>
+                <div class="toast-message">${message}</div>
+            </div>
+            <button class="toast-close" onclick="this.closest('.toast-custom').remove()">
+                <i class="bi bi-x"></i>
+            </button>
+        `;
+        container.appendChild(toast);
+
+        setTimeout(function() {
+            if (toast.parentNode) {
+                toast.style.animation = 'slideOutRight 0.3s ease forwards';
+                setTimeout(function() { toast.remove(); }, 300);
+            }
+        }, 5000);
+    }
+
+    // =============================================
+    // MODAL CONFIRM
+    // =============================================
+    function showConfirm(options) {
+        return new Promise(function(resolve) {
+            var modal = document.getElementById('modalConfirm');
+            var icon = document.getElementById('modalIcon');
+            var title = document.getElementById('modalTitle');
+            var message = document.getElementById('modalMessage');
+            var cancelBtn = document.getElementById('modalCancel');
+            var confirmBtn = document.getElementById('modalConfirmBtn');
+
+            // Set icon
+            var iconMap = {
+                'check-circle': 'bi bi-check-circle',
+                'truck': 'bi bi-truck',
+                'flag-checkered': 'bi bi-flag-checkered',
+                'x-octagon': 'bi bi-x-octagon',
+                'exclamation-triangle': 'bi bi-exclamation-triangle',
+                'question-circle': 'bi bi-question-circle'
+            };
+            var iconClass = iconMap[options.icon] || iconMap['question-circle'];
+            icon.innerHTML = '<i class="' + iconClass + '"></i>';
+
+            // Set icon color
+            icon.className = 'modal-icon';
+            var color = options.iconColor || 'warning';
+            icon.classList.add(color);
+
+            // Set confirm button color
+            confirmBtn.className = 'btn btn-confirm-action';
+            confirmBtn.classList.add(color);
+
+            // Set text
+            title.textContent = options.title || 'Xác nhận';
+            message.textContent = options.message || 'Bạn có chắc chắn muốn thực hiện hành động này?';
+
+            // Show modal
+            modal.classList.add('show');
+
+            // Handle cancel
+            cancelBtn.onclick = function() {
+                modal.classList.remove('show');
+                resolve(false);
+            };
+
+            // Handle confirm
+            confirmBtn.onclick = function() {
+                modal.classList.remove('show');
+                resolve(true);
+            };
+
+            // Close on overlay click
+            modal.onclick = function(e) {
+                if (e.target === modal) {
+                    modal.classList.remove('show');
+                    resolve(false);
+                }
+            };
+        });
+    }
+
+    // =============================================
+    // XỬ LÝ SỰ KIỆN CHO CÁC NÚT CONFIRM
+    // =============================================
+    document.addEventListener('DOMContentLoaded', function() {
+        var confirmButtons = document.querySelectorAll('.btn-confirm');
+
+        confirmButtons.forEach(function(button) {
+            button.addEventListener('click', async function(e) {
+                e.preventDefault();
+
+                // Lấy dữ liệu từ data attributes
+                var href = this.getAttribute('href');
+                var confirmMessage = this.getAttribute('data-confirm') || 'Bạn có chắc chắn?';
+                var successMessage = this.getAttribute('data-success') || 'Thao tác thành công!';
+                var errorMessage = this.getAttribute('data-error') || 'Thao tác thất bại!';
+                var icon = this.getAttribute('data-icon') || 'question-circle';
+                var iconColor = this.getAttribute('data-icon-color') || 'warning';
+
+                // Hiển thị modal confirm
+                var confirmed = await showConfirm({
+                    title: 'Xác nhận hành động',
+                    message: confirmMessage,
+                    icon: icon,
+                    iconColor: iconColor
+                });
+
+                if (!confirmed) return;
+
+                // Disable button và hiển thị loading
+                var originalHtml = this.innerHTML;
+                this.disabled = true;
+                this.innerHTML = `
+                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    Đang xử lý...
+                `;
+
+                try {
+                    // Gửi request GET
+                    var response = await fetch(href, {
+                        method: 'GET',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+
+                    // Khôi phục button
+                    this.disabled = false;
+                    this.innerHTML = originalHtml;
+
+                    if (response.ok) {
+                        showToast(successMessage, 'success');
+                        // Reload trang sau 1.5s để cập nhật trạng thái
+                        setTimeout(function() {
+                            location.reload();
+                        }, 1500);
+                    } else {
+                        var text = await response.text();
+                        try {
+                            var data = JSON.parse(text);
+                            showToast(data.message || errorMessage, 'error');
+                        } catch (e) {
+                            showToast(errorMessage, 'error');
+                        }
+                    }
+
+                } catch (error) {
+                    // Khôi phục button
+                    this.disabled = false;
+                    this.innerHTML = originalHtml;
+                    showToast(errorMessage + ' (' + error.message + ')', 'error');
+                }
+            });
+        });
+    });
+
+    // =============================================
+    // HIỂN THỊ TOAST TỪ THÔNG BÁO CỦA SERVER
+    // =============================================
+    document.addEventListener("DOMContentLoaded", function() {
+        var successMsg = document.querySelector('meta[name="successMess"]')?.getAttribute('content') || '';
+        var errorMsg = document.querySelector('meta[name="errorMess"]')?.getAttribute('content') || '';
+
+        if (successMsg && successMsg !== '' && successMsg !== 'null' && successMsg !== 'undefined') {
+            showToast(successMsg, 'success');
+        }
+        if (errorMsg && errorMsg !== '' && errorMsg !== 'null' && errorMsg !== 'undefined') {
+            showToast(errorMsg, 'error');
+        }
+    });
+</script>
+
+</body>
+</html>
+
+
+

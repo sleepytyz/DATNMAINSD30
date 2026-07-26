@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Ca bán hàng – FS Shop</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+
+    <meta name="_csrf" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:content="${_csrf.headerName}">
+
+    <style>
+        .page-title { font-size: 22px; font-weight: 700; }
+        .page-sub   { font-size: 13px; color: #6B7280; margin-top: 2px; margin-bottom: 20px; }
+
+        .card-box {
+            background: #fff;
+            border: 1px solid #E5E7EB;
+            border-radius: 12px;
+            padding: 22px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,.05);
+        }
+        .card-box.accent { border-left: 4px solid #c92327; }
+        .card-box.success { border-left: 4px solid #16A34A; }
+        .card-box.warn { border-left: 4px solid #F59E0B; }
+
+        .box-title {
+            font-size: 16px; font-weight: 700; color: #111827;
+            display: flex; align-items: center; gap: 8px; margin-bottom: 16px;
+        }
+
+        /* Bảng đối soát */
+        .doi-soat { width: 100%; }
+        .doi-soat td { padding: 9px 0; font-size: 14.5px; }
+        .doi-soat td:last-child { text-align: right; font-weight: 600; }
+        .doi-soat tr.total td {
+            border-top: 2px solid #E5E7EB;
+            padding-top: 13px;
+            font-size: 16px;
+            font-weight: 700;
+            color: #111827;
+        }
+        .muted { color: #6B7280; }
+
+        .money-input {
+            font-size: 20px; font-weight: 700; text-align: right;
+            padding: 12px 14px; border: 1.5px solid #D1D5DB; border-radius: 9px;
+            width: 100%;
+        }
+        .money-input:focus { outline: none; border-color: #c92327; }
+
+        .btn-act {
+            display: inline-flex; align-items: center; gap: 7px;
+            padding: 11px 22px; border: none; border-radius: 9px;
+            font-size: 15px; font-weight: 600; color: #fff; cursor: pointer;
+        }
+        .btn-open  { background: #c92327; }
+        .btn-open:hover { background: #a01a1e; }
+        .btn-close { background: #DC2626; }
+        .btn-close:hover { background: #B91C1C; }
+        .btn-act:disabled { opacity: .55; cursor: not-allowed; }
+
+        .badge-live {
+            background: #DCFCE7; color: #166534;
+            padding: 4px 12px; border-radius: 20px;
+            font-size: 12.5px; font-weight: 700;
+        }
+        .alert-box {
+            padding: 14px 16px; border-radius: 9px; font-size: 14px;
+            display: flex; align-items: center; gap: 9px;
+        }
+        .alert-warn { background: #FEF3C7; color: #92400E; }
+        .alert-err  { background: #FEE2E2; color: #991B1B; }
+        .alert-info { background: #DBEAFE; color: #1E40AF; }
+
+        .hd-table { width: 100%; font-size: 13.5px; }
+        .hd-table th {
+            text-align: left; padding: 9px 8px;
+            border-bottom: 2px solid #F3F4F6; color: #6B7280;
+            font-weight: 600; font-size: 12px; text-transform: uppercase;
+        }
+        .hd-table td { padding: 9px 8px; border-bottom: 1px solid #F9FAFB; }
+
+        /* Toast */
+        .toast-msg {
+            position: fixed; top: 20px; right: 20px; z-index: 9999;
+            padding: 14px 20px; border-radius: 9px; color: #fff;
+            font-weight: 600; font-size: 14px; display: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,.15);
+        }
+        .toast-msg.success { background: #16A34A; }
+        .toast-msg.error   { background: #DC2626; }
+
+        /* ============ POPUP MỞ CA (tham khảo mẫu) ============ */
+        .modal-backdrop-cc {
+            position: fixed; inset: 0; z-index: 9998;
+            background: rgba(17,24,39,.55);
+            display: none;               /* ẩn mặc định, JS bật lên khi cần */
+            align-items: center; justify-content: center;
+            padding: 20px;
+        }
+        .modal-cc {
+            background: #fff; border-radius: 14px; width: 100%; max-width: 440px;
+            max-height: 90vh; display: flex; flex-direction: column; overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0,0,0,.25);
+        }
+        .modal-cc-head {
+            background: #c92327;
+            color: #fff; padding: 20px; text-align: center;
+        }
+        .modal-cc-title { font-size: 19px; font-weight: 800; letter-spacing: .5px; }
+        .modal-cc-sub   { font-size: 12px; opacity: .85; margin-top: 4px; }
+
+        .modal-cc-body { padding: 20px; overflow-y: auto; }
+
+        .chip-nv {
+            background: #F3F4F6; border-radius: 20px; padding: 8px 14px;
+            font-size: 12.5px; color: #374151; text-align: center;
+            margin-bottom: 18px; font-family: monospace;
+        }
+        .chip-nv .dot { margin: 0 6px; color: #9CA3AF; }
+
+        .field-group { margin-bottom: 16px; }
+        .field-label { font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 6px; }
+        .field-readonly {
+            background: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 8px;
+            padding: 11px 13px; font-size: 14px; color: #6B7280;
+        }
+        .field-hint { font-size: 11.5px; color: #9CA3AF; margin-top: 5px; }
+
+        .handover-box {
+            background: #EFF6FF; border: 1px solid #BFDBFE; border-left: 3px solid #c92327;
+            border-radius: 8px; padding: 12px 14px; margin-bottom: 18px;
+        }
+        .handover-title { font-size: 12.5px; font-weight: 700; color: #1E40AF; margin-bottom: 8px; }
+        .handover-row {
+            display: flex; justify-content: space-between; align-items: center;
+            font-size: 12.5px; color: #374151; padding: 3px 0;
+        }
+
+        .input-money-wrap { position: relative; }
+        .input-money {
+            width: 100%; padding: 12px 55px 12px 13px;
+            border: 1.5px solid #D1D5DB; border-radius: 8px;
+            font-size: 17px; font-weight: 700; color: #111827;
+        }
+        .input-money:focus { outline: none; border-color: #c92327; }
+        .input-money-wrap .unit {
+            position: absolute; right: 13px; top: 50%; transform: translateY(-50%);
+            font-size: 12px; color: #9CA3AF; font-weight: 600;
+        }
+        .input-note {
+            width: 100%; padding: 10px 13px; border: 1px solid #D1D5DB;
+            border-radius: 8px; font-size: 13.5px; resize: vertical;
+        }
+        .input-note:focus { outline: none; border-color: #c92327; }
+
+        .modal-cc-foot {
+            display: flex; gap: 10px; padding: 16px 20px;
+            border-top: 1px solid #F3F4F6;
+        }
+        .btn-cancel, .btn-confirm {
+            flex: 1; padding: 12px; border-radius: 9px;
+            font-size: 14.5px; font-weight: 700; cursor: pointer;
+        }
+        .btn-cancel {
+            background: #fff; border: 1.5px solid #D1D5DB; color: #4B5563;
+        }
+        .btn-cancel:hover { background: #F9FAFB; }
+        .btn-confirm {
+            background: #c92327; border: none; color: #fff;
+        }
+        .btn-confirm:hover { background: #a01a1e; }
+        .btn-confirm:disabled { opacity: .6; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+<div class="wrapper">
+    <div sec:authorize="hasRole('STAFF')" th:replace="~{fragments/sidebarstaff :: sidebar-staff}"></div>
+    <div sec:authorize="hasRole('ADMIN')" th:replace="~{fragments/sidebaradmin :: sidebar-admin}"></div>
+
+    <div class="content-body">
+        <div th:replace="~{fragments/header :: header('Ca bán hàng', 'Giao ca & quỹ tiền')}"></div>
+
+        <div class="content-wrapper" style="padding: 24px 28px;">
+
+            <div class="page-title">CA BÁN HÀNG</div>
+            <div class="page-sub">
+                Quản lý quỹ tiền tại quầy: mở ca → bán hàng → đóng ca &amp; đối soát.
+            </div>
+
+            <!-- Lỗi tài khoản -->
+            <div th:if="${loi != null}" class="alert-box alert-err">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <span th:text="${loi}"></span>
+            </div>
+
+            <!-- ============================================================
+                 TRƯỜNG HỢP 1: ĐANG TRONG CA -> hiện tổng kết + nút đóng ca
+                 ============================================================ -->
+            <div th:if="${phien != null}">
+
+                <div class="card-box success">
+                    <div class="box-title">
+                        <i class="bi bi-broadcast" style="color:#16A34A"></i>
+                        Bạn đang trong ca
+                        <span class="badge-live">ĐANG MỞ</span>
+                    </div>
+
+                    <table class="doi-soat">
+                        <tr>
+                            <td class="muted"><i class="bi bi-person"></i> Nhân viên</td>
+                            <td th:text="${nhanVien.hoTen} + ' (' + ${nhanVien.maNhanVien} + ')'"></td>
+                        </tr>
+                        <tr th:if="${phien.caLamViec != null}">
+                            <td class="muted"><i class="bi bi-clock"></i> Ca làm việc</td>
+                            <td th:text="${phien.caLamViec.tenCa} + ' (' + ${phien.caLamViec.gioBatDau} + ' - ' + ${phien.caLamViec.gioKetThuc} + ')'"></td>
+                        </tr>
+                        <tr>
+                            <td class="muted"><i class="bi bi-play-circle"></i> Mở ca lúc</td>
+                            <td th:text="${#temporals.format(phien.thoiGianMoCa, 'HH:mm:ss dd/MM/yyyy')}"></td>
+                        </tr>
+                    </table>
+                </div>
+
+                <!-- Tổng kết ca (realtime) -->
+                <div class="card-box accent">
+                    <div class="box-title">
+                        <i class="bi bi-calculator" style="color:#c92327"></i>
+                        Tổng kết ca (tính đến hiện tại)
+                    </div>
+
+                    <table class="doi-soat">
+                        <tr>
+                            <td class="muted">Tiền đầu ca (đã nhập khi mở ca)</td>
+                            <td th:text="${#numbers.formatDecimal(phien.tienDauCa, 0, 'POINT', 0, 'COMMA')} + ' đ'"></td>
+                        </tr>
+                        <tr>
+                            <td class="muted">
+                                <i class="bi bi-cash-coin" style="color:#16A34A"></i>
+                                Doanh thu TIỀN MẶT trong ca <span style="font-size:12px">(nằm trong két)</span>
+                            </td>
+                            <td style="color:#16A34A"
+                                th:text="'+ ' + ${#numbers.formatDecimal(phien.doanhThuTienMat, 0, 'POINT', 0, 'COMMA')} + ' đ'"></td>
+                        </tr>
+                        <tr>
+                            <td class="muted">
+                                <i class="bi bi-credit-card"></i>
+                                Doanh thu CHUYỂN KHOẢN / thẻ / QR <span style="font-size:12px">(không trong két)</span>
+                            </td>
+                            <td class="muted"
+                                th:text="${#numbers.formatDecimal(phien.doanhThuChuyenKhoan, 0, 'POINT', 0, 'COMMA')} + ' đ'"></td>
+                        </tr>
+                        <tr>
+                            <td class="muted"><i class="bi bi-receipt"></i> Số hoá đơn đã bán</td>
+                            <td th:text="${phien.soHoaDon}"></td>
+                        </tr>
+                        <tr class="total">
+                            <td>Tiền dự kiến phải có trong két</td>
+                            <td style="color:#c92327"
+                                th:text="${#numbers.formatDecimal(phien.tienDuKien, 0, 'POINT', 0, 'COMMA')} + ' đ'"></td>
+                        </tr>
+                    </table>
+
+                    <div class="alert-box alert-info" style="margin-top:14px;">
+                        <i class="bi bi-info-circle"></i>
+                        <span>Tiền dự kiến = Tiền đầu ca + Doanh thu tiền mặt. Khi đóng ca, hãy đếm tiền
+                              thực tế trong két và nhập vào để hệ thống đối soát.</span>
+                    </div>
+                </div>
+
+                <!-- Đóng ca -->
+                <div class="card-box warn">
+                    <div class="box-title">
+                        <i class="bi bi-box-arrow-right" style="color:#F59E0B"></i>
+                        Đóng ca &amp; đối soát quỹ
+                    </div>
+
+                    <label style="font-size:14px;font-weight:600;color:#374151;display:block;margin-bottom:7px;">
+                        Tiền mặt THỰC TẾ đếm được trong két (đ)
+                    </label>
+                    <input type="text" id="tienCuoiCa" class="money-input"
+                           placeholder="0" inputmode="numeric" autocomplete="off">
+
+                    <label style="font-size:13.5px;color:#6B7280;display:block;margin:14px 0 6px;">
+                        Ghi chú (nếu có chênh lệch, hãy nêu lý do)
+                    </label>
+                    <textarea id="ghiChuDongCa" rows="2"
+                              style="width:100%;padding:10px 12px;border:1px solid #D1D5DB;border-radius:8px;font-size:14px;"
+                              placeholder="VD: thiếu 50.000đ do trả nhầm tiền thừa..."></textarea>
+
+                    <!-- Ô lý do thiếu quỹ: chỉ hiện khi backend báo thiếu vượt ngưỡng -->
+                    <div id="khoiLyDoThieu" style="display:none;margin-top:12px;">
+                        <div class="alert-box" style="background:#FEF2F2;border:1px solid #FCA5A5;color:#991B1B;padding:10px 12px;border-radius:8px;font-size:13.5px;">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            <span>Quỹ đang thiếu vượt ngưỡng cho phép. Bạn <strong>bắt buộc</strong> phải nêu lý do.
+                                  Ca này sẽ được chuyển quản lý duyệt. Nhân viên không được tự lấy tiền khỏi két.</span>
+                        </div>
+                        <label style="font-size:13.5px;font-weight:600;color:#991B1B;display:block;margin:10px 0 6px;">
+                            Lý do thiếu quỹ (bắt buộc)
+                        </label>
+                        <textarea id="lyDoThieuQuy" rows="2"
+                                  style="width:100%;padding:10px 12px;border:1px solid #FCA5A5;border-radius:8px;font-size:14px;"
+                                  placeholder="Nêu rõ nguyên nhân thiếu tiền..."></textarea>
+                    </div>
+
+                    <div style="margin-top:16px;">
+                        <button class="btn-act btn-close" id="btnDongCa" onclick="dongCa()">
+                            <i class="bi bi-lock"></i> Đóng ca &amp; chốt quỹ
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Hoá đơn trong ca -->
+                <div class="card-box" th:if="${hoaDonTrongCa != null and !hoaDonTrongCa.isEmpty()}">
+                    <div class="box-title">
+                        <i class="bi bi-list-ul"></i>
+                        Hoá đơn phát sinh trong ca
+                        <span class="muted" style="font-weight:400;font-size:13px;"
+                              th:text="'(' + ${hoaDonTrongCa.size()} + ' hoá đơn)'"></span>
+                    </div>
+                    <div style="overflow-x:auto;">
+                        <table class="hd-table">
+                            <thead>
+                            <tr>
+                                <th>Mã HĐ</th>
+                                <th>Thời gian</th>
+                                <th>Phương thức</th>
+                                <th style="text-align:right;">Tổng tiền</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="hd : ${hoaDonTrongCa}">
+                                <td th:text="${hd.maHoaDon}"></td>
+                                <td th:text="${#temporals.format(hd.ngayTao, 'HH:mm:ss')}"></td>
+                                <td>
+                                    <span th:text="${hd.phuongThucThanhToan}"
+                                          th:style="${hd.phuongThucThanhToan == 'Tiền mặt'} ? 'color:#16A34A;font-weight:600' : 'color:#6B7280'"></span>
+                                </td>
+                                <td style="text-align:right;font-weight:600;"
+                                    th:text="${#numbers.formatDecimal(hd.tongTien, 0, 'POINT', 0, 'COMMA')} + ' đ'"></td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================================================
+                 TRƯỜNG HỢP 2: CHƯA MỞ CA
+                 ============================================================ -->
+            <div th:if="${phien == null and loi == null}">
+
+                <!-- Không có lịch hôm nay -> không cho mở ca -->
+                <div th:if="${caHopLe == null}" class="card-box warn">
+                    <div class="box-title">
+                        <i class="bi bi-exclamation-triangle" style="color:#F59E0B"></i>
+                        Chưa thể mở ca
+                    </div>
+                    <div class="alert-box alert-warn">
+                        <i class="bi bi-info-circle-fill"></i>
+                        <span>
+                            Hôm nay bạn <strong>không có lịch làm việc</strong> nào (hoặc ca đã kết thúc).
+                            Vui lòng liên hệ quản lý để được xếp ca.
+                        </span>
+                    </div>
+                    <div style="margin-top:16px;">
+                        <a href="/cham-cong" class="btn-act btn-open" style="text-decoration:none;">
+                            <i class="bi bi-clock-history"></i> Xem lịch chấm công
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Có lịch hôm nay -> hiện thẻ + POPUP mở ca -->
+                <div th:if="${caHopLe != null}" class="card-box accent">
+                    <div class="box-title">
+                        <i class="bi bi-unlock" style="color:#c92327"></i>
+                        Bạn chưa mở ca
+                    </div>
+                    <div class="alert-box alert-info">
+                        <i class="bi bi-info-circle-fill"></i>
+                        <span>Cần mở ca (nhập tiền đầu ca) trước khi bán hàng.
+                              Mở ca sẽ <strong>tự động chấm công vào ca</strong> cho bạn.</span>
+                    </div>
+                    <div style="margin-top:16px;">
+                        <button class="btn-act btn-open" onclick="moModal()">
+                            <i class="bi bi-unlock"></i> Mở ca làm việc
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- ================================================================
+     POPUP MỞ CA LÀM VIỆC
+     ================================================================ -->
+<div id="modalMoCa" class="modal-backdrop-cc" th:if="${phien == null and loi == null and caHopLe != null}">
+    <div class="modal-cc">
+        <!-- Header -->
+        <div class="modal-cc-head">
+            <div class="modal-cc-title">MỞ CA LÀM VIỆC</div>
+            <div class="modal-cc-sub">Hệ thống quản lý bán hàng FS Shop</div>
+        </div>
+
+        <div class="modal-cc-body">
+            <!-- Chip nhân viên + thời gian -->
+            <div class="chip-nv">
+                <i class="bi bi-person-badge"></i>
+                Nhân viên: <strong th:text="${nhanVien.hoTen}"></strong>
+                <span class="dot">•</span>
+                <span id="dongHo"></span>
+            </div>
+
+            <!-- Ca được phân công -->
+            <div class="field-group">
+                <div class="field-label">Ca làm việc được phân công</div>
+                <div class="field-readonly" th:if="${caHopLe.caLamViec != null}"
+                     th:text="${caHopLe.caLamViec.tenCa} + ' (' + ${caHopLe.caLamViec.gioBatDau} + ' - ' + ${caHopLe.caLamViec.gioKetThuc} + ')'">
+                </div>
+                <div class="field-readonly" th:if="${caHopLe.caLamViec == null}">Ca làm việc</div>
+            </div>
+
+            <!-- Bàn giao từ ca trước -->
+            <div class="handover-box">
+                <div class="handover-title">
+                    <i class="bi bi-arrow-left-right"></i> Bàn giao từ ca trước:
+                </div>
+                <div class="handover-row">
+                    <span><i class="bi bi-cash-stack" style="color:#16A34A"></i> Tiền mặt tại két:</span>
+                    <strong th:text="${#numbers.formatDecimal(tienCaTruoc != null ? tienCaTruoc : 0, 0, 'POINT', 0, 'COMMA')} + ' VND'">0 VND</strong>
+                </div>
+                <div class="handover-row">
+                    <span><i class="bi bi-credit-card" style="color:#6B7280"></i> Số dư chuyển khoản:</span>
+                    <strong>0 VND</strong>
+                </div>
+            </div>
+
+            <!-- Nhập tiền đầu ca -->
+            <div class="field-group">
+                <div class="field-label">Xác nhận Tiền mặt đầu ca <span style="color:#DC2626">*</span></div>
+                <div class="input-money-wrap">
+                    <input type="text" id="tienDauCa" class="input-money"
+                           placeholder="0" inputmode="numeric" autocomplete="off">
+                    <span class="unit">VND</span>
+                </div>
+                <div class="field-hint">
+                    Đếm tiền thực tế trong két rồi nhập vào đây. Đây là gốc để đối soát khi đóng ca.
+                </div>
+            </div>
+
+            <!-- Ghi chú -->
+            <div class="field-group">
+                <div class="field-label">Ghi chú (tuỳ chọn)</div>
+                <textarea id="ghiChuMoCa" rows="2" class="input-note"
+                          placeholder="VD: nhận quỹ từ ca sáng..."></textarea>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="modal-cc-foot">
+            <button class="btn-cancel" onclick="dongModal()">Huỷ bỏ</button>
+            <button class="btn-confirm" id="btnMoCa" onclick="moCa()">Xác nhận mở ca</button>
+        </div>
+    </div>
+</div>
+
+<div id="toast" class="toast-msg"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    const csrfToken  = document.querySelector('meta[name="_csrf"]').getAttribute('content');
+    const csrfHeader = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
+
+    function showToast(msg, type) {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.className = 'toast-msg ' + (type || 'success');
+        t.style.display = 'block';
+        setTimeout(() => { t.style.display = 'none'; }, 3500);
+    }
+
+    // Tự động thêm dấu chấm phân cách nghìn khi gõ tiền
+    function ganDinhDangTien(id) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.addEventListener('input', function () {
+            let so = this.value.replace(/\D/g, '');
+            this.value = so ? Number(so).toLocaleString('vi-VN') : '';
+        });
+    }
+    ganDinhDangTien('tienDauCa');
+    ganDinhDangTien('tienCuoiCa');
+
+    // ==================== POPUP MỞ CA ====================
+    function moModal() {
+        const m = document.getElementById('modalMoCa');
+        if (m) { m.style.display = 'flex'; document.getElementById('tienDauCa').focus(); }
+    }
+    function dongModal() {
+        const m = document.getElementById('modalMoCa');
+        if (m) m.style.display = 'none';
+    }
+    // Đồng hồ trong popup
+    (function chayDongHo() {
+        const el = document.getElementById('dongHo');
+        if (!el) return;
+        function tick() {
+            const d = new Date();
+            const p = n => String(n).padStart(2, '0');
+            el.textContent = `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())} `
+                + `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()}`;
+        }
+        tick();
+        setInterval(tick, 1000);
+    })();
+    // Nếu bị đẩy từ trang bán hàng sang (chưa mở ca) -> tự bật popup luôn
+    (function tuBatPopup() {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('canMoCa') === '1' && document.getElementById('modalMoCa')) {
+            moModal();
+        }
+    })();
+
+    function docSo(id) {
+        const el = document.getElementById(id);
+        if (!el) return null;
+        const so = el.value.replace(/\D/g, '');
+        return so === '' ? null : so;
+    }
+
+    // ==================== MỞ CA ====================
+    function moCa() {
+        const tien = docSo('tienDauCa');
+        if (tien === null) {
+            showToast('Vui lòng nhập số tiền đầu ca', 'error');
+            return;
+        }
+        const btn = document.getElementById('btnMoCa');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Đang mở ca...';
+
+        fetch('/giao-ca/mo-ca', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', [csrfHeader]: csrfToken },
+            body: JSON.stringify({
+                tienDauCa: tien,
+                ghiChu: document.getElementById('ghiChuMoCa').value
+            })
+        })
+            .then(r => r.json())
+            .then(d => {
+                if (d.success) {
+                    showToast(d.message, 'success');
+                    setTimeout(() => location.reload(), 1200);
+                } else {
+                    showToast(d.message, 'error');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="bi bi-unlock"></i> Mở ca & bắt đầu bán hàng';
+                }
+            })
+            .catch(e => {
+                showToast('Lỗi kết nối: ' + e.message, 'error');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-unlock"></i> Mở ca & bắt đầu bán hàng';
+            });
+    }
+
+    // ==================== ĐÓNG CA ====================
+    function dongCa() {
+        const tien = docSo('tienCuoiCa');
+        if (tien === null) {
+            showToast('Vui lòng nhập số tiền thực tế đếm được trong két', 'error');
+            return;
+        }
+        if (!confirm('Xác nhận đóng ca? Sau khi đóng, bạn sẽ không bán hàng được nữa cho tới khi mở ca mới.')) {
+            return;
+        }
+
+        const btn = document.getElementById('btnDongCa');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Đang chốt quỹ...';
+
+        fetch('/giao-ca/dong-ca', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', [csrfHeader]: csrfToken },
+            body: JSON.stringify({
+                tienCuoiCaThucTe: tien,
+                ghiChu: document.getElementById('ghiChuDongCa').value,
+                lyDoThieuQuy: document.getElementById('lyDoThieuQuy').value
+            })
+        })
+            .then(r => r.json())
+            .then(d => {
+                if (d.success) {
+                    const cl = Number(d.chenhLech || 0);
+                    let msg = 'Đã đóng ca. ';
+                    if (cl === 0)      msg += 'Quỹ khớp hoàn toàn!';
+                    else if (cl > 0)   msg += 'THỪA quỹ ' + cl.toLocaleString('vi-VN') + 'đ';
+                    else               msg += 'THIẾU quỹ ' + Math.abs(cl).toLocaleString('vi-VN') + 'đ';
+                    if (d.canDuyet) msg += ' — đã ghi nhận lý do, chuyển quản lý duyệt.';
+                    showToast(msg, cl === 0 ? 'success' : 'error');
+                    setTimeout(() => location.href = '/giao-ca/lich-su', 2000);
+                } else {
+                    // Backend yêu cầu nhập lý do thiếu quỹ -> hiện ô lý do
+                    if (d.message && d.message.indexOf('LÝ DO') !== -1) {
+                        document.getElementById('khoiLyDoThieu').style.display = 'block';
+                        document.getElementById('lyDoThieuQuy').focus();
+                    }
+                    showToast(d.message, 'error');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="bi bi-lock"></i> Đóng ca & chốt quỹ';
+                }
+            })
+            .catch(e => {
+                showToast('Lỗi kết nối: ' + e.message, 'error');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-lock"></i> Đóng ca & chốt quỹ';
+            });
+    }
+    /*]]>*/
+</script>
+</body>
+</html>

@@ -1,0 +1,63 @@
+<!-- sidebar-staff.html -->
+<nav class="sidebar" th:fragment="sidebar-staff">
+    <style>
+        .sidebar-header{
+            background: #fff;
+            border-bottom: 1px solid #e5e5e5;
+        }
+    </style>
+
+    <div>
+        <div class="sidebar-header">
+            <img th:src="@{/storefront/img/logo.jpg}" style="background:#fff;border-radius:12px;object-fit:cover" alt="FS Shop Logo">
+        </div>
+
+        <div class="sidebar-menu-wrapper">
+            <div class="menu-heading">Bán Hàng</div>
+            <a href="/"><i class="bi bi-house-door"></i> Trang Chủ</a>
+            <a href="/banhang/index"><i class="bi bi-cart3"></i> Bán hàng</a>
+            <a href="/giao-ca/phien" th:classappend="${activeMenu == 'phienbanhang'} ? ' active'">
+                <i class="bi bi-cash-stack"></i> Ca bán hàng
+            </a>
+
+            <div class="menu-heading">Quản Lý Đơn Hàng</div>
+            <a href="/donhang/index"><i class="bi bi-truck"></i> Danh sách đơn hàng</a>
+            <a href="/hoa-don/index"><i class="bi bi-receipt"></i> Hóa đơn</a>
+
+            <div class="menu-heading">Khách Hàng</div>
+            <a href="/khach-hang/hien-thi"><i class="bi bi-person-lines-fill"></i> Khách hàng</a>
+
+            <div class="menu-heading">Cá Nhân</div>
+            <a href="/giao-ca/lich-cua-toi" th:classappend="${activeMenu == 'lichcuatoi'} ? ' active'">
+                <i class="bi bi-calendar-check"></i> Lịch của tôi
+            </a>
+            <a href="/cham-cong" th:classappend="${activeMenu == 'chamcong'} ? ' active'">
+                <i class="bi bi-clock-history"></i> Chấm công
+            </a>
+            <a href="/nv-ca-nhan" th:classappend="${activeMenu == 'nvcanhan'} ? ' active'">
+                <i class="bi bi-person-circle"></i> Thông tin cá nhân
+            </a>
+
+            <div class="menu-heading">Báo Cáo</div>
+            <a href="/thong-ke/ca-nhan" th:classappend="${activeMenu == 'thongkecanhan'} ? ' active'">
+                <i class="bi bi-bar-chart-line"></i> Thống kê của tôi
+            </a>
+        </div>
+    </div>
+
+    <div class="sidebar-footer">
+        <a href="javascript:void(0);"
+           onclick="document.getElementById('logout-form-staff').submit();"
+           class="d-flex align-items-center gap-2 text-secondary text-decoration-none fw-semibold"
+           style="font-size: 14px;">
+            <i class="bi bi-box-arrow-right text-danger"></i> Đăng xuất
+        </a>
+
+        <form id="logout-form-staff" th:action="@{/logout}" method="post" style="display: none;"></form>
+    </div>
+
+            <a href="/lienhe/index"><i class="bi bi-envelope-paper"></i> Liên hệ</a>
+            <a href="/danhgia/index"><i class="bi bi-star-half"></i> Đánh giá</a>
+            <a href="/hotro/index"><i class="bi bi-headset"></i> Hỗ trợ trực tuyến</a>
+    <div th:replace="~{fragments/quanly-realtime :: realtime-quanly}"></div>
+</nav>

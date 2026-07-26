@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Lịch sử ca – FS Shop</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+
+    <style>
+        .page-title { font-size: 22px; font-weight: 700; }
+        .page-sub   { font-size: 13px; color: #6B7280; margin-top: 2px; margin-bottom: 20px; }
+
+        .card-box {
+            background: #fff; border: 1px solid #E5E7EB; border-radius: 12px;
+            padding: 22px; box-shadow: 0 1px 3px rgba(0,0,0,.05);
+        }
+        .tb { width: 100%; font-size: 13.5px; }
+        .tb th {
+            text-align: left; padding: 11px 10px;
+            background: #c92327; color: #fff; font-weight: 700; font-size: 11.5px; text-transform: uppercase;
+            white-space: nowrap;
+        }
+        .tb td { padding: 12px 10px; border-bottom: 1px solid #F9FAFB; }
+        .tb td.num { text-align: right; font-weight: 600; white-space: nowrap; }
+
+        .pill {
+            padding: 3px 10px; border-radius: 20px;
+            font-size: 11.5px; font-weight: 700; white-space: nowrap;
+        }
+        .pill-open   { background: #DCFCE7; color: #166534; }
+        .pill-closed { background: #F3F4F6; color: #4B5563; }
+
+        .lech-ok    { color: #16A34A; font-weight: 700; }
+        .lech-thua  { color: #2563EB; font-weight: 700; }
+        .lech-thieu { color: #DC2626; font-weight: 700; }
+
+        .empty { text-align: center; padding: 40px; color: #9CA3AF; }
+    </style>
+</head>
+<body>
+<div class="wrapper">
+    <div sec:authorize="hasRole('STAFF')" th:replace="~{fragments/sidebarstaff :: sidebar-staff}"></div>
+    <div sec:authorize="hasRole('ADMIN')" th:replace="~{fragments/sidebaradmin :: sidebar-admin}"></div>
+
+    <div class="content-body">
+        <div th:replace="~{fragments/header :: header('Lịch sử ca', 'Giao ca & quỹ tiền')}"></div>
+
+        <div class="content-wrapper" style="padding: 24px 28px;">
+            <div class="page-title">LỊCH SỬ CA BÁN HÀNG</div>
+            <div class="page-sub">Các ca bạn đã mở và kết quả đối soát quỹ.</div>
+
+            <div th:if="${loi != null}" style="background:#FEE2E2;color:#991B1B;padding:14px;border-radius:9px;margin-bottom:18px;">
+                <i class="bi bi-exclamation-triangle-fill"></i> <span th:text="${loi}"></span>
+            </div>
+
+            <div style="margin-bottom:18px;">
+                <a href="/giao-ca/phien"
+                   style="display:inline-flex;align-items:center;gap:7px;padding:10px 18px;background:#2563EB;
+                          color:#fff;border-radius:9px;text-decoration:none;font-weight:600;font-size:14px;">
+                    <i class="bi bi-arrow-left"></i> Về màn hình ca
+                </a>
+            </div>
+
+            <div class="card-box">
+                <div th:if="${danhSachPhien == null or danhSachPhien.isEmpty()}" class="empty">
+                    <i class="bi bi-inbox" style="font-size:32px;"></i>
+                    <div style="margin-top:8px;">Bạn chưa có ca nào.</div>
+                </div>
+
+                <div th:unless="${danhSachPhien == null or danhSachPhien.isEmpty()}" style="overflow-x:auto;">
+                    <table class="tb">
+                        <thead>
+                        <tr>
+                            <th>Ca</th>
+                            <th>Mở ca</th>
+                            <th>Đóng ca</th>
+                            <th style="text-align:right;">Tiền đầu ca</th>
+                            <th style="text-align:right;">DT tiền mặt</th>
+                            <th style="text-align:right;">DT chuyển khoản</th>
+                            <th style="text-align:right;">Dự kiến</th>
+                            <th style="text-align:right;">Thực đếm</th>
+                            <th style="text-align:right;">Chênh lệch</th>
+                            <th>Trạng thái</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="p : ${danhSachPhien}">
+                            <td th:text="${p.caLamViec != null ? p.caLamViec.tenCa : '-'}"></td>
+                            <td th:text="${#temporals.format(p.thoiGianMoCa, 'HH:mm dd/MM')}"></td>
+                            <td th:text="${p.thoiGianDongCa != null ? #temporals.format(p.thoiGianDongCa, 'HH:mm dd/MM') : '-'}"></td>
+                            <td class="num" th:text="${#numbers.formatDecimal(p.tienDauCa, 0, 'POINT', 0, 'COMMA')}"></td>
+                            <td class="num" style="color:#16A34A"
+                                th:text="${p.doanhThuTienMat != null ? #numbers.formatDecimal(p.doanhThuTienMat, 0, 'POINT', 0, 'COMMA') : '0'}"></td>
+                            <td class="num" style="color:#6B7280"
+                                th:text="${p.doanhThuChuyenKhoan != null ? #numbers.formatDecimal(p.doanhThuChuyenKhoan, 0, 'POINT', 0, 'COMMA') : '0'}"></td>
+                            <td class="num" th:text="${p.tienDuKien != null ? #numbers.formatDecimal(p.tienDuKien, 0, 'POINT', 0, 'COMMA') : '-'}"></td>
+                            <td class="num" th:text="${p.tienCuoiCaThucTe != null ? #numbers.formatDecimal(p.tienCuoiCaThucTe, 0, 'POINT', 0, 'COMMA') : '-'}"></td>
+                            <td class="num">
+                                <th:block th:if="${p.chenhLech != null}">
+                                    <span th:with="cl=${p.chenhLech}"
+                                          th:class="${cl.signum() == 0} ? 'lech-ok' : (${cl.signum() > 0} ? 'lech-thua' : 'lech-thieu')"
+                                          th:text="${cl.signum() == 0} ? 'Khớp'
+                                                   : ((${cl.signum() > 0} ? '+' : '') + ${#numbers.formatDecimal(cl, 0, 'POINT', 0, 'COMMA')})"></span>
+                                </th:block>
+                                <span th:if="${p.chenhLech == null}">-</span>
+                            </td>
+                            <td>
+                                <span th:if="${p.trangThai == 'DANG_MO'}" class="pill pill-open">ĐANG MỞ</span>
+                                <span th:if="${p.trangThai == 'DA_DONG'}" class="pill pill-closed">Đã đóng</span>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+</body>
+</html>

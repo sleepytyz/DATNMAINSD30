@@ -1,0 +1,1944 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Chi tiết sản phẩm - FS Shop</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <style>
+        /* ===== RESET & BASE ===== */
+        html, body { height: 100%; margin: 0; padding: 0; background: #f4f6f9; }
+        .wrapper {
+            display: flex;
+            min-height: 100vh;
+        }
+        .sidebar {
+            width: 250px;
+            flex-shrink: 0;
+        }
+        .content-wrapper {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            width: calc(100% - 250px);
+            min-width: 0;
+        }
+
+        /* ===== CONTENT BODY ===== */
+        .content-body {
+            padding: 24px;
+            flex-grow: 1;
+            background-color: #f4f6f9;
+        }
+
+        /* ===== TOAST ===== */
+        .toast-container-custom {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            max-width: 420px;
+            width: 100%;
+        }
+        .toast-custom {
+            background: #fff;
+            border-radius: 12px;
+            padding: 16px 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+            border-left: 5px solid #dc3545;
+            animation: slideInRight 0.4s ease;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        .toast-custom.success { border-left-color: #28a745; }
+        .toast-custom.warning { border-left-color: #ffc107; }
+        .toast-custom .toast-icon { font-size: 1.5rem; flex-shrink: 0; margin-top: 2px; }
+        .toast-custom .toast-content { flex: 1; }
+        .toast-custom .toast-title { font-weight: 700; font-size: 0.95rem; color: #2d3748; }
+        .toast-custom .toast-message { font-size: 0.85rem; color: #6c757d; margin-top: 2px; }
+        .toast-custom .toast-close {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            color: #adb5bd;
+            cursor: pointer;
+            padding: 0 4px;
+            transition: color 0.2s;
+        }
+        .toast-custom .toast-close:hover { color: #dc3545; }
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideOutRight {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+
+        /* ===== CARD ===== */
+        .card-custom {
+            border-radius: 16px;
+            overflow: hidden;
+            border: none;
+            transition: all 0.3s ease;
+        }
+        .card-custom:hover {
+            box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.08) !important;
+        }
+
+        .card-header-custom {
+            background: linear-gradient(135deg, #c92327 0%, #a01a1e 100%);
+            border: none;
+            padding: 16px 24px;
+        }
+        .card-header-custom h5 {
+            font-weight: 700;
+            font-size: 1rem;
+            letter-spacing: 0.3px;
+            color: white;
+        }
+        .card-header-custom .bi {
+            font-size: 1.2rem;
+        }
+
+        /* ===== INFO GRID ===== */
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px 40px;
+        }
+        .info-item {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            padding: 6px 0;
+            border-bottom: 1px dashed #e9ecef;
+        }
+        .info-item .label {
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: #6c757d;
+            min-width: 100px;
+        }
+        .info-item .value {
+            font-weight: 500;
+            font-size: 0.9rem;
+            color: #2d3748;
+        }
+        .info-item .value.text-danger {
+            font-weight: 700;
+            color: #c92327 !important;
+        }
+
+        @media (max-width: 768px) {
+            .info-grid {
+                grid-template-columns: 1fr;
+                gap: 4px;
+            }
+        }
+
+        /* ===== TABLE ===== */
+        .table-card {
+            border-radius: 16px;
+            overflow: hidden;
+            background: #fff;
+            border: 1px solid #e9ecef;
+        }
+        .table-header {
+            background: #f8f9fa;
+            padding: 14px 20px;
+            border-bottom: 2px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .table-header .left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .table-header .right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .table-custom {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+        .table-custom thead {
+            background: linear-gradient(135deg, #f8f9fa 0%, #f1f3f5 100%);
+        }
+        .table-custom thead th {
+            padding: 12px 14px;
+            font-weight: 700;
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #495057;
+            border-bottom: 2px solid #e9ecef;
+            white-space: nowrap;
+            text-align: center;
+        }
+        .table-custom tbody tr {
+            transition: all 0.2s ease;
+            border-bottom: 1px solid #f1f3f5;
+        }
+        .table-custom tbody tr:hover { background: #fff5f5 !important; }
+        .table-custom tbody td {
+            padding: 10px 14px;
+            vertical-align: middle;
+            color: #2d3748;
+            text-align: center;
+        }
+
+        /* ===== BADGE ===== */
+        .badge-active {
+            background: #d4edda;
+            color: #155724;
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+        }
+        .badge-locked {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+        }
+        .badge-out-of-stock {
+            background: #fff3cd;
+            color: #856404;
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+        }
+        .badge-status {
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+        }
+        .badge-success { background: #d4edda; color: #155724; }
+        .badge-warning { background: #fff3cd; color: #856404; }
+        .badge-danger { background: #f8d7da; color: #721c24; }
+        .badge-secondary { background: #e9ecef; color: #6c757d; }
+
+        /* ===== BUTTONS ===== */
+        .btn-action {
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
+            font-size: 0.9rem;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .btn-action-edit {
+            border-color: #0d6efd;
+            color: #0d6efd;
+            background: transparent;
+        }
+        .btn-action-edit:hover {
+            background: #0d6efd;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(13, 110, 253, 0.25);
+        }
+
+        .btn-back {
+            background: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 6px 16px;
+            font-weight: 600;
+            font-size: 0.8rem;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+        .btn-back:hover {
+            background: #5a6268;
+            color: white;
+            transform: translateY(-1px);
+        }
+
+        /* ===== SWITCH ===== */
+        .custom-switch {
+            width: 2.5em !important;
+            height: 1.2em !important;
+            cursor: pointer;
+        }
+        .custom-switch:checked {
+            background-color: #c92327 !important;
+            border-color: #c92327 !important;
+        }
+        .custom-switch:focus {
+            box-shadow: 0 0 0 0.2rem rgba(201, 35, 39, 0.2) !important;
+        }
+
+        /* ===== IMAGE ===== */
+        .img-zoom {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+        }
+        .img-zoom:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+        }
+
+        /* ===== MODAL ===== */
+        .modal-content-custom {
+            border-radius: 16px !important;
+            border: none !important;
+            overflow: hidden;
+        }
+        .modal-header-custom {
+            background: linear-gradient(135deg, #c92327 0%, #a01a1e 100%);
+            border: none;
+            padding: 16px 24px;
+        }
+        .modal-header-custom .modal-title {
+            color: white;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+        .modal-header-custom .btn-close {
+            filter: brightness(0) invert(1);
+        }
+        .modal-body-custom {
+            padding: 24px;
+            background: #f8f9fa;
+        }
+        .modal-body-custom .form-label {
+            font-weight: 600;
+            font-size: 0.8rem;
+            color: #2d3748;
+        }
+        .modal-body-custom .form-control,
+        .modal-body-custom .form-select {
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            font-size: 0.85rem;
+            padding: 8px 12px;
+            transition: all 0.3s ease;
+        }
+        .modal-body-custom .form-control:focus,
+        .modal-body-custom .form-select:focus {
+            border-color: #c92327 !important;
+            box-shadow: 0 0 0 0.2rem rgba(201, 35, 39, 0.12) !important;
+        }
+
+        .preview-box {
+            width: 100%;
+            height: 150px;
+            border: 2px dashed #dee2e6;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            background: #fff;
+            margin-bottom: 8px;
+        }
+        .preview-box img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        /* ===== MODAL CONFIRM ===== */
+        #confirmActionModal .modal-content {
+            animation: modalSlideIn 0.4s ease;
+        }
+        @keyframes modalSlideIn {
+            from {
+                transform: scale(0.9) translateY(20px);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1) translateY(0);
+                opacity: 1;
+            }
+        }
+        #confirmActionModal .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        #confirmActionModal .btn-outline-secondary:hover {
+            background: #f8f9fa;
+            border-color: #dee2e6;
+        }
+        #confirmActionModal .modal-body .border-bottom {
+            border-color: #f1f3f5 !important;
+        }
+        .confirm-icon-wrapper {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 12px;
+        }
+        .confirm-icon-wrapper.warning {
+            background: #fff3cd;
+        }
+        .confirm-icon-wrapper.danger {
+            background: #f8d7da;
+        }
+        .confirm-icon-wrapper.success {
+            background: #d4edda;
+        }
+        .confirm-icon-wrapper i {
+            font-size: 2rem;
+        }
+        .confirm-icon-wrapper.warning i {
+            color: #856404;
+        }
+        .confirm-icon-wrapper.danger i {
+            color: #721c24;
+        }
+        .confirm-icon-wrapper.success i {
+            color: #155724;
+        }
+
+        /* ===== SELECT2 ===== */
+        .select2-container .select2-selection--single {
+            height: 38px !important;
+            border-radius: 8px !important;
+            border: 1px solid #e0e0e0 !important;
+        }
+        .select2-container .select2-selection--single .select2-selection__rendered {
+            line-height: 36px !important;
+            padding-left: 12px !important;
+            font-size: 0.85rem;
+        }
+        .select2-container .select2-selection--single .select2-selection__arrow {
+            height: 36px !important;
+        }
+        .select2-container--open .select2-dropdown {
+            border-radius: 8px !important;
+            border-color: #c92327 !important;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+        }
+        .select2-container--default .select2-results__option--highlighted.select2-results__option--selectable {
+            background-color: #c92327 !important;
+        }
+
+        /* ===== IMAGE GALLERY ===== */
+        .image-gallery {
+            background: #f8f9fa;
+            border-radius: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+        }
+        .image-gallery .image-item {
+            cursor: pointer;
+            border: 3px solid transparent;
+            border-radius: 6px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            position: relative;
+            background: white;
+            aspect-ratio: 1/1;
+        }
+        .image-gallery .image-item:hover {
+            transform: scale(1.05);
+            z-index: 10;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .image-gallery .image-item.selected {
+            border-color: #c92327;
+            box-shadow: 0 0 0 2px rgba(201,35,39,0.3);
+        }
+        .image-gallery .image-item.selected-sub {
+            border-color: #28a745;
+            box-shadow: 0 0 0 2px rgba(40,167,69,0.3);
+        }
+        .image-gallery .image-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .image-gallery .image-item .image-name {
+            font-size: 10px;
+            text-align: center;
+            padding: 2px 4px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .image-gallery .image-item .select-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(201,35,39,0.2);
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        .image-gallery .image-item.selected .select-overlay { display: flex; }
+        .image-gallery .image-item.selected-sub .select-overlay { display: flex; }
+        .image-gallery .image-item .select-overlay i {
+            font-size: 32px;
+            color: #c92327;
+        }
+        .image-gallery .image-item.selected-sub .select-overlay i {
+            color: #28a745;
+        }
+        .image-gallery .image-item .image-badge {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 9px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            z-index: 5;
+        }
+        .image-badge.main-badge { background: #c92327; }
+        .image-badge.sub-badge { background: #28a745; }
+
+        .selected-images-container {
+            min-height: 80px;
+            border: 2px dashed #dee2e6;
+            border-radius: 8px;
+            padding: 8px;
+            background: #fafbfc;
+        }
+        .selected-image-item {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 2px solid #dee2e6;
+            flex-shrink: 0;
+            transition: all 0.3s ease;
+            background: white;
+        }
+        .selected-image-item:hover {
+            transform: scale(1.05);
+            border-color: #c92327;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 10;
+        }
+        .selected-image-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .selected-image-item .remove-btn {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            width: 22px;
+            height: 22px;
+            padding: 0;
+            font-size: 10px;
+            border-radius: 50%;
+            line-height: 1;
+            background: #dc3545;
+            color: white;
+            border: 2px solid white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .selected-image-item .remove-btn:hover {
+            transform: scale(1.2);
+            background: #c82333;
+        }
+        .selected-image-item .badge-main {
+            position: absolute;
+            bottom: 2px;
+            left: 2px;
+            background: #c92327;
+            color: white;
+            padding: 0 6px;
+            border-radius: 4px;
+            font-size: 9px;
+            font-weight: 600;
+        }
+        .selected-image-item .badge-index {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            background: rgba(0,0,0,0.6);
+            color: white;
+            padding: 0 6px;
+            border-radius: 4px;
+            font-size: 9px;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 992px) {
+            .table-custom {
+                font-size: 0.8rem;
+            }
+            .table-custom thead th,
+            .table-custom tbody td {
+                padding: 8px 10px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .content-wrapper {
+                width: 100%;
+            }
+            .table-custom {
+                font-size: 0.75rem;
+            }
+            .table-custom thead th,
+            .table-custom tbody td {
+                padding: 6px 8px;
+            }
+            .btn-action {
+                width: 28px;
+                height: 28px;
+                font-size: 0.75rem;
+            }
+            .table-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .table-header .right {
+                width: 100%;
+                justify-content: flex-start;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .table-custom {
+                font-size: 0.7rem;
+            }
+            .table-custom thead th,
+            .table-custom tbody td {
+                padding: 4px 6px;
+            }
+            .btn-action {
+                width: 24px;
+                height: 24px;
+                font-size: 0.65rem;
+            }
+            .badge-status, .badge-active, .badge-locked, .badge-out-of-stock {
+                font-size: 0.6rem;
+                padding: 2px 8px;
+            }
+            .custom-switch {
+                width: 2em !important;
+                height: 1em !important;
+            }
+            .preview-box {
+                height: 100px;
+            }
+        }
+    </style>
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+</head>
+<body>
+
+<div class="wrapper">
+    <div sec:authorize="hasRole('ADMIN')">
+        <div th:replace="fragments/sidebaradmin :: sidebar-admin"></div>
+    </div>
+
+    <div sec:authorize="hasRole('STAFF')">
+        <div th:replace="fragments/sidebarstaff :: sidebar-staff"></div>
+    </div>
+
+    <div class="content-wrapper">
+        <div class="toast-container-custom" id="toastContainer"></div>
+        <div th:replace="~{fragments/header :: header('Chi tiết sản phẩm', 'Sản phẩm')}"></div>
+
+        <div class="content-body">
+            <div class="card card-custom shadow-sm mb-4">
+                <div class="card-header-custom">
+                    <h5 class="mb-0 d-flex align-items-center gap-2">
+                        <i class="bi bi-box-seam-fill"></i>
+                        <span>Thông tin sản phẩm</span>
+                        <span class="ms-2 badge bg-light text-dark" th:text="${sanpham?.maSanPham}"></span>
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="label"> Mã SP:</span>
+                            <span class="value text-danger fw-bold" th:text="${sanpham?.maSanPham}"></span>
+                        </div>
+                        <div class="info-item">
+                            <span class="label"> Tên SP:</span>
+                            <span class="value fw-bold" th:text="${sanpham?.tenSanPham}"></span>
+                        </div>
+                        <div class="info-item">
+                            <span class="label"> Danh mục:</span>
+                            <span class="value" th:text="${sanpham?.danhMucSanPham?.tenDanhMuc}"></span>
+                        </div>
+                        <div class="info-item">
+                            <span class="label"> Thương hiệu:</span>
+                            <span class="value" th:text="${sanpham?.thuongHieu?.tenThuongHieu}"></span>
+                        </div>
+                        <div class="info-item">
+                            <span class="label"> Chất liệu:</span>
+                            <span class="value" th:text="${sanpham?.chatLieu?.tenChatLieu}"></span>
+                        </div>
+                        <div class="info-item">
+                            <span class="label"> Kiểu giày:</span>
+                            <span class="value" th:text="${sanpham?.kieuGiay?.tenKieuGiay}"></span>
+                        </div>
+                        <div class="info-item" style="grid-column: 1 / -1;">
+                            <span class="label"> Mô tả:</span>
+                            <span class="value" th:text="${sanpham?.moTa}"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== TABLE CARD ===== -->
+            <div class="table-card">
+                <div class="table-header">
+                    <div class="left">
+                        <i class="bi bi-list-ul text-danger fs-5"></i>
+                        <h5 class="mb-0 fw-bold text-dark">Danh sách biến thể</h5>
+                        <span class="badge bg-secondary" th:text="${listBienThe?.size()} + ' biến thể'"></span>
+                    </div>
+                    <div class="right">
+                        <a th:href="@{/sanpham/index}" class="btn-back">
+                            <i class="bi bi-arrow-left me-1"></i>Quay lại
+                        </a>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table-custom" id="variantTable">
+                        <thead>
+                        <tr>
+                            <th style="width: 45px;">STT</th>
+                            <th style="min-width: 130px;">Mã SPCT</th>
+                            <th style="min-width: 60px;">Size</th>
+                            <th style="min-width: 90px;">Màu sắc</th>
+                            <th style="min-width: 120px;">Giá bán</th>
+                            <th style="min-width: 70px;">Tồn kho</th>
+                            <th style="min-width: 100px;">Trạng thái</th>
+                            <th style="min-width: 80px;">Hình ảnh</th>
+                            <th style="min-width: 130px;">Hành động</th>
+                        </tr>
+                        </thead>
+                        <tbody id="variantTableBody">
+                        <tr th:each="bt, row : ${listBienThe}" th:id="'row-' + ${bt.maSanPhamChiTiet}">
+                            <td class="fw-semibold" th:text="${row.count}"></td>
+                            <td class="fw-semibold text-danger" th:text="${bt.maSanPhamChiTiet}"></td>
+                            <td>
+                                <span class="badge bg-light text-dark border" th:text="${bt.kichThuoc.tenKichThuoc}"></span>
+                            </td>
+                            <td>
+                                <span class="badge" style="background: #e9ecef; color: #2d3748;" th:text="${bt.mauSac.tenMauSac}"></span>
+                            </td>
+                            <td class="fw-bold text-danger giaBanDisplay" th:text="${#numbers.formatDecimal(bt.giaBan, 0, 'COMMA', 0, 'POINT')} + ' ₫'"></td>
+                            <td class="fw-bold soLuongDisplay" th:text="${bt.soLuongTon}"></td>
+                            <td>
+                                <span th:if="${bt.trangThai == 'Còn hàng'}" class="badge-status badge-success">
+                                    <i class="bi bi-check-circle-fill"></i>Còn hàng
+                                </span>
+                                <span th:if="${bt.trangThai == 'Sắp hết'}" class="badge-status badge-warning">
+                                    <i class="bi bi-exclamation-triangle-fill"></i>Sắp hết
+                                </span>
+                                <span th:if="${bt.trangThai == 'Hết hàng'}" class="badge-status badge-danger">
+                                    <i class="bi bi-x-circle-fill"></i>Hết hàng
+                                </span>
+                                <span th:if="${bt.trangThai == 'Ngừng bán'}" class="badge-status badge-secondary">
+                                    <i class="bi bi-slash-circle-fill"></i>Ngừng bán
+                                </span>
+                            </td>
+                            <td>
+                                <img th:if="${bt.duongDanAnh != null && !bt.duongDanAnh.isEmpty()}"
+                                     th:src="@{'/images/' + ${bt.duongDanAnh}}"
+                                     width="50" height="50"
+                                     class="img-zoom rounded border"
+                                     style="object-fit:cover;"
+                                     alt="Ảnh sản phẩm"
+                                     onerror="this.src='/images/default-product.png'">
+                                <span th:if="${bt.duongDanAnh == null || bt.duongDanAnh.isEmpty()}" class="text-muted small">Chưa có ảnh</span>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center justify-content-center gap-1">
+                                    <button class="btn-action btn-action-edit"
+                                            th:data-id="${bt.maSanPhamChiTiet}"
+                                            th:data-masp="${sanpham.maSanPham}"
+                                            th:data-kichthuoc="${bt.kichThuoc.maKichThuoc}"
+                                            th:data-mausac="${bt.mauSac.maMauSac}"
+                                            th:data-giaban="${bt.giaBan}"
+                                            th:data-soluong="${bt.soLuongTon}"
+                                            th:data-anh="${bt.duongDanAnh}"
+                                            th:data-danhsachanh="${bt.danhSachAnh}"
+                                            th:data-tenkichthuoc="${bt.kichThuoc.tenKichThuoc}"
+                                            th:data-tenmausac="${bt.mauSac.tenMauSac}"
+                                            th:data-tensanpham="${sanpham.tenSanPham}"
+                                            th:data-masanpham="${sanpham.maSanPham}"
+                                            onclick="openEditModalFromButton(this)"
+                                            title="Chỉnh sửa">
+                                        <i class="bi bi-pencil-fill"></i>
+                                    </button>
+
+                                    <div class="form-check form-switch m-0">
+                                        <input class="form-check-input custom-switch toggle-switch" type="checkbox" role="switch"
+                                               th:checked="${bt.trangThai != 'Ngừng bán'}"
+                                               th:data-id="${bt.maSanPhamChiTiet}"
+                                               th:data-name="${sanpham.tenSanPham}"
+                                               th:data-variant="${bt.kichThuoc.tenKichThuoc} + ' - ' + ${bt.mauSac.tenMauSac}"
+                                               title="Bật/Tắt trạng thái">
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(listBienThe)}">
+                            <td colspan="9" class="text-center text-muted py-4">
+                                <i class="bi bi-boxes" style="font-size: 2.5rem; display: block; margin-bottom: 8px;"></i>
+                                Chưa có biến thể nào cho sản phẩm này
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="spctModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content modal-content-custom">
+            <div class="modal-header-custom">
+                <h5 class="modal-title d-flex align-items-center gap-2">
+                    <i class="bi bi-pencil-square"></i>
+                    <span>Cập nhật biến thể sản phẩm</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body-custom">
+                <form id="updateForm">
+                    <input type="hidden" id="csrfToken" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                    <input type="hidden" name="source" value="detail">
+                    <input type="hidden" name="maSanPhamGoc" id="maSanPhamGoc" th:value="${sanpham.maSanPham}">
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Mã SPCT <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control bg-light" id="maSanPhamChiTiet" name="maSanPhamChiTiet" readonly>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Sản phẩm chính <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control bg-light" id="tenSanPham" readonly>
+                            <input type="hidden" name="sanPham.maSanPham" id="maSanPhamHidden">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Kích cỡ <span class="text-danger">*</span></label>
+                            <select class="form-select select2-search" id="kichThuoc" name="kichThuoc.maKichThuoc">
+                                <option th:each="c : ${lists}" th:value="${c.maKichThuoc}" th:text="${c.tenKichThuoc}"></option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Màu sắc <span class="text-danger">*</span></label>
+                            <select class="form-select select2-search" id="mauSac" name="mauSac.maMauSac">
+                                <option th:each="c : ${listms}" th:value="${c.maMauSac}" th:text="${c.tenMauSac}"></option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Giá bán <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light">₫</span>
+                                <input type="text" class="form-control money-input"
+                                       id="giaBanDisplay"
+                                       placeholder="0"
+                                       oninput="formatMoneyInput(this)"
+                                       onblur="formatMoneyBlur(this)"
+                                       onfocus="formatMoneyFocus(this)">
+                                <input type="hidden" name="giaBan" id="giaBanHidden">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Số lượng <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="soLuongTon" name="soLuongTon" placeholder="0" min="0">
+                        </div>
+
+                        <div class="col-md-12">
+                            <label class="form-label fw-semibold small text-dark">Hình ảnh sản phẩm</label>
+                            <div class="preview-box mb-1" id="previewWrapper" style="height: 180px;">
+                                <img id="imgPreview" src="/images/default-product.png" alt="Preview" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                            </div>
+                            <div class="text-muted small mb-2">
+                                <i class="bi bi-star-fill text-warning"></i> <span id="mainImageName">Chưa có ảnh chính</span>
+                            </div>
+
+                            <!-- Danh sách ảnh phụ -->
+                            <div class="mb-2">
+                                <div class="d-flex align-items-center justify-content-between mb-1">
+                                    <label class="fw-semibold small text-dark mb-0">
+                                        Danh sách ảnh phụ (<span id="imageCountLabel">0</span>)
+                                    </label>
+                                    <div class="d-flex gap-1">
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="loadImageList()">
+                                            <i class="bi bi-arrow-clockwise me-1"></i> Tải ảnh
+                                        </button>
+                                        <button type="button" class="btn btn-outline-danger btn-sm" onclick="clearAllImages()">
+                                            <i class="bi bi-trash me-1"></i> Xóa tất cả
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <input type="hidden" name="duongDanAnh" id="duongDanAnh">
+                                <input type="hidden" name="danhSachAnh" id="danhSachAnh">
+
+                                <!-- Container hiển thị ảnh đã chọn -->
+                                <div id="selectedImagesContainer" class="d-flex flex-wrap gap-2 mb-2 p-2" style="min-height: 80px; border: 2px dashed #dee2e6; border-radius: 8px; background: #fafbfc;">
+                                    <div class="text-muted small w-100 text-center py-2" id="emptyImagesMessage">
+                                        <i class="bi bi-images me-1"></i> Chưa có ảnh phụ nào
+                                    </div>
+                                </div>
+
+                                <!-- Gallery ảnh từ folder -->
+                                <div id="imageGallery" class="image-gallery" style="display: none;">
+                                    <div class="row g-2" id="imageListContainer"></div>
+                                </div>
+
+                                <!-- Thông báo ảnh đã chọn -->
+                                <div id="selectedImageInfo" class="mt-2" style="display:none;">
+                                    <div class="alert alert-success alert-sm p-2 mb-0 d-flex align-items-center justify-content-between">
+                                        <span>
+                                            <i class="bi bi-check-circle-fill me-1"></i>
+                                            Đã chọn: <strong id="selectedImageName"></strong>
+                                        </span>
+                                        <button type="button" class="btn-close btn-sm" onclick="clearSelectedImage()"></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 mt-4">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                            <i class="bi bi-x-circle me-1"></i>Hủy
+                        </button>
+                        <button type="button" class="btn" style="background: #c92327; color: white;" onclick="submitUpdateForm()">
+                            <i class="bi bi-save me-1"></i>Cập nhật
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="confirmActionModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px; overflow: hidden;">
+            <div class="modal-header" style="background: linear-gradient(135deg, #c92327 0%, #a01a1e 100%); border: none; padding: 16px 24px;">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-circle bg-white bg-opacity-25 p-2" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                        <i class="bi bi-exclamation-triangle-fill" style="font-size: 1.2rem; color: white;"></i>
+                    </div>
+                    <div>
+                        <h5 class="modal-title fw-bold text-white" id="confirmActionTitle" style="font-size: 1rem;">Xác nhận</h5>
+                        <small class="text-white-50" id="confirmActionSubtitle">Vui lòng xác nhận hành động</small>
+                    </div>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body p-4" style="background: #f8f9fa;">
+                <div class="text-center">
+                    <div class="confirm-icon-wrapper warning" id="confirmActionIcon">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                    </div>
+                    <h5 class="fw-bold text-dark" id="confirmActionMessage">Bạn có chắc chắn muốn thực hiện hành động này?</h5>
+                    <p class="text-muted small" id="confirmActionDescription">Hành động này có thể không thể hoàn tác.</p>
+                    <div class="mt-2" id="confirmActionExtra" style="display: none;"></div>
+                </div>
+            </div>
+
+            <div class="modal-footer border-0" style="background: white; padding: 12px 24px;">
+                <button type="button" class="btn btn-outline-secondary px-4 py-2 fw-semibold" data-bs-dismiss="modal" style="border-radius: 10px; font-size: 0.9rem;">
+                    <i class="bi bi-x-circle me-1"></i>Hủy bỏ
+                </button>
+                <button type="button" class="btn px-4 py-2 fw-semibold" id="confirmActionBtn" style="background: #c92327; color: white; border-radius: 10px; transition: all 0.3s; font-size: 0.9rem;">
+                    <i class="bi bi-check-circle-fill me-1"></i>Xác nhận
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    $(document).ready(function() {
+        $('.select2-search').select2({
+            placeholder: "Chọn...",
+            allowClear: true,
+            width: '100%',
+            dropdownParent: $('#spctModal')
+        });
+    });
+
+    document.addEventListener("DOMContentLoaded", function() {
+        var showModal = /*[[${showModal}]]*/ false;
+        if (showModal) {
+            new bootstrap.Modal(document.getElementById('spctModal')).show();
+        }
+
+        var successMsg = /*[[${successMess}]]*/ null;
+        var errorMsg = /*[[${errorMess}]]*/ null;
+        if (successMsg) {
+            showToast(successMsg, 'success');
+        }
+        if (errorMsg) {
+            showToast(errorMsg, 'error');
+        }
+
+        var modalElement = document.getElementById('spctModal');
+        if (modalElement) {
+            modalElement.addEventListener('hidden.bs.modal', function() {
+                resetModalState();
+            });
+        }
+
+        updateSubImageCounts();
+    });
+
+    function updateSubImageCounts() {
+        document.querySelectorAll('#variantTableBody tr').forEach(function(row) {
+            var editBtn = row.querySelector('.btn-action-edit');
+            if (editBtn) {
+                var danhSachAnh = editBtn.getAttribute('data-danhsachanh') || '';
+                var duongDanAnh = editBtn.getAttribute('data-anh') || '';
+                var subCount = 0;
+
+                if (danhSachAnh && danhSachAnh !== '' && danhSachAnh !== 'null' && danhSachAnh !== '[]') {
+                    try {
+                        var imageList = [];
+                        if (typeof danhSachAnh === 'string') {
+                            if (danhSachAnh.startsWith('[')) {
+                                imageList = JSON.parse(danhSachAnh);
+                            } else {
+                                imageList = danhSachAnh.split(',').map(function(s) { return s.trim(); }).filter(function(s) { return s !== ''; });
+                            }
+                        } else if (Array.isArray(danhSachAnh)) {
+                            imageList = danhSachAnh;
+                        }
+
+                        if (imageList.length > 0) {
+                            if (duongDanAnh && imageList.includes(duongDanAnh)) {
+                                subCount = imageList.length - 1;
+                            } else {
+                                subCount = imageList.length;
+                            }
+                        }
+                    } catch (e) {
+                        console.warn('Lỗi parse danh sách ảnh:', e);
+                    }
+                }
+
+                var imgCell = row.querySelector('td:nth-child(8)');
+                if (imgCell) {
+                    var badge = imgCell.querySelector('.sub-image-count');
+                    if (subCount > 0) {
+                        if (badge) {
+                            badge.textContent = '+' + subCount;
+                            badge.style.display = 'inline-block';
+                        } else {
+                            var img = imgCell.querySelector('img');
+                            if (img) {
+                                var newBadge = document.createElement('span');
+                                newBadge.className = 'badge bg-secondary ms-1 sub-image-count';
+                                newBadge.style.cssText = 'font-size: 10px; padding: 2px 8px; border-radius: 12px;';
+                                newBadge.textContent = '+' + subCount;
+                                img.parentNode.insertBefore(newBadge, img.nextSibling);
+                            }
+                        }
+                    } else {
+                        if (badge) {
+                            badge.style.display = 'none';
+                        }
+                    }
+                }
+
+                editBtn.setAttribute('data-subcount', subCount);
+            }
+        });
+    }
+
+    function showToast(message, type, title) {
+        var container = document.getElementById('toastContainer');
+        if (!container) {
+            console.warn('Toast container not found!');
+            return;
+        }
+        var icons = {
+            error: 'bi bi-x-circle-fill text-danger',
+            success: 'bi bi-check-circle-fill text-success',
+            warning: 'bi bi-exclamation-triangle-fill text-warning',
+            info: 'bi bi-info-circle-fill text-info'
+        };
+        var titles = {
+            error: 'Lỗi!',
+            success: 'Thành công!',
+            warning: 'Cảnh báo!',
+            info: 'Thông tin'
+        };
+        var toast = document.createElement('div');
+        toast.className = 'toast-custom ' + type;
+        toast.innerHTML = `
+            <div class="toast-icon"><i class="${icons[type] || icons.info}"></i></div>
+            <div class="toast-content">
+                <div class="toast-title">${title || titles[type] || 'Thông báo'}</div>
+                <div class="toast-message" style="white-space: pre-line;">${message}</div>
+            </div>
+            <button class="toast-close" onclick="this.closest('.toast-custom').remove()">
+                <i class="bi bi-x"></i>
+            </button>
+        `;
+        container.appendChild(toast);
+        setTimeout(function() {
+            if (toast.parentNode) {
+                toast.style.animation = 'slideOutRight 0.3s ease forwards';
+                setTimeout(function() {
+                    if (toast.parentNode) toast.remove();
+                }, 300);
+            }
+        }, 5000);
+    }
+
+    function formatMoneyInput(input) {
+        let value = input.value.replace(/[^0-9]/g, '');
+        if (value === '') {
+            input.value = '';
+            return;
+        }
+        input.value = parseInt(value).toLocaleString('vi-VN');
+    }
+
+    function formatMoneyBlur(input) {
+        let value = input.value.replace(/[^0-9]/g, '');
+        if (value === '') {
+            input.value = '';
+            return;
+        }
+        input.value = parseInt(value).toLocaleString('vi-VN') + ' VNĐ';
+    }
+
+    function formatMoneyFocus(input) {
+        let value = input.value.replace(/[^0-9]/g, '');
+        if (value === '') {
+            input.value = '';
+            return;
+        }
+        input.value = parseInt(value).toLocaleString('vi-VN');
+    }
+
+    function getRawMoneyValue(input) {
+        if (!input) return 0;
+        const value = input.value.replace(/[^0-9]/g, '');
+        return parseFloat(value) || 0;
+    }
+
+    function formatCurrency(amount) {
+        if (!amount && amount !== 0) return '0 ₫';
+        var num = parseFloat(amount) || 0;
+        return new Intl.NumberFormat('vi-VN', {
+            style: 'currency',
+            currency: 'VND',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        }).format(num);
+    }
+
+    var selectedImages = [];
+    var currentMainImage = '';
+    var imageListCache = [];
+
+    function renderSelectedImages() {
+        var container = document.getElementById('selectedImagesContainer');
+        var countLabel = document.getElementById('imageCountLabel');
+        var emptyMessage = document.getElementById('emptyImagesMessage');
+        if (!container) return;
+        var count = selectedImages.length;
+        if (countLabel) countLabel.textContent = count;
+        var danhSachAnhInput = document.getElementById('danhSachAnh');
+        if (danhSachAnhInput) {
+            danhSachAnhInput.value = JSON.stringify(selectedImages);
+        }
+        var items = container.querySelectorAll('.selected-image-item');
+        items.forEach(function(el) { el.remove(); });
+        if (count === 0) {
+            if (emptyMessage) emptyMessage.style.display = 'block';
+            return;
+        }
+        if (emptyMessage) emptyMessage.style.display = 'none';
+        selectedImages.forEach(function(imageUrl, index) {
+            var isMain = (imageUrl === currentMainImage);
+            var div = document.createElement('div');
+            div.className = 'selected-image-item';
+            div.setAttribute('data-index', index);
+            div.innerHTML = `
+                <img src="/images/${imageUrl}"
+                     style="width: 100%; height: 100%; object-fit: cover;"
+                     onerror="this.src='/images/default-product.png'">
+                <button type="button" class="remove-btn" onclick="removeImageFromList(${index})">
+                    <i class="bi bi-x"></i>
+                </button>
+                ${isMain ? '<span class="badge-main"><i class="bi bi-star-fill"></i> Chính</span>' : ''}
+                <span class="badge-index">#${index + 1}</span>
+                <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.3); display: ${isMain ? 'none' : 'flex'}; align-items: center; justify-content: center; color: white; font-size: 12px; cursor: pointer;"
+                     onclick="confirmSetMainImage('${imageUrl}')">
+                    ${!isMain ? '<i class="bi bi-star" style="font-size: 20px;"></i>' : ''}
+                </div>
+            `;
+            container.insertBefore(div, emptyMessage);
+        });
+    }
+
+    function confirmSetMainImage(imageUrl) {
+        if (!imageUrl || imageUrl === currentMainImage) {
+            showToast('ℹ️ "' + imageUrl + '" đã là ảnh chính!', 'info');
+            return;
+        }
+
+        showConfirmActionModal({
+            icon: 'info',
+            iconClass: 'bi-arrow-up-circle-fill',
+            title: 'Xác nhận đổi ảnh chính',
+            subtitle: 'Thay đổi ảnh đại diện cho biến thể',
+            description: 'Ảnh chính sẽ được cập nhật và hiển thị trên tất cả các danh sách.',
+            btnText: '<i class="bi bi-check-circle-fill me-1"></i>Xác nhận đổi',
+            btnClass: 'btn-primary',
+            extra: '<div class="d-flex justify-content-center gap-3 mt-2"><img src="/images/' + imageUrl + '" style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:2px solid #c92327;" onerror="this.style.display=\'none\'"><i class="bi bi-arrow-right fs-4 text-danger"></i><img src="/images/' + currentMainImage + '" style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:2px solid #28a745;" onerror="this.style.display=\'none\'"></div>'
+        }).then(function(confirmed) {
+            if (confirmed) {
+                setMainImage(imageUrl);
+            }
+        });
+    }
+
+    function addImageToList(imageUrl) {
+        if (!imageUrl) return;
+        if (selectedImages.includes(imageUrl)) {
+            showToast('⚠️ Ảnh "' + imageUrl + '" đã có trong danh sách!', 'warning');
+            return;
+        }
+        selectedImages.push(imageUrl);
+        renderSelectedImages();
+        updateSubImageCounts();
+        showToast('✅ Đã thêm ảnh: ' + imageUrl, 'success');
+    }
+
+    function removeImageFromList(index) {
+        var removed = selectedImages[index];
+        if (removed === currentMainImage) {
+            showToast('⚠️ Không thể xóa ảnh chính!', 'warning');
+            return;
+        }
+        selectedImages.splice(index, 1);
+        renderSelectedImages();
+        updateSubImageCounts();
+        showToast('🗑️ Đã xóa ảnh: ' + removed, 'info');
+    }
+
+    function clearAllImages() {
+        if (selectedImages.length === 0 && !currentMainImage) {
+            showToast('Không có ảnh nào để xóa!', 'info');
+            return;
+        }
+
+        showConfirmActionModal({
+            icon: 'danger',
+            iconClass: 'bi-trash-fill',
+            title: 'Xóa tất cả ảnh',
+            subtitle: 'Hành động không thể hoàn tác',
+            message: 'Bạn có chắc chắn muốn xóa **tất cả ảnh** của biến thể này?',
+            description: 'Cả ảnh chính và ảnh phụ sẽ bị xóa khỏi danh sách.',
+            btnText: '<i class="bi bi-trash-fill me-1"></i>Xóa tất cả',
+            btnClass: 'btn-danger'
+        }).then(function(confirmed) {
+            if (confirmed) {
+                selectedImages = [];
+                currentMainImage = '';
+                document.getElementById('duongDanAnh').value = '';
+                document.getElementById('imgPreview').src = '/images/default-product.png';
+                document.getElementById('mainImageName').textContent = 'Chưa có ảnh chính';
+                renderSelectedImages();
+                updateSubImageCounts();
+                showToast('🗑️ Đã xóa tất cả ảnh!', 'info');
+            }
+        });
+    }
+
+    function setMainImage(fileName) {
+        if (!fileName) return;
+        currentMainImage = fileName;
+        document.getElementById('imgPreview').src = '/images/' + fileName;
+        document.getElementById('duongDanAnh').value = fileName;
+        document.getElementById('mainImageName').textContent = fileName;
+        if (!selectedImages.includes(fileName)) {
+            selectedImages.unshift(fileName);
+        }
+        renderSelectedImages();
+        updateSubImageCounts();
+        showToast('✅ Đã chọn ảnh chính: ' + fileName, 'success');
+    }
+
+    function loadImageList() {
+        loadImageListWithSelection(currentMainImage, selectedImages);
+    }
+
+    function loadImageListWithSelection(selectedMain, imageList) {
+        var container = document.getElementById('imageListContainer');
+        var gallery = document.getElementById('imageGallery');
+        if (!container) return;
+        container.innerHTML = `
+            <div class="col-12 text-center py-3">
+                <div class="spinner-border text-danger" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2 text-muted small">Đang tải danh sách ảnh...</p>
+            </div>
+        `;
+        gallery.style.display = 'block';
+        fetch('/api/images/list', {
+            method: 'GET'
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.images && data.images.length > 0) {
+                    imageListCache = data.images;
+                    var validMain = '';
+                    if (selectedMain && selectedMain !== '' && selectedMain !== 'null') {
+                        var found = data.images.some(function(img) {
+                            return img.fileName === selectedMain;
+                        });
+                        if (found) {
+                            validMain = selectedMain;
+                            currentMainImage = selectedMain;
+                        } else {
+                            showToast('⚠️ Ảnh chính "' + selectedMain + '" đã bị xóa khỏi folder!', 'warning');
+                            document.getElementById('imgPreview').src = '/images/default-product.png';
+                            document.getElementById('duongDanAnh').value = '';
+                            document.getElementById('mainImageName').textContent = 'Chưa có ảnh chính';
+                        }
+                    }
+                    if (imageList && imageList.length > 0) {
+                        var filteredList = imageList.filter(function(img) {
+                            return data.images.some(function(folderImg) {
+                                return folderImg.fileName === img;
+                            });
+                        });
+                        if (validMain && !filteredList.includes(validMain)) {
+                            filteredList.unshift(validMain);
+                        }
+                        selectedImages = filteredList;
+                    } else if (validMain) {
+                        selectedImages = [validMain];
+                    } else {
+                        selectedImages = [];
+                    }
+                    renderGalleryImages(data.images, validMain, selectedImages);
+                    if (validMain) {
+                        document.getElementById('selectedImageInfo').style.display = 'block';
+                        document.getElementById('selectedImageName').textContent = validMain;
+                        document.getElementById('duongDanAnh').value = validMain;
+                        document.getElementById('imgPreview').src = '/images/' + validMain;
+                        document.getElementById('mainImageName').textContent = validMain;
+                    }
+                    renderSelectedImages();
+                    updateSubImageCounts();
+                    showToast('Đã tải ' + data.images.length + ' ảnh từ folder!', 'success');
+                } else {
+                    container.innerHTML = `
+                    <div class="col-12 text-center py-3 text-muted">
+                        <i class="bi bi-folder2-open fs-2 d-block mb-2"></i>
+                        Không có ảnh nào trong folder
+                        <br><small>Folder: D:/AnhSP/</small>
+                    </div>
+                `;
+                }
+            })
+            .catch(error => {
+                console.error('❌ Lỗi:', error);
+                container.innerHTML = `
+                <div class="col-12 text-center py-3 text-danger">
+                    <i class="bi bi-exclamation-triangle-fill fs-2 d-block mb-2"></i>
+                    Lỗi tải danh sách ảnh: ${error.message}
+                </div>
+            `;
+                showToast('Lỗi tải danh sách ảnh: ' + error.message, 'error');
+            });
+    }
+
+    function renderGalleryImages(images, mainImage, selectedImageList) {
+        var container = document.getElementById('imageListContainer');
+        if (!container) return;
+        var html = '';
+        images.forEach(function(img) {
+            var isMain = (img.fileName === mainImage);
+            var isSelected = selectedImageList && selectedImageList.includes(img.fileName);
+            html += `
+                <div class="col-4 col-md-3 col-lg-2">
+                    <div class="image-item ${isMain ? 'selected' : ''} ${isSelected && !isMain ? 'selected-sub' : ''}"
+                         onclick="addImageToList('${img.fileName}')"
+                         title="${img.fileName}">
+                        <img src="/images/${img.fileName}"
+                             alt="${img.fileName}"
+                             onerror="this.src='/images/default-product.png'">
+                        <div class="image-name">${img.fileName}</div>
+                        <div class="select-overlay">
+                            <i class="bi bi-check-circle-fill"></i>
+                        </div>
+                        ${isMain ? '<div class="image-badge main-badge"><i class="bi bi-star-fill"></i> Chính</div>' : ''}
+                        ${isSelected && !isMain ? '<div class="image-badge sub-badge"><i class="bi bi-check-circle-fill"></i> Đã chọn</div>' : ''}
+                    </div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+        var gallery = document.getElementById('imageGallery');
+        if (gallery) gallery.style.display = 'block';
+    }
+
+    function clearSelectedImage() {
+        if (currentMainImage) {
+            var index = selectedImages.indexOf(currentMainImage);
+            if (index > -1) {
+                selectedImages.splice(index, 1);
+            }
+        }
+        currentMainImage = '';
+        document.getElementById('duongDanAnh').value = '';
+        document.getElementById('imgPreview').src = '/images/default-product.png';
+        document.getElementById('mainImageName').textContent = 'Chưa có ảnh chính';
+        document.getElementById('selectedImageInfo').style.display = 'none';
+        renderSelectedImages();
+        updateSubImageCounts();
+        showToast('Đã xóa ảnh chính', 'info');
+    }
+
+    function resetModalState() {
+        document.getElementById('maSanPhamChiTiet').value = '';
+        document.getElementById('tenSanPham').value = '';
+        document.getElementById('maSanPhamHidden').value = '';
+        document.getElementById('soLuongTon').value = '';
+        document.getElementById('giaBanDisplay').value = '';
+        document.getElementById('giaBanHidden').value = '';
+        document.getElementById('duongDanAnh').value = '';
+        document.getElementById('imgPreview').src = '/images/default-product.png';
+        document.getElementById('mainImageName').textContent = 'Chưa có ảnh chính';
+        document.getElementById('kichThuoc').value = '';
+        document.getElementById('mauSac').value = '';
+        if (typeof $ !== 'undefined') {
+            $('#kichThuoc').trigger('change');
+            $('#mauSac').trigger('change');
+        }
+        var gallery = document.getElementById('imageGallery');
+        if (gallery) gallery.style.display = 'none';
+        var selectedInfo = document.getElementById('selectedImageInfo');
+        if (selectedInfo) selectedInfo.style.display = 'none';
+        var container = document.getElementById('imageListContainer');
+        if (container) container.innerHTML = '';
+        document.querySelectorAll('.image-item').forEach(function(item) {
+            item.classList.remove('selected');
+            item.classList.remove('selected-sub');
+        });
+        selectedImages = [];
+        currentMainImage = '';
+        renderSelectedImages();
+    }
+
+    function openEditModal(id, kichThuoc, mauSac, giaBan, soLuong, anh, danhSachAnh, tenSanPham, maSanPham) {
+        try {
+            resetModalState();
+            document.getElementById('maSanPhamChiTiet').value = id || '';
+            document.getElementById('tenSanPham').value = tenSanPham || '';
+            document.getElementById('maSanPhamHidden').value = maSanPham || '';
+            if (document.getElementById('kichThuoc')) {
+                document.getElementById('kichThuoc').value = kichThuoc || '';
+                if (typeof $ !== 'undefined') {
+                    $('#kichThuoc').trigger('change');
+                }
+            }
+            if (document.getElementById('mauSac')) {
+                document.getElementById('mauSac').value = mauSac || '';
+                if (typeof $ !== 'undefined') {
+                    $('#mauSac').trigger('change');
+                }
+            }
+            document.getElementById('soLuongTon').value = soLuong || 0;
+            if (document.getElementById('giaBanDisplay')) {
+                var giaTri = parseFloat(giaBan) || 0;
+                if (giaTri > 0) {
+                    document.getElementById('giaBanDisplay').value = giaTri.toLocaleString('vi-VN') + ' VNĐ';
+                } else {
+                    document.getElementById('giaBanDisplay').value = '';
+                }
+                document.getElementById('giaBanHidden').value = giaTri;
+                document.getElementById('giaBanDisplay').setAttribute('data-raw-value', giaTri);
+            }
+            var imageList = [];
+            if (danhSachAnh && danhSachAnh !== '' && danhSachAnh !== 'null' && danhSachAnh !== '[]') {
+                try {
+                    if (typeof danhSachAnh === 'string') {
+                        if (danhSachAnh.startsWith('[')) {
+                            imageList = JSON.parse(danhSachAnh);
+                        } else {
+                            imageList = danhSachAnh.split(',').map(function(s) { return s.trim(); }).filter(function(s) { return s !== ''; });
+                        }
+                    } else if (Array.isArray(danhSachAnh)) {
+                        imageList = danhSachAnh;
+                    }
+                } catch (e) {
+                    if (typeof danhSachAnh === 'string') {
+                        imageList = danhSachAnh.split(',').map(function(s) { return s.trim(); }).filter(function(s) { return s !== ''; });
+                    }
+                }
+            }
+            currentMainImage = anh || '';
+            if (anh && anh !== '' && anh !== 'null' && anh !== 'undefined') {
+                document.getElementById('duongDanAnh').value = anh;
+                document.getElementById('imgPreview').src = '/images/' + anh;
+                document.getElementById('mainImageName').textContent = anh;
+                if (!imageList.includes(anh)) {
+                    imageList.unshift(anh);
+                }
+            } else {
+                document.getElementById('imgPreview').src = '/images/default-product.png';
+                document.getElementById('mainImageName').textContent = 'Chưa có ảnh chính';
+            }
+            selectedImages = imageList;
+            renderSelectedImages();
+            var modalEl = document.getElementById('spctModal');
+            if (modalEl) {
+                var modal = new bootstrap.Modal(modalEl);
+                modal.show();
+            }
+            setTimeout(function() {
+                loadImageListWithSelection(currentMainImage, selectedImages);
+            }, 500);
+        } catch (error) {
+            console.error('❌ Error opening modal:', error);
+            showToast('Lỗi khi mở modal: ' + error.message, 'error');
+        }
+    }
+
+    function openEditModalFromButton(btn) {
+        try {
+            var id = btn.getAttribute('data-id');
+            var kichThuoc = btn.getAttribute('data-kichthuoc');
+            var mauSac = btn.getAttribute('data-mausac');
+            var giaBan = btn.getAttribute('data-giaban');
+            var soLuong = btn.getAttribute('data-soluong');
+            var anh = btn.getAttribute('data-anh');
+            var danhSachAnh = btn.getAttribute('data-danhsachanh') || '';
+            var tenSanPham = btn.getAttribute('data-tensanpham');
+            var maSanPham = btn.getAttribute('data-masanpham');
+            if (!id) {
+                showToast('Không tìm thấy mã biến thể!', 'error');
+                return;
+            }
+            if (giaBan === null || giaBan === undefined || giaBan === 'null' || giaBan === '') {
+                giaBan = 0;
+            }
+            if (typeof giaBan === 'string') {
+                giaBan = parseFloat(giaBan.replace(/[^0-9.-]/g, '')) || 0;
+            }
+            giaBan = parseFloat(giaBan) || 0;
+            resetModalState();
+            openEditModal(id, kichThuoc, mauSac, giaBan, soLuong, anh, danhSachAnh, tenSanPham, maSanPham);
+        } catch (error) {
+            console.error('❌ Error in openEditModalFromButton:', error);
+            showToast('Lỗi: ' + error.message, 'error');
+        }
+    }
+
+    function submitUpdateForm() {
+        var form = document.getElementById('updateForm');
+        if (!form) {
+            showToast('Không tìm thấy form!', 'error');
+            return;
+        }
+
+        var maSanPhamChiTiet = document.getElementById('maSanPhamChiTiet').value;
+        var maSanPham = document.getElementById('maSanPhamHidden').value;
+        var maKichThuoc = document.getElementById('kichThuoc').value;
+        var maMauSac = document.getElementById('mauSac').value;
+        var soLuongTon = document.getElementById('soLuongTon').value;
+        var giaBanDisplay = document.getElementById('giaBanDisplay');
+        var giaBanValue = 0;
+        if (giaBanDisplay) {
+            giaBanValue = getRawMoneyValue(giaBanDisplay);
+            if (giaBanValue === 0) {
+                var rawValue = giaBanDisplay.getAttribute('data-raw-value');
+                if (rawValue) {
+                    giaBanValue = parseFloat(rawValue) || 0;
+                }
+            }
+        }
+
+        if (!maSanPhamChiTiet) {
+            showToast('⚠️ Không tìm thấy mã biến thể!', 'warning');
+            return;
+        }
+        if (giaBanValue <= 0) {
+            showToast('⚠️ Vui lòng nhập giá bán hợp lệ!', 'warning');
+            if (giaBanDisplay) giaBanDisplay.focus();
+            return;
+        }
+
+        var duongDanAnh = document.getElementById('duongDanAnh').value;
+        var danhSachAnh = document.getElementById('danhSachAnh').value;
+
+        var formData = new FormData();
+        formData.append('maSanPhamChiTiet', maSanPhamChiTiet);
+        formData.append('sanPham.maSanPham', maSanPham);
+        formData.append('kichThuoc.maKichThuoc', maKichThuoc);
+        formData.append('mauSac.maMauSac', maMauSac);
+        formData.append('giaBan', giaBanValue);
+        formData.append('soLuongTon', soLuongTon);
+        formData.append('source', 'detail');
+        if (duongDanAnh && duongDanAnh !== '') {
+            formData.append('duongDanAnh', duongDanAnh);
+        }
+        if (danhSachAnh && danhSachAnh !== '' && danhSachAnh !== '[]') {
+            formData.append('danhSachAnh', danhSachAnh);
+        }
+
+        var csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
+        var csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content');
+        var headers = {};
+        if (csrfToken && csrfHeader) {
+            headers[csrfHeader] = csrfToken;
+        }
+
+        var submitBtn = document.querySelector('#spctModal .btn[style*="background: #c92327"]');
+        var originalText = submitBtn ? submitBtn.innerHTML : '';
+        if (submitBtn) {
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Đang lưu...';
+            submitBtn.disabled = true;
+        }
+
+        showToast('⏳ Đang cập nhật biến thể...', 'warning');
+
+        fetch('/sanphamct/update-ajax', {
+            method: 'POST',
+            headers: headers,
+            body: formData
+        })
+            .then(function(response) {
+                return response.json();
+            })
+            .then(function(data) {
+                var modal = bootstrap.Modal.getInstance(document.getElementById('spctModal'));
+                if (modal) modal.hide();
+
+                if (data.success) {
+                    showToast('✅ ' + (data.message || 'Cập nhật biến thể thành công!'), 'success');
+                    updateRowData(data);
+                } else {
+                    showToast('❌ ' + (data.message || 'Cập nhật thất bại!'), 'error');
+                }
+            })
+            .catch(function(error) {
+                console.error('❌ Fetch error:', error);
+                showToast('❌ Lỗi: ' + error.message, 'error');
+            })
+            .finally(function() {
+                if (submitBtn) {
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                }
+            });
+    }
+
+    function updateRowData(data) {
+        console.log('🔄 Cập nhật dòng dữ liệu:', data);
+
+        var maBienThe = data.maBienThe;
+        if (!maBienThe) {
+            console.warn('⚠️ Không có mã biến thể!');
+            return;
+        }
+
+        var row = document.getElementById('row-' + maBienThe);
+        if (!row) {
+            console.warn('⚠️ Không tìm thấy dòng:', maBienThe);
+            return;
+        }
+
+        var cells = row.querySelectorAll('td');
+        if (cells.length < 9) {
+            console.warn('⚠️ Số lượng cell không đủ:', cells.length);
+            return;
+        }
+
+        if (data.tenKichThuoc) cells[2].textContent = data.tenKichThuoc;
+        if (data.tenMauSac) cells[3].textContent = data.tenMauSac;
+        if (data.giaBan) cells[4].innerHTML = '<span class="fw-bold text-danger">' + formatCurrency(data.giaBan) + '</span>';
+        if (data.soLuongTon !== undefined && data.soLuongTon !== null) {
+            cells[5].textContent = data.soLuongTon;
+            cells[5].className = 'fw-bold soLuongDisplay';
+        }
+        if (data.trangThai) cells[6].innerHTML = getStatusBadge(data.trangThai);
+
+        var imageHtml = '';
+        var mainImage = data.duongDanAnh || '';
+        var subCount = data.soLuongAnhPhu || 0;
+
+        if (mainImage && mainImage !== '') {
+            imageHtml = `<img src="/images/${mainImage}" width="50" height="50" class="img-zoom rounded border" style="object-fit:cover;" alt="Ảnh sản phẩm" onerror="this.src='/images/default-product.png'">`;
+            if (subCount > 0) {
+                imageHtml += `<span class="badge bg-secondary ms-1 sub-image-count" style="font-size: 10px; padding: 2px 8px; border-radius: 12px;">+${subCount}</span>`;
+            }
+        } else {
+            imageHtml = `<span class="text-muted small">Chưa có ảnh</span>`;
+        }
+        cells[7].innerHTML = imageHtml;
+
+        var editBtn = row.querySelector('.btn-action-edit');
+        if (editBtn) {
+            if (data.maKichThuoc) editBtn.setAttribute('data-kichthuoc', data.maKichThuoc);
+            if (data.maMauSac) editBtn.setAttribute('data-mausac', data.maMauSac);
+            if (data.giaBan) editBtn.setAttribute('data-giaban', data.giaBan);
+            if (data.soLuongTon !== undefined) editBtn.setAttribute('data-soluong', data.soLuongTon);
+            if (data.duongDanAnh) editBtn.setAttribute('data-anh', data.duongDanAnh);
+            if (data.trangThai) editBtn.setAttribute('data-trangthai', data.trangThai);
+            if (data.danhSachAnh) {
+                editBtn.setAttribute('data-danhsachanh', JSON.stringify(data.danhSachAnh));
+            }
+            if (subCount !== undefined) {
+                editBtn.setAttribute('data-subcount', subCount);
+            }
+        }
+
+        var switchInput = row.querySelector('.custom-switch');
+        if (switchInput && data.trangThai) {
+            switchInput.checked = (data.trangThai !== 'Ngừng bán' && data.trangThai !== 'Ngừng kinh doanh');
+            switchInput.setAttribute('data-message', switchInput.checked ? 'Đã bật sản phẩm!' : 'Đã tắt sản phẩm!');
+        }
+
+        row.style.transition = 'background-color 0.5s';
+        row.style.backgroundColor = '#d4edda';
+        setTimeout(function() {
+            row.style.backgroundColor = '';
+        }, 2000);
+
+        console.log('✅ Đã cập nhật dòng:', maBienThe);
+    }
+
+    function getStatusBadge(trangThai) {
+        var icon = '', badgeClass = '', text = trangThai || '';
+        switch(trangThai) {
+            case 'Còn hàng': icon = '<i class="bi bi-check-circle-fill"></i>'; badgeClass = 'badge-success'; break;
+            case 'Sắp hết': icon = '<i class="bi bi-exclamation-triangle-fill"></i>'; badgeClass = 'badge-warning'; break;
+            case 'Hết hàng': icon = '<i class="bi bi-x-circle-fill"></i>'; badgeClass = 'badge-danger'; break;
+            case 'Ngừng bán': case 'Ngừng kinh doanh': icon = '<i class="bi bi-slash-circle-fill"></i>'; badgeClass = 'badge-secondary'; break;
+            default: icon = '<i class="bi bi-question-circle-fill"></i>'; badgeClass = 'badge-secondary';
+        }
+        return '<span class="badge-status ' + badgeClass + '">' + icon + ' ' + text + '</span>';
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.toggle-switch').forEach(function(switchEl) {
+            switchEl.addEventListener('change', function(e) {
+                e.preventDefault();
+
+                var isChecked = this.checked;
+                var id = this.getAttribute('data-id');
+                var originalChecked = !isChecked;
+
+                if (this.disabled) {
+                    showToast('⚠️ Không thể thay đổi trạng thái biến thể khi sản phẩm cha đang ngừng bán!', 'warning');
+                    this.checked = originalChecked;
+                    return;
+                }
+
+                var statusText = isChecked ? 'Còn hàng' : 'Ngừng bán';
+                var titleText = isChecked ? 'Xác nhận bật biến thể' : 'Xác nhận tắt biến thể';
+                var iconType = isChecked ? 'success' : 'warning';
+                var iconClass = isChecked ? 'bi-check-circle-fill' : 'bi-slash-circle-fill';
+                var btnClass = isChecked ? 'btn-success' : 'btn-danger';
+                var btnText = isChecked ? '<i class="bi bi-check-circle-fill me-1"></i>Xác nhận bật' : '<i class="bi bi-slash-circle-fill me-1"></i>Xác nhận tắt';
+                var description = 'Trạng thái sẽ chuyển thành "' + statusText + '"';
+                var extra = '<div class="alert alert-info mb-0 text-start"><i class="bi bi-info-circle me-1"></i>Mã biến thể: <strong>' + id + '</strong></div>';
+
+                showConfirmActionModal({
+                    icon: iconType,
+                    iconClass: iconClass,
+                    title: titleText,
+                    subtitle: isChecked ? 'Biến thể sẽ được bật' : 'Biến thể sẽ được tắt',
+                    description: description,
+                    btnText: btnText,
+                    btnClass: btnClass,
+                    extra: extra
+                }).then(function(confirmed) {
+                    if (confirmed) {
+                        var form = switchEl.closest('form');
+                        if (form) {
+                            form.submit();
+                        } else {
+                            var csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
+                            var csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content');
+                            var headers = {
+                                'Content-Type': 'application/json'
+                            };
+                            if (csrfToken && csrfHeader) {
+                                headers[csrfHeader] = csrfToken;
+                            }
+
+                            fetch('/sanphamct/api/toggle-status/' + id + '?active=' + isChecked, {
+                                method: 'POST',
+                                headers: headers
+                            })
+                                .then(function(response) {
+                                    return response.json();
+                                })
+                                .then(function(data) {
+                                    if (data.success) {
+                                        showToast('✅ ' + data.message, 'success');
+                                        var row = document.getElementById('row-' + id);
+                                        if (row) {
+                                            var cells = row.querySelectorAll('td');
+                                            if (cells.length >= 7) {
+                                                cells[6].innerHTML = getStatusBadge(data.trangThai);
+                                            }
+                                            if (cells.length >= 6) {
+                                                cells[5].textContent = data.soLuongTon;
+                                            }
+                                        }
+                                    } else {
+                                        showToast('❌ ' + data.message, 'error');
+                                        switchEl.checked = originalChecked;
+                                    }
+                                })
+                                .catch(function(error) {
+                                    showToast('❌ Lỗi: ' + error.message, 'error');
+                                    switchEl.checked = originalChecked;
+                                });
+                        }
+                    } else {
+                        switchEl.checked = originalChecked;
+                    }
+                });
+            });
+        });
+    });
+
+    function showConfirmActionModal(options) {
+        return new Promise((resolve) => {
+            var icon = document.getElementById('confirmActionIcon');
+            var title = document.getElementById('confirmActionTitle');
+            var subtitle = document.getElementById('confirmActionSubtitle');
+            var message = document.getElementById('confirmActionMessage');
+            var description = document.getElementById('confirmActionDescription');
+            var extra = document.getElementById('confirmActionExtra');
+            var btn = document.getElementById('confirmActionBtn');
+
+            var iconType = options.icon || 'warning';
+            var iconClass = options.iconClass || 'bi-exclamation-triangle-fill';
+            icon.className = 'confirm-icon-wrapper ' + iconType;
+            icon.innerHTML = '<i class="bi ' + iconClass + '"></i>';
+
+            title.textContent = options.title || 'Xác nhận';
+            subtitle.textContent = options.subtitle || 'Vui lòng xác nhận hành động';
+
+            if (options.message) {
+                message.innerHTML = options.message;
+            } else {
+                message.textContent = 'Bạn có chắc chắn muốn thực hiện hành động này?';
+            }
+
+            description.textContent = options.description || 'Hành động này có thể không thể hoàn tác.';
+
+            if (options.extra) {
+                extra.style.display = 'block';
+                extra.innerHTML = options.extra;
+            } else {
+                extra.style.display = 'none';
+            }
+
+            btn.innerHTML = options.btnText || '<i class="bi bi-check-circle-fill me-1"></i>Xác nhận';
+            btn.className = 'btn px-4 py-2 fw-semibold ' + (options.btnClass || 'btn-danger');
+            btn.style.borderRadius = '10px';
+            btn.style.transition = 'all 0.3s';
+
+            var newBtn = btn.cloneNode(true);
+            btn.parentNode.replaceChild(newBtn, btn);
+
+            newBtn.addEventListener('click', function() {
+                var modal = bootstrap.Modal.getInstance(document.getElementById('confirmActionModal'));
+                modal.hide();
+                resolve(true);
+            });
+
+            var modalElement = document.getElementById('confirmActionModal');
+            var handleHidden = function() {
+                resolve(false);
+                modalElement.removeEventListener('hidden.bs.modal', handleHidden);
+            };
+            modalElement.addEventListener('hidden.bs.modal', handleHidden);
+
+            var modal = new bootstrap.Modal(modalElement);
+            modal.show();
+        });
+    }
+</script>
+</body>
+</html>

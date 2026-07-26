@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Liên hệ khách hàng - FS Shop</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <style>
+        .lh-card { background:#fff; border:1px solid #e9ecf2; border-radius:14px; }
+        .lh-row { padding:16px 18px; border-bottom:1px solid #f2f4f7; }
+        .lh-row:last-child { border-bottom:0; }
+        .lh-row.daxuly { opacity:.6; }
+        .lh-ava { width:44px; height:44px; border-radius:999px; background:linear-gradient(135deg,#2563eb,#60a5fa);
+            color:#fff; display:grid; place-items:center; font-weight:800; flex-shrink:0; }
+        .lh-noidung { background:#f8f9fb; border:1px solid #eef0f4; border-radius:11px; padding:11px 14px;
+            margin-top:9px; white-space:pre-wrap; font-size:14px; }
+        .btn-gmail { background:#ea4335; border:0; color:#fff !important; font-weight:700; }
+        .btn-gmail:hover { background:#c5372c; color:#fff; }
+        #lhBannerMoi { display:none; cursor:pointer; }
+        .lh-stat { background:#fff; border:1px solid #e9ecf2; border-radius:14px; padding:16px 18px; }
+        .lh-stat .so { font-size:26px; font-weight:800; line-height:1; }
+        .lh-stat .nhan { font-size:12.5px; color:#667085; margin-top:5px; }
+    </style>
+</head>
+<body>
+<div class="wrapper">
+    <div sec:authorize="hasRole('ADMIN')"><div th:replace="~{fragments/sidebaradmin :: sidebar-admin}"></div></div>
+    <div sec:authorize="hasRole('STAFF')"><div th:replace="~{fragments/sidebarstaff :: sidebar-staff}"></div></div>
+
+    <div class="content-body px-3">
+        <div th:replace="~{fragments/header :: header('Liên hệ khách hàng', 'Liên hệ')}"></div>
+
+        <div class="alert alert-success position-fixed shadow" th:if="${thongBao}"
+             style="top:20px;right:20px;z-index:9999" th:text="${thongBao}"></div>
+
+        <!-- Banner realtime: có liên hệ mới -->
+        <div class="alert alert-warning d-flex align-items-center gap-2 mt-3 shadow-sm" id="lhBannerMoi"
+             onclick="location.reload()">
+            <i class="bi bi-envelope-exclamation-fill fs-5"></i>
+            <div><b>Có liên hệ mới vừa gửi đến!</b> Bấm vào đây để tải lại danh sách.</div>
+        </div>
+
+        <div class="row g-3 mt-1">
+            <div class="col-6 col-lg-3"><div class="lh-stat">
+                <div class="so" th:text="${tongTatCa}">0</div>
+                <div class="nhan"><i class="bi bi-envelope me-1"></i>Tổng liên hệ</div>
+            </div></div>
+            <div class="col-6 col-lg-3"><div class="lh-stat">
+                <div class="so text-danger" th:text="${tongChuaXuLy}">0</div>
+                <div class="nhan"><i class="bi bi-envelope-exclamation me-1"></i>Chưa xử lý</div>
+            </div></div>
+            <div class="col-12 col-lg-6 d-flex align-items-center justify-content-lg-end gap-2">
+                <a th:href="@{/lienhe/index}" class="btn btn-sm"
+                   th:classappend="${fTt == null} ? 'btn-danger' : 'btn-light border'">Tất cả</a>
+                <a th:href="@{/lienhe/index(tt='Chưa xử lý')}" class="btn btn-sm"
+                   th:classappend="${fTt == 'Chưa xử lý'} ? 'btn-danger' : 'btn-light border'">Chưa xử lý</a>
+                <a th:href="@{/lienhe/index(tt='Đã xử lý')}" class="btn btn-sm"
+                   th:classappend="${fTt == 'Đã xử lý'} ? 'btn-danger' : 'btn-light border'">Đã xử lý</a>
+            </div>
+        </div>
+
+        <div class="lh-card mt-3 mb-4">
+            <div th:if="${rows.isEmpty()}" class="text-center text-muted py-5">
+                <i class="bi bi-inbox" style="font-size:42px"></i>
+                <div class="mt-2">Chưa có liên hệ nào.</div>
+            </div>
+
+            <div class="lh-row" th:each="r : ${rows}" th:classappend="${r.daXuLy} ? ' daxuly'">
+                <div class="d-flex gap-3">
+                    <div class="lh-ava" th:text="${#strings.substring(r.hoTen, 0, 1)}">A</div>
+                    <div class="flex-grow-1">
+                        <div class="d-flex align-items-center flex-wrap gap-2">
+                            <b th:text="${r.hoTen}">Nguyễn Văn A</b>
+                            <a class="text-muted small" th:href="'mailto:' + ${r.email}"
+                               th:text="${r.email}">email@abc.com</a>
+                            <span class="badge rounded-pill"
+                                  th:classappend="${r.daXuLy} ? ' text-bg-success' : ' text-bg-danger'"
+                                  th:text="${r.daXuLy} ? 'Đã xử lý' : 'Chưa xử lý'">Chưa xử lý</span>
+                            <span class="text-muted small ms-auto" th:text="${r.thoiGian}">10:00 01/01/2026</span>
+                        </div>
+                        <div class="lh-noidung" th:text="${r.noiDung}">Nội dung khách gửi...</div>
+                        <div class="mt-2 d-flex flex-wrap gap-2">
+                            <a class="btn btn-sm btn-gmail" th:href="${r.gmailUrl}" target="_blank" rel="noopener">
+                                <i class="bi bi-envelope-arrow-up-fill"></i> Trả lời qua Gmail</a>
+                            <a class="btn btn-sm btn-light border" th:href="${r.mailtoUrl}" title="Mở ứng dụng mail của máy">
+                                <i class="bi bi-envelope"></i> Ứng dụng mail</a>
+                            <a th:unless="${r.daXuLy}" class="btn btn-sm btn-outline-success"
+                               th:href="@{/lienhe/xu-ly(id=${r.id},xong=true)}">
+                                <i class="bi bi-check2-circle"></i> Đã xử lý</a>
+                            <a th:if="${r.daXuLy}" class="btn btn-sm btn-outline-secondary"
+                               th:href="@{/lienhe/xu-ly(id=${r.id},xong=false)}">
+                                <i class="bi bi-arrow-counterclockwise"></i> Chưa xử lý</a>
+                        </div>
+                        <div class="text-muted small mt-2">
+                            <i class="bi bi-info-circle"></i>
+                            Nút Gmail mở sẵn thư điền địa chỉ khách + trích dẫn tin nhắn — soạn xong bấm gửi,
+                            rồi quay lại đánh dấu <b>Đã xử lý</b>.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Có liên hệ mới (bắn từ widget realtime dùng chung) → hiện banner tải lại
+    window.addEventListener('fs-lien-he', function () {
+        var b = document.getElementById('lhBannerMoi');
+        if (b) b.style.display = 'flex';
+    });
+</script>
+</body>
+</html>

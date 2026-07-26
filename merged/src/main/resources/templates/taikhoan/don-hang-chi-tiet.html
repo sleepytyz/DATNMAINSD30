@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/client-layout :: head('Chi tiết đơn hàng')}"></head>
+<body>
+<header th:replace="~{fragments/client-layout :: header}"></header>
+<div class="fs-container">
+    <div class="fs-account-layout">
+        <aside th:replace="~{fragments/client-layout :: taikhoanMenu(${tabActive})}"></aside>
+        <main class="fs-account-main"
+              th:with="b=${hd.trangThai == 'Chờ xác nhận' ? 1 :
+                          (hd.trangThai == 'Đã xác nhận' ? 2 :
+                          (hd.trangThai == 'Đang giao' ? 3 :
+                          (hd.trangThai == 'Đã giao' ? 4 : 0)))}">
+            <div class="fs-alert fs-alert-success" th:if="${thongBao}">
+                <i class="bi bi-check-circle-fill"></i><span th:text="${thongBao}"></span></div>
+            <div class="fs-alert fs-alert-error" th:if="${loiDonHang}">
+                <i class="bi bi-x-circle-fill"></i><span th:text="${loiDonHang}"></span></div>
+
+            <div class="fs-panel">
+                <h2 style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                    <i class="bi bi-receipt"></i> Đơn <span th:text="${hd.maHoaDon}">HD001</span>
+                    <span id="fsTTChip" class="fs-tt"
+                          th:classappend="${hd.trangThai == 'Chờ xác nhận'} ? ' fs-tt-cho' :
+                                          (${hd.trangThai == 'Đã xác nhận'} ? ' fs-tt-xacnhan' :
+                                          (${hd.trangThai == 'Đang giao'} ? ' fs-tt-giao' :
+                                          (${hd.trangThai == 'Đã giao'} ? ' fs-tt-xong' : ' fs-tt-huy')))"
+                          th:text="${hd.trangThai}">Chờ xác nhận</span>
+                </h2>
+                <p class="sub"><i class="bi bi-broadcast"></i>
+                    Trạng thái tự cập nhật theo thời gian thực khi cửa hàng xử lý đơn.</p>
+
+                <div class="fs-cancelled" id="fsHuyNote" th:style="${hd.trangThai != 'Đã huỷ'} ? 'display:none'">
+                    <i class="bi bi-x-octagon-fill"></i> Đơn hàng đã huỷ — tồn kho và mã giảm giá (nếu có) đã được hoàn lại.
+                </div>
+
+                <div class="fs-timeline" id="fsTimeline">
+                    <div class="fs-step" data-buoc="1"
+                         th:classappend="${b > 1 || b == 4} ? ' done' : (${b == 1} ? ' now' : '')">
+                        <div class="dot"><i class="bi bi-hourglass-split"></i></div><b>Chờ xác nhận</b></div>
+                    <div class="fs-step" data-buoc="2"
+                         th:classappend="${b > 2 || b == 4} ? ' done' : (${b == 2} ? ' now' : '')">
+                        <div class="dot"><i class="bi bi-check2-circle"></i></div><b>Đã xác nhận</b></div>
+                    <div class="fs-step" data-buoc="3"
+                         th:classappend="${b == 4} ? ' done' : (${b == 3} ? ' now' : '')">
+                        <div class="dot"><i class="bi bi-truck"></i></div><b>Đang giao</b></div>
+                    <div class="fs-step" data-buoc="4"
+                         th:classappend="${b == 4} ? ' done'">
+                        <div class="dot"><i class="bi bi-box-seam"></i></div><b>Đã giao</b></div>
+                </div>
+
+                <div class="fs-sum-row"><span>Thời gian đặt</span>
+                    <b th:text="${hd.ngayTao != null ? #temporals.format(hd.ngayTao,'HH:mm dd/MM/yyyy') : '—'}">—</b></div>
+                <div class="fs-sum-row"><span>Giao đến</span>
+                    <b style="text-align:right;max-width:70%" th:text="${hd.diaChiGiaoHang}">Địa chỉ</b></div>
+                <div class="fs-sum-row"><span>Thanh toán</span><b th:text="${hd.phuongThucThanhToan}">COD</b></div>
+                <div class="fs-sum-row" th:if="${hd.ngayThanhToan != null}"><span>Đã thanh toán lúc</span>
+                    <b th:text="${#temporals.format(hd.ngayThanhToan,'HH:mm dd/MM/yyyy')}">—</b></div>
+                <div class="fs-sum-row" th:if="${hd.ghiChu != null && !#strings.isEmpty(hd.ghiChu)}">
+                    <span>Ghi chú</span><b style="text-align:right;max-width:70%" th:text="${hd.ghiChu}"></b></div>
+            </div>
+
+            <div class="fs-panel">
+                <h3><i class="bi bi-box"></i> Sản phẩm trong đơn</h3>
+                <div class="fs-mini-line" th:each="ct : ${chiTiet}">
+                    <img th:src="${ct.sanPhamChiTiet != null && ct.sanPhamChiTiet.anhDaiDien != null
+                                  ? '/images/' + ct.sanPhamChiTiet.anhDaiDien : '/storefront/img/no-image.svg'}"
+                         alt="" onerror="this.src='/storefront/img/no-image.svg'">
+                    <div>
+                        <a class="ten" th:if="${ct.sanPhamChiTiet != null && ct.sanPhamChiTiet.sanPham != null}"
+                           th:href="@{/cua-hang/san-pham/{id}(id=${ct.sanPhamChiTiet.sanPham.maSanPham})}"
+                           th:text="${ct.sanPhamChiTiet.sanPham.tenSanPham}">Tên</a>
+                        <div class="pl">
+                            <span th:if="${ct.sanPhamChiTiet != null && ct.sanPhamChiTiet.mauSac != null}"
+                                  th:text="${ct.sanPhamChiTiet.mauSac.tenMauSac}"></span> /
+                            <span th:if="${ct.sanPhamChiTiet != null && ct.sanPhamChiTiet.kichThuoc != null}"
+                                  th:text="${ct.sanPhamChiTiet.kichThuoc.tenKichThuoc}"></span>
+                            <span th:text="' ×' + ${ct.soLuong}"></span>
+                        </div>
+                        <a th:if="${ct.sanPhamChiTiet != null && ct.sanPhamChiTiet.sanPham != null
+                                    && coTheDanhGia.getOrDefault(ct.sanPhamChiTiet.sanPham.maSanPham, false)}"
+                           th:href="@{/cua-hang/san-pham/{id}(id=${ct.sanPhamChiTiet.sanPham.maSanPham})} + '#danh-gia'"
+                           class="fs-btn fs-btn-ghost fs-btn-sm" style="margin-top:6px">
+                            <i class="bi bi-star"></i> Đánh giá</a>
+                    </div>
+                    <div class="tt" th:text="${#numbers.formatDecimal(ct.thanhTien,0,'POINT',0,'COMMA')} + '₫'">—</div>
+                </div>
+
+                <div class="fs-sum-row" style="margin-top:8px"><span>Phí vận chuyển</span>
+                    <span th:text="${hd.tienShip != null && hd.tienShip.signum() > 0
+                                    ? #numbers.formatDecimal(hd.tienShip,0,'POINT',0,'COMMA') + '₫' : 'Miễn phí'}">—</span></div>
+                <div class="fs-sum-row save" th:if="${hd.maGiamGia != null}">
+                    <span>Voucher</span><span th:text="${hd.maGiamGia.tenGiamGia}">FSSALE10</span></div>
+                <div class="fs-sum-row total"><span>Tổng thanh toán</span>
+                    <b th:text="${#numbers.formatDecimal(hd.tongTien,0,'POINT',0,'COMMA')} + '₫'">—</b></div>
+
+                <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px">
+                    <a th:if="${hd.trangThai == 'Chờ thanh toán'}"
+                       th:href="@{/thanh-toan/thanh-cong/{ma}(ma=${hd.maHoaDon})}"
+                       class="fs-btn fs-btn-primary">
+                        <i class="bi bi-credit-card-2-front"></i> Quay lại thanh toán</a>
+                    <form th:action="@{/ca-nhan/don-hang/huy/{ma}(ma=${hd.maHoaDon})}" method="post"
+                          id="fsNutHuyDon" th:style="${hd.trangThai != 'Chờ xác nhận'} ? 'display:none'"
+                          onsubmit="return confirm('Huỷ đơn hàng này? Tồn kho và voucher sẽ được hoàn lại.')">
+                        <button type="submit" class="fs-btn fs-btn-outline" style="color:var(--fs-red);border-color:#ffc7c2">
+                            <i class="bi bi-x-circle"></i> Huỷ đơn</button>
+                    </form>
+                    <form th:action="@{/ca-nhan/don-hang/mua-lai/{ma}(ma=${hd.maHoaDon})}" method="post">
+                        <button type="submit" class="fs-btn fs-btn-primary">
+                            <i class="bi bi-arrow-repeat"></i> Mua lại</button>
+                    </form>
+                    <a th:href="@{/ca-nhan/don-hang}" class="fs-btn fs-btn-outline">
+                        <i class="bi bi-arrow-left"></i> Về danh sách đơn</a>
+                </div>
+            </div>
+
+            <!-- ================= ĐÁNH GIÁ SẢN PHẨM (hiện khi đơn Đã giao) ================= -->
+            <div class="fs-panel" id="danh-gia-don"
+                 th:if="${hd.trangThai == 'Đã giao' && spDanhGia != null && !spDanhGia.isEmpty()}">
+                <h3><i class="bi bi-stars"></i> Đánh giá sản phẩm trong đơn</h3>
+                <p class="sub">Đơn đã giao thành công — chấm sao và chia sẻ cảm nhận ngay tại đây.
+                    Mỗi sản phẩm được đánh giá một lần cho mỗi đơn hàng.</p>
+
+                <div class="fs-review-form" style="margin-top:12px" th:each="sp : ${spDanhGia}">
+                    <div style="display:flex;gap:12px;align-items:center;margin-bottom:8px">
+                        <img th:src="${sp.anh}" alt="" onerror="this.src='/storefront/img/no-image.svg'"
+                             style="width:52px;height:52px;border-radius:10px;object-fit:cover;border:1px solid var(--fs-line);background:#fff">
+                        <b th:text="${sp.ten}">Tên sản phẩm</b>
+                    </div>
+
+                    <form th:if="${sp.coThe}" th:action="@{/danh-gia/gui}" method="post">
+                        <input type="hidden" name="maSanPham" th:value="${sp.ma}">
+                        <input type="hidden" name="veDonHang" th:value="${hd.maHoaDon}">
+                        <div class="fs-sao-chon" title="Chọn số sao">
+                            <input type="radio" name="soSao" value="5" th:id="'s5-' + ${sp.ma}" checked>
+                            <label th:for="'s5-' + ${sp.ma}"><i class="bi bi-star-fill"></i></label>
+                            <input type="radio" name="soSao" value="4" th:id="'s4-' + ${sp.ma}">
+                            <label th:for="'s4-' + ${sp.ma}"><i class="bi bi-star-fill"></i></label>
+                            <input type="radio" name="soSao" value="3" th:id="'s3-' + ${sp.ma}">
+                            <label th:for="'s3-' + ${sp.ma}"><i class="bi bi-star-fill"></i></label>
+                            <input type="radio" name="soSao" value="2" th:id="'s2-' + ${sp.ma}">
+                            <label th:for="'s2-' + ${sp.ma}"><i class="bi bi-star-fill"></i></label>
+                            <input type="radio" name="soSao" value="1" th:id="'s1-' + ${sp.ma}">
+                            <label th:for="'s1-' + ${sp.ma}"><i class="bi bi-star-fill"></i></label>
+                        </div>
+                        <textarea name="noiDung" maxlength="1000"
+                                  placeholder="Giày đi có êm không? Form có chuẩn size không? Chia sẻ để mọi người cùng biết nhé..."></textarea>
+                        <div style="margin-top:10px">
+                            <button type="submit" class="fs-btn fs-btn-primary">
+                                <i class="bi bi-send"></i> Gửi đánh giá</button>
+                        </div>
+                    </form>
+
+                    <div th:unless="${sp.coThe}" class="fs-alert fs-alert-success" style="margin:0">
+                        <i class="bi bi-patch-check-fill"></i>
+                        <span>Bạn đã đánh giá sản phẩm này — cảm ơn bạn!
+                            <a th:href="@{/cua-hang/san-pham/{id}(id=${sp.ma})} + '#danh-gia'"
+                               style="color:inherit;text-decoration:underline">Xem trên trang sản phẩm</a></span>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+<footer th:replace="~{fragments/client-layout :: footer}"></footer>
+<div th:replace="~{fragments/client-layout :: toast}"></div>
+<th:block th:replace="~{fragments/client-layout :: scripts}"></th:block>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+<script th:inline="javascript">
+    fsKetNoiDonHang(/*[[${hd.maHoaDon}]]*/ '');
+</script>
+</body>
+</html>

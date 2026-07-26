@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/client-layout :: head('Hồ sơ cá nhân')}"></head>
+<body>
+<header th:replace="~{fragments/client-layout :: header}"></header>
+<div class="fs-container">
+    <div class="fs-account-layout">
+        <aside th:replace="~{fragments/client-layout :: taikhoanMenu(${tabActive})}"></aside>
+        <main class="fs-account-main">
+            <div class="fs-alert fs-alert-success" th:if="${thongBao}">
+                <i class="bi bi-check-circle-fill"></i><span th:text="${thongBao}"></span></div>
+            <div class="fs-panel">
+                <h2><i class="bi bi-person"></i> Hồ sơ cá nhân</h2>
+                <p class="sub">Quản lý thông tin để việc đặt hàng nhanh chóng và chính xác hơn.</p>
+                <form th:action="@{/ca-nhan/cap-nhat}" th:object="${khachHang}" method="post">
+                    <div class="fs-form-grid">
+                        <div class="fs-field">
+                            <label>Mã khách hàng</label>
+                            <input type="text" th:value="*{maKH}" disabled>
+                        </div>
+                        <div class="fs-field">
+                            <label>Tên đăng nhập</label>
+                            <input type="text" th:value="*{taiKhoan != null ? taiKhoan.tenDangNhap : ''}" disabled>
+                        </div>
+                        <div class="fs-field">
+                            <label>Họ và tên *</label>
+                            <input type="text" th:field="*{hoTen}" placeholder="Nguyễn Văn A">
+                            <span class="err" th:if="${#fields.hasErrors('hoTen')}" th:errors="*{hoTen}"></span>
+                        </div>
+                        <div class="fs-field">
+                            <label>Số điện thoại *</label>
+                            <input type="text" th:field="*{sdt}" placeholder="09xxxxxxxx">
+                            <span class="err" th:if="${#fields.hasErrors('sdt')}" th:errors="*{sdt}"></span>
+                        </div>
+                        <div class="fs-field">
+                            <label>Email *</label>
+                            <input type="email" th:field="*{email}" placeholder="ban@email.com">
+                            <span class="err" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></span>
+                        </div>
+                        <div class="fs-field">
+                            <label>Ngày đăng ký</label>
+                            <input type="text" th:value="${khachHang.ngayDangKy != null ? #temporals.format(khachHang.ngayDangKy,'dd/MM/yyyy') : ''}" disabled>
+                        </div>
+                    </div>
+                    <button type="submit" class="fs-btn fs-btn-primary">
+                        <i class="bi bi-check2-circle"></i> Lưu thay đổi</button>
+                </form>
+            </div>
+        </main>
+    </div>
+</div>
+<footer th:replace="~{fragments/client-layout :: footer}"></footer>
+<div th:replace="~{fragments/client-layout :: toast}"></div>
+<th:block th:replace="~{fragments/client-layout :: scripts}"></th:block>
+</body>
+</html>

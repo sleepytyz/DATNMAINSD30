@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/client-layout :: head('Đổi mật khẩu')}"></head>
+<body>
+<header th:replace="~{fragments/client-layout :: header}"></header>
+<div class="fs-container">
+    <div class="fs-account-layout">
+        <aside th:replace="~{fragments/client-layout :: taikhoanMenu(${tabActive})}"></aside>
+        <main class="fs-account-main">
+            <div class="fs-alert fs-alert-success" th:if="${thongBao}">
+                <i class="bi bi-check-circle-fill"></i><span th:text="${thongBao}"></span></div>
+            <div class="fs-panel" style="max-width:520px">
+                <h2><i class="bi bi-shield-lock"></i> Đổi mật khẩu</h2>
+                <p class="sub">Nên dùng mật khẩu mạnh (chữ hoa, chữ thường, số, ký tự đặc biệt).</p>
+                <form th:action="@{/ca-nhan/doi-mat-khau}" th:object="${doiMatKhau}" method="post">
+                    <div class="fs-field">
+                        <label>Mật khẩu hiện tại *</label>
+                        <input type="password" th:field="*{matKhauCu}">
+                        <span class="err" th:if="${#fields.hasErrors('matKhauCu')}" th:errors="*{matKhauCu}"></span>
+                    </div>
+                    <div class="fs-field">
+                        <label>Mật khẩu mới *</label>
+                        <input type="password" th:field="*{matKhauMoi}">
+                        <span class="err" th:if="${#fields.hasErrors('matKhauMoi')}" th:errors="*{matKhauMoi}"></span>
+                    </div>
+                    <div class="fs-field">
+                        <label>Nhập lại mật khẩu mới *</label>
+                        <input type="password" th:field="*{xnMatKhauMoi}">
+                        <span class="err" th:if="${#fields.hasErrors('xnMatKhauMoi')}" th:errors="*{xnMatKhauMoi}"></span>
+                    </div>
+                    <button type="submit" class="fs-btn fs-btn-primary">
+                        <i class="bi bi-shield-check"></i> Cập nhật mật khẩu</button>
+                </form>
+            </div>
+        </main>
+    </div>
+</div>
+<footer th:replace="~{fragments/client-layout :: footer}"></footer>
+<div th:replace="~{fragments/client-layout :: toast}"></div>
+<th:block th:replace="~{fragments/client-layout :: scripts}"></th:block>
+</body>
+</html>

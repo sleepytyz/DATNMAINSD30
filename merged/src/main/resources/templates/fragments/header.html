@@ -1,0 +1,29 @@
+<header class="main-header" th:fragment="header(pageTitle, breadcrumb)"
+        xmlns:th="http://www.thymeleaf.org"
+        xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+    <div class="breadcrumb-box">
+        <a th:href="@{/}">Trang chủ</a> <span th:if="${breadcrumb != null}">
+            / <span th:text="${breadcrumb}"></span>
+        </span>
+    </div>
+
+    <div class="header-right">
+        <div class="notification-box">
+            <i class="bi bi-bell"></i>
+            <span class="notification-badge">3</span>
+        </div>
+
+        <div class="user-profile">
+            <img th:src="@{/images/avatar-default.png}" class="avatar">
+
+            <div>
+                <div class="user-name">
+                    <span sec:authorize="isAuthenticated()" th:text="${#authentication.principal.hoTenNhanVien}"></span>
+                    <span sec:authorize="isAnonymous()">Chưa đăng nhập</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</header>

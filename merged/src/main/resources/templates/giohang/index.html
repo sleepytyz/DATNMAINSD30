@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/client-layout :: head('Giỏ hàng')}"></head>
+<body>
+<header th:replace="~{fragments/client-layout :: header}"></header>
+
+<div class="fs-container" id="fsCartPage">
+    <nav class="fs-breadcrumb">
+        <a th:href="@{/}">Trang chủ</a> <i class="bi bi-chevron-right"></i> <b>Giỏ hàng</b>
+    </nav>
+
+    <!-- Flash (VD: sau khi "Mua lại" từ đơn cũ) -->
+    <div class="fs-alert fs-alert-success" th:if="${thongBaoGioHang}">
+        <i class="bi bi-check-circle-fill"></i><span th:text="${thongBaoGioHang}"></span></div>
+    <div class="fs-alert fs-alert-warn" th:if="${canhBaoGioHang}">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <span><span th:each="c : ${canhBaoGioHang}" th:text="${c} + ' '" style="display:block"></span></span></div>
+    <div class="fs-alert fs-alert-error" th:if="${loiTaiKhoan}">
+        <i class="bi bi-x-circle-fill"></i><span th:text="${loiTaiKhoan}"></span></div>
+    <div class="fs-alert fs-alert-warn" th:each="c : ${gio.canhBao}">
+        <i class="bi bi-exclamation-triangle-fill"></i><span th:text="${c}"></span></div>
+
+    <!-- ================= GIỎ TRỐNG ================= -->
+    <div class="fs-empty" th:if="${gio.dongHang.isEmpty()}" style="margin:14px 0 44px">
+        <i class="bi bi-bag-x"></i>
+        <h3>Giỏ hàng của bạn đang trống</h3>
+        <p>Cùng chọn cho mình một đôi giày thật ưng ý nhé!</p>
+        <a th:href="@{/cua-hang/san-pham}" class="fs-btn fs-btn-primary fs-btn-lg">
+            <i class="bi bi-bag"></i> Mua sắm ngay</a>
+    </div>
+
+    <!-- ================= GIỎ CÓ HÀNG ================= -->
+    <div class="fs-cart-layout" th:if="${!gio.dongHang.isEmpty()}">
+        <!-- Danh sách dòng hàng -->
+        <div class="fs-cart-list">
+            <div class="fs-cart-line" th:each="l : ${gio.dongHang}"
+                 th:attr="data-ma=${l.maSanPhamChiTiet}"
+                 th:classappend="${!l.conHopLe} ? ' invalid'">
+                <a th:href="@{/cua-hang/san-pham/{id}(id=${l.maSanPham})}" th:if="${l.maSanPham != null}">
+                    <img th:src="${l.anh}" th:alt="${l.tenSanPham}" onerror="this.src='/storefront/img/no-image.svg'">
+                </a>
+                <img th:if="${l.maSanPham == null}" th:src="${l.anh != null ? l.anh : '/storefront/img/no-image.svg'}" alt="">
+                <div>
+                    <a class="fs-cart-name" th:if="${l.maSanPham != null}"
+                       th:href="@{/cua-hang/san-pham/{id}(id=${l.maSanPham})}"
+                       th:text="${l.tenSanPham}">Tên sản phẩm</a>
+                    <span class="fs-cart-name" th:if="${l.maSanPham == null}" th:text="${l.tenSanPham}"></span>
+                    <div class="fs-cart-variant"
+                         th:text="'Màu: ' + ${l.tenMauSac} + '  •  Size: ' + ${l.tenKichThuoc}">Màu: Đen • Size: 42</div>
+                    <div class="fs-cart-price">
+                        <b th:text="${#numbers.formatDecimal(l.donGia,0,'POINT',0,'COMMA')} + '₫'">1.200.000₫</b>
+                        <s th:if="${l.donGiaGoc != null && l.donGia != null && l.donGiaGoc.compareTo(l.donGia) > 0}"
+                           th:text="${#numbers.formatDecimal(l.donGiaGoc,0,'POINT',0,'COMMA')} + '₫'">1.500.000₫</s>
+                    </div>
+                    <div class="fs-qty" style="margin-top:9px" th:if="${l.conHopLe}">
+                        <button type="button" class="js-qty-minus" aria-label="Giảm">−</button>
+                        <input type="number" class="js-qty-input" th:value="${l.soLuong}" min="0"
+                               th:attr="max=${l.soLuongTon}">
+                        <button type="button" class="js-qty-plus" aria-label="Tăng">+</button>
+                    </div>
+                </div>
+                <div class="fs-cart-right">
+                    <div class="fs-cart-total js-line-total"
+                         th:text="${#numbers.formatDecimal(l.thanhTien,0,'POINT',0,'COMMA')} + '₫'">1.200.000₫</div>
+                    <button type="button" class="fs-cart-remove js-xoa-line">
+                        <i class="bi bi-trash3"></i> Xoá</button>
+                </div>
+            </div>
+
+            <a th:href="@{/cua-hang/san-pham}" class="fs-btn fs-btn-outline" style="justify-self:start">
+                <i class="bi bi-arrow-left"></i> Tiếp tục mua sắm</a>
+        </div>
+
+        <!-- Tóm tắt đơn -->
+        <aside class="fs-summary"
+               th:with="pct=${gio.tongSoLuong == 0 ? 0 : (gio.conThieuDeFreeship.signum() <= 0 ? 100 : 100 - (gio.conThieuDeFreeship.doubleValue() * 100.0 / 500000.0))}">
+            <h3><i class="bi bi-receipt"></i> Tóm tắt đơn hàng</h3>
+
+            <div class="fs-freeship">
+                <small id="fsFreeshipText">
+                    <th:block th:if="${gio.conThieuDeFreeship.signum() > 0}">
+                        Mua thêm <b th:text="${#numbers.formatDecimal(gio.conThieuDeFreeship,0,'POINT',0,'COMMA')} + '₫'">100.000₫</b>
+                        để được <b>miễn phí vận chuyển</b>
+                    </th:block>
+                    <th:block th:if="${gio.conThieuDeFreeship.signum() <= 0}">
+                        <b>Tuyệt vời!</b> Đơn của bạn được miễn phí vận chuyển 🎉
+                    </th:block>
+                </small>
+                <div class="track"><div class="fill" id="fsFreeshipFill" th:style="'width:' + ${pct} + '%'"></div></div>
+            </div>
+
+            <!-- Voucher: đã áp dụng -->
+            <div class="fs-voucher-applied" id="fsVoucherApplied"
+                 th:style="${gio.voucherApDung == null} ? 'display:none'">
+                <span><i class="bi bi-ticket-perforated-fill"></i>
+                    Mã <b id="fsVoucherTen" th:text="${gio.voucherApDung != null ? gio.voucherApDung.tenGiamGia : ''}">FSSALE10</b></span>
+                <button type="button" class="js-bo-voucher" title="Bỏ mã"><i class="bi bi-x-circle"></i></button>
+            </div>
+
+            <!-- Voucher: nhập / chọn -->
+            <div id="fsVoucherNhap" th:style="${gio.voucherApDung != null} ? 'display:none'">
+                <form class="fs-voucher-box" id="fsVoucherForm">
+                    <input type="text" name="maVoucher" placeholder="Nhập mã giảm giá" autocomplete="off">
+                    <button type="submit" class="fs-btn fs-btn-dark fs-btn-sm">Áp dụng</button>
+                </form>
+                <div th:if="${voucherGoiY != null && !voucherGoiY.isEmpty()}">
+                    <div class="fs-voucher-pick"><i class="bi bi-stars"></i> Voucher bạn có thể dùng:</div>
+                    <div class="fs-voucher-list">
+                        <div class="fs-voucher-mini" th:each="v : ${voucherGoiY}">
+                    <span>
+                        <!-- ✅ SỬA: Hiển thị MÃ trước, TÊN sau -->
+                        <b th:text="${v.maGiamGia}">GGXXXX</b>
+                        <span th:text="' - ' + ${v.tenGiamGia}"> - Tên voucher</span>
+                        <span th:if="${v.loaiGiamGia == 'PhanTram'}"
+                              th:text="' | Giảm ' + ${#numbers.formatDecimal(v.giaTriGiam,0,'POINT',0,'COMMA')} + '%'"> | Giảm 10%</span>
+                        <span th:unless="${v.loaiGiamGia == 'PhanTram'}"
+                              th:text="' | Giảm ' + ${#numbers.formatDecimal(v.giaTriGiam,0,'POINT',0,'COMMA')} + '₫'"> | Giảm 50K</span>
+                        <span th:if="${v.donToiThieu != null && v.donToiThieu.signum() > 0}"
+                              th:text="' | Đơn từ ' + ${#numbers.formatDecimal(v.donToiThieu,0,'POINT',0,'COMMA')} + '₫'"> | Đơn từ 200K</span>
+                    </span>
+                            <button type="button" class="js-ap-voucher"
+                                    th:attr="data-ma=${v.maGiamGia}">
+                                Dùng
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="fs-voucher-pick" th:if="${!daDangNhap}">
+                    <i class="bi bi-info-circle"></i>
+                    <a th:href="@{/login}">Đăng nhập</a> để xem voucher dành riêng cho bạn.
+                </div>
+            </div>
+
+            <div class="fs-sum-row"><span>Tạm tính</span>
+                <span id="sumTienHang" th:text="${#numbers.formatDecimal(gio.tongTienHang,0,'POINT',0,'COMMA')} + '₫'">2.400.000₫</span></div>
+            <div class="fs-sum-row save" id="rowTietKiem"
+                 th:style="${gio.tietKiemKhuyenMai.signum() <= 0} ? 'display:none'">
+                <span><i class="bi bi-tag"></i> Tiết kiệm khuyến mãi</span>
+                <span id="sumTietKiem" th:text="'-' + ${#numbers.formatDecimal(gio.tietKiemKhuyenMai,0,'POINT',0,'COMMA')} + '₫'">-300.000₫</span></div>
+            <div class="fs-sum-row save" id="rowVoucher"
+                 th:style="${gio.soTienGiamVoucher.signum() <= 0} ? 'display:none'">
+                <span><i class="bi bi-ticket-perforated"></i> Giảm từ voucher</span>
+                <span id="sumVoucher" th:text="'-' + ${#numbers.formatDecimal(gio.soTienGiamVoucher,0,'POINT',0,'COMMA')} + '₫'">-50.000₫</span></div>
+            <div class="fs-sum-row"><span>Phí vận chuyển</span>
+                <span id="sumShip" th:text="${gio.tienShip.signum() > 0 ? #numbers.formatDecimal(gio.tienShip,0,'POINT',0,'COMMA') + '₫' : 'Miễn phí'}">30.000₫</span></div>
+            <div class="fs-sum-row total"><span>Tổng thanh toán</span>
+                <b id="sumTong" th:text="${#numbers.formatDecimal(gio.tongThanhToan,0,'POINT',0,'COMMA')} + '₫'">2.380.000₫</b></div>
+
+            <div style="margin-top:14px; display:grid; gap:9px">
+                <a th:if="${daDangNhap}" th:href="@{/thanh-toan(tuGio=1)}" class="fs-btn fs-btn-primary fs-btn-lg fs-btn-block">
+                    <i class="bi bi-credit-card"></i> Tiến hành thanh toán</a>
+                <th:block th:if="${!daDangNhap}">
+                    <a th:href="@{/login}" class="fs-btn fs-btn-primary fs-btn-lg fs-btn-block">
+                        <i class="bi bi-box-arrow-in-right"></i> Đăng nhập để thanh toán</a>
+                    <a th:href="@{/register}" class="fs-btn fs-btn-outline fs-btn-block">Chưa có tài khoản? Đăng ký ngay</a>
+                </th:block>
+            </div>
+        </aside>
+    </div>
+</div>
+
+<footer th:replace="~{fragments/client-layout :: footer}"></footer>
+<div th:replace="~{fragments/client-layout :: toast}"></div>
+<th:block th:replace="~{fragments/client-layout :: scripts}"></th:block>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+
+        // Gửi yêu cầu voucher KÈM CSRF. Thiếu token thì Spring Security chặn 403 và
+        // trang sẽ "im lặng không làm gì" — đây từng là lý do không áp được mã ở giỏ hàng.
+        function goiVoucher(url) {
+            var dau = { 'Content-Type': 'application/x-www-form-urlencoded' };
+            var mToken = document.querySelector('meta[name=_csrf]');
+            var mTen = document.querySelector('meta[name=_csrf_header]');
+            if (mToken && mTen) dau[mTen.getAttribute('content')] = mToken.getAttribute('content');
+
+            return fetch(url, { method: 'POST', headers: dau })
+                .then(function (res) {
+                    if (!res.ok) throw new Error('HTTP ' + res.status);
+                    return res.json();
+                });
+        }
+
+        function bao(thongDiep, loai) {
+            if (window.fsToast) fsToast(thongDiep, loai);
+            else alert(thongDiep);
+        }
+
+        // Bấm chip voucher gợi ý
+        document.querySelectorAll('.js-ap-voucher').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var nut = this;
+                var maVoucher = nut.dataset.ma || nut.dataset.ten;
+                var chuCu = nut.textContent;
+                nut.textContent = 'Đang áp...';
+                nut.disabled = true;
+
+                goiVoucher('/gio-hang/ap-dung-voucher?maVoucher=' + encodeURIComponent(maVoucher))
+                    .then(function (data) {
+                        if (data.ok) { location.reload(); return; }
+                        bao(data.thongBao || 'Không áp dụng được mã giảm giá.', 'err');
+                        nut.textContent = chuCu;
+                        nut.disabled = false;
+                    })
+                    .catch(function () {
+                        bao('Không kết nối được máy chủ, vui lòng thử lại.', 'err');
+                        nut.textContent = chuCu;
+                        nut.disabled = false;
+                    });
+            });
+        });
+
+        // Nhập mã thủ công
+        var form = document.getElementById('fsVoucherForm');
+        if (form) form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            var input = this.querySelector('input[name="maVoucher"]');
+            var maVoucher = input ? input.value.trim() : '';
+            if (!maVoucher) { bao('Vui lòng nhập mã giảm giá.', 'err'); return; }
+
+            var btn = this.querySelector('button[type="submit"]');
+            var chuCu = btn ? btn.textContent : '';
+            if (btn) { btn.textContent = 'Đang áp...'; btn.disabled = true; }
+
+            goiVoucher('/gio-hang/ap-dung-voucher?maVoucher=' + encodeURIComponent(maVoucher))
+                .then(function (data) {
+                    if (data.ok) { location.reload(); return; }
+                    bao(data.thongBao || 'Không áp dụng được mã giảm giá.', 'err');
+                    if (btn) { btn.textContent = chuCu; btn.disabled = false; }
+                })
+                .catch(function () {
+                    bao('Không kết nối được máy chủ, vui lòng thử lại.', 'err');
+                    if (btn) { btn.textContent = chuCu; btn.disabled = false; }
+                });
+        });
+
+        // Bỏ mã đang áp dụng
+        var nutBo = document.querySelector('.js-bo-voucher');
+        if (nutBo) nutBo.addEventListener('click', function () {
+            goiVoucher('/gio-hang/bo-voucher')
+                .then(function (data) {
+                    if (data.ok) { location.reload(); return; }
+                    bao(data.thongBao || 'Không bỏ được mã giảm giá.', 'err');
+                })
+                .catch(function () {
+                    bao('Không kết nối được máy chủ, vui lòng thử lại.', 'err');
+                });
+        });
+    });
+</script>
+
+</body>
+</html>

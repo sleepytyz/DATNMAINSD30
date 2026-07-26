@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<nav th:fragment="menu(active)" class="fs-account-menu">
+    <a th:href="@{/ca-nhan}" th:classappend="${active=='ho-so'} ? 'active'"><i class="bi bi-person-circle"></i> Thông tin cá nhân</a>
+    <a th:href="@{/ca-nhan/doi-mat-khau}" th:classappend="${active=='mat-khau'} ? 'active'"><i class="bi bi-shield-lock"></i> Đổi mật khẩu</a>
+    <a th:href="@{/ca-nhan/dia-chi}" th:classappend="${active=='dia-chi'} ? 'active'"><i class="bi bi-geo-alt"></i> Sổ địa chỉ</a>
+    <a th:href="@{/ca-nhan/don-hang}" th:classappend="${active=='don-hang'} ? 'active'"><i class="bi bi-bag-check"></i> Đơn hàng của tôi</a>
+    <a th:href="@{/ca-nhan/voucher}" th:classappend="${active=='voucher'} ? 'active'"><i class="bi bi-ticket-perforated"></i> Voucher của tôi</a>
+    <hr>
+    <form th:action="@{/logout}" method="post">
+        <button type="submit" style="color:#B71C1C;"><i class="bi bi-box-arrow-right"></i> Đăng xuất</button>
+    </form>
+</nav>
+</body>
+</html>

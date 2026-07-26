@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/client-layout :: head('Sản phẩm yêu thích')}"></head>
+<body>
+<header th:replace="~{fragments/client-layout :: header}"></header>
+
+<div class="fs-container">
+    <nav class="fs-breadcrumb">
+        <a th:href="@{/}">Trang chủ</a> <i class="bi bi-chevron-right"></i> <b>Yêu thích</b>
+    </nav>
+
+    <div class="fs-section" style="padding-top:8px">
+        <div class="fs-section-head">
+            <div><h2><i class="bi bi-heart-fill"></i> Sản phẩm yêu thích</h2>
+                <p th:text="'Bạn đang lưu ' + ${cards.size()} + ' sản phẩm (theo phiên truy cập này)'">Bạn đang lưu 3 sản phẩm</p></div>
+            <a th:href="@{/cua-hang/san-pham}" class="fs-link-all">Tiếp tục mua sắm <i class="bi bi-arrow-right"></i></a>
+        </div>
+
+        <div class="fs-grid" th:if="${!cards.isEmpty()}">
+            <th:block th:each="c : ${cards}">
+                <div th:replace="~{fragments/client-layout :: card(${c}, true)}"></div>
+            </th:block>
+        </div>
+
+        <div class="fs-empty" th:if="${cards.isEmpty()}">
+            <i class="bi bi-heart"></i>
+            <h3>Chưa có sản phẩm yêu thích</h3>
+            <p>Chạm vào biểu tượng ♥ trên sản phẩm để lưu lại những đôi giày bạn thích.</p>
+            <a th:href="@{/cua-hang/san-pham}" class="fs-btn fs-btn-primary">
+                <i class="bi bi-bag"></i> Khám phá sản phẩm</a>
+        </div>
+    </div>
+</div>
+
+<footer th:replace="~{fragments/client-layout :: footer}"></footer>
+<div th:replace="~{fragments/client-layout :: toast}"></div>
+<th:block th:replace="~{fragments/client-layout :: scripts}"></th:block>
+</body>
+</html>

@@ -1,0 +1,1151 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+  <meta charset="UTF-8">
+  <title th:text="${isEdit} ? 'Cập Nhật Nhân Viên' : 'Thêm Nhân Viên Mới'">Nhân Viên</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
+  <link rel="stylesheet" th:href="@{/css/style.css}">
+
+  <!-- Meta tags để truyền thông báo -->
+  <meta name="successMess" th:content="${successMess}">
+  <meta name="errorMess" th:content="${errorMess}">
+
+  <style>
+    .toast-container-custom {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 9999;
+      max-width: 420px;
+      width: 100%;
+    }
+    .toast-custom {
+      background: #fff;
+      border-radius: 12px;
+      padding: 16px 20px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+      border-left: 5px solid #dc3545;
+      animation: slideInRight 0.4s ease;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .toast-custom.success { border-left-color: #28a745; }
+    .toast-custom.warning { border-left-color: #ffc107; }
+    .toast-custom.error { border-left-color: #dc3545; }
+    .toast-custom.info { border-left-color: #0dcaf0; }
+    .toast-custom .toast-icon { font-size: 1.5rem; flex-shrink: 0; margin-top: 2px; }
+    .toast-custom .toast-content { flex: 1; }
+    .toast-custom .toast-title { font-weight: 700; font-size: 0.95rem; color: #2d3748; }
+    .toast-custom .toast-message { font-size: 0.85rem; color: #6c757d; margin-top: 2px; white-space: pre-line; }
+    .toast-custom .toast-close {
+      background: none;
+      border: none;
+      font-size: 1.2rem;
+      color: #adb5bd;
+      cursor: pointer;
+      padding: 0 4px;
+      transition: color 0.2s;
+    }
+    .toast-custom .toast-close:hover { color: #dc3545; }
+    @keyframes slideInRight {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes slideOutRight {
+      from { transform: translateX(0); opacity: 1; }
+      to { transform: translateX(100%); opacity: 0; }
+    }
+
+    .form-control:focus, .form-select:focus {
+      border-color: #c92327 !important;
+      box-shadow: 0 0 0 0.25rem rgba(201, 35, 39, 0.15) !important;
+    }
+    .form-control.is-invalid:focus {
+      border-color: #dc3545 !important;
+      box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.15) !important;
+    }
+    .form-control[readonly] { background-color: #f8f9fa; }
+
+    #loadingOverlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 99999;
+      justify-content: center;
+      align-items: center;
+    }
+    #loadingOverlay .spinner {
+      width: 50px;
+      height: 50px;
+      border: 5px solid #f3f3f3;
+      border-top: 5px solid #c92327;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .field-hidden { display: none !important; }
+
+    .scan-container {
+      border: 2px dashed #dee2e6;
+      border-radius: 8px;
+      padding: 15px;
+      text-align: center;
+      background: #f8f9fa;
+      min-height: 200px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    .scan-container video {
+      width: 100%;
+      max-height: 250px;
+      border-radius: 8px;
+      background: #000;
+      display: none;
+    }
+    .scan-container .scan-placeholder i {
+      font-size: 3rem;
+      color: #c92327;
+      opacity: 0.5;
+    }
+    .btn-scan {
+      background: #c92327;
+      color: white;
+      border: none;
+      padding: 8px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .btn-scan:hover { background: #a01a1e; transform: scale(1.02); }
+    .btn-scan-secondary { background: #6c757d; }
+    .btn-scan-secondary:hover { background: #5a6268; }
+    .btn-scan:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    #cccd-info-card {
+      display: none;
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 15px;
+      margin-top: 10px;
+      border-left: 4px solid #28a745;
+    }
+    .cccd-field {
+      display: flex;
+      margin-bottom: 5px;
+      padding: 4px 0;
+      border-bottom: 1px solid #e9ecef;
+    }
+    .cccd-field:last-child { border-bottom: none; }
+    .cccd-field .label { font-weight: 600; min-width: 100px; color: #495057; }
+    .cccd-field .value { color: #212529; font-weight: 500; }
+
+    .cccd-example {
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 10px 15px;
+      margin-top: 10px;
+      border: 1px solid #e9ecef;
+    }
+    .cccd-example .title {
+      font-weight: 600;
+      color: #495057;
+      margin-bottom: 5px;
+    }
+    .cccd-example .content {
+      font-size: 0.85rem;
+      color: #6c757d;
+      font-family: monospace;
+      background: #fff;
+      padding: 8px;
+      border-radius: 4px;
+      word-break: break-all;
+    }
+    .cccd-example .note {
+      font-size: 0.8rem;
+      color: #dc3545;
+      margin-top: 5px;
+    }
+
+    /* Highlight khi áp dụng tự động */
+    .highlight-field {
+      animation: highlightPulse 1s ease 3;
+    }
+    @keyframes highlightPulse {
+      0% { background-color: #fff3cd; }
+      50% { background-color: #ffc107; }
+      100% { background-color: #fff3cd; }
+    }
+
+    input[type="date"]::-webkit-calendar-picker-indicator {
+      cursor: pointer;
+    }
+    input[type="date"] {
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+<div id="loadingOverlay">
+  <div class="spinner"></div>
+</div>
+
+<div class="wrapper">
+  <div sec:authorize="hasRole('ADMIN')">
+    <div th:replace="fragments/sidebaradmin :: sidebar-admin"></div>
+  </div>
+
+  <div sec:authorize="hasRole('STAFF')">
+    <div th:replace="fragments/sidebarstaff :: sidebar-staff"></div>
+  </div>
+
+  <div class="content-body">
+    <div th:replace="fragments/header :: header('Quản lý nhân viên', 'Nhân viên')"></div>
+
+    <div class="page-content">
+      <div class="toast-container-custom" id="toastContainer"></div>
+
+      <div class="card shadow-sm border-0">
+        <div class="card-header bg-white border-bottom py-3">
+          <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 fw-bold text-dark">
+              <i class="bi bi-person-badge text-danger me-2"></i>
+              <span th:text="${isEdit} ? 'Cập Nhật Thông Tin Nhân Viên' : 'Thêm Nhân Viên Mới'"></span>
+            </h5>
+            <a th:href="@{/nhan-vien}" class="btn btn-outline-secondary btn-sm">
+              <i class="bi bi-arrow-left me-1"></i> Quay lại
+            </a>
+          </div>
+        </div>
+
+        <div class="card-body p-4">
+          <form th:action="@{/nhan-vien/save}" th:object="${nhanVien}" method="POST" id="nhanVienForm">
+            <input type="hidden" th:field="*{maNhanVien}" />
+
+            <!-- ===== QUÉT CCCD - CHỈ HIỂN THỊ KHI THÊM MỚI ===== -->
+            <div class="card mb-3 border-danger" th:if="${!isEdit}">
+              <div class="card-header bg-danger text-white py-2">
+                <h6 class="mb-0"><i class="bi bi-qr-code-scan me-2"></i>Quét CCCD / Căn cước công dân</h6>
+              </div>
+              <div class="card-body">
+                <div class="row">
+                  <div class="col-md-6">
+                    <div class="scan-container" id="scanContainer">
+                      <video id="video"></video>
+                      <div class="scan-placeholder" id="scanPlaceholder">
+                      </div>
+                      <div class="mt-2 d-flex gap-2 flex-wrap justify-content-center">
+                        <button type="button" class="btn-scan" id="scanBtn" onclick="startScan()">
+                          <i class="bi bi-qr-code-scan me-1"></i> Quét CCCD
+                        </button>
+                        <button type="button" class="btn-scan btn-scan-secondary" id="stopScanBtn" style="display:none;" onclick="stopScan()">
+                          <i class="bi bi-stop-circle me-1"></i> Dừng quét
+                        </button>
+                        <button type="button" class="btn-scan btn-scan-secondary" id="resetScanBtn" style="display:none;" onclick="resetScanUI()">
+                          <i class="bi bi-arrow-counterclockwise me-1"></i> Đặt lại
+                        </button>
+                      </div>
+                    </div>
+<!--                    <div class="text-muted small mt-1">-->
+<!--                      <i class="bi bi-info-circle"></i> Quét mã QR trên CCCD gắn chip (mặt sau)-->
+<!--                    </div>-->
+
+<!--                    <div class="cccd-example">-->
+<!--                      <div class="title"><i class="bi bi-info-circle me-1"></i>Định dạng CCCD hợp lệ:</div>-->
+<!--                      <div class="content">-->
+<!--                        {"hoTen":"Nguyễn Văn A","ngaySinh":"01/01/1990","gioiTinh":"Nam","diaChi":"Hà Nội"}-->
+<!--                      </div>-->
+<!--                      <div class="note">-->
+<!--                        ⚠️ <strong>Lưu ý:</strong> Mã QR từ VNeID là JWT token, KHÔNG chứa thông tin cá nhân.-->
+<!--                        Vui lòng quét mã QR trên mặt sau thẻ CCCD gắn chip.-->
+<!--                      </div>-->
+<!--                    </div>-->
+                  </div>
+                  <div class="col-md-6">
+                    <div id="cccd-info-card">
+                      <h6 class="text-success mb-2"><i class="bi bi-check-circle-fill me-1"></i>Thông tin từ CCCD</h6>
+                      <div class="cccd-field"><span class="label">Họ tên:</span><span class="value" id="cccdHoTen">-</span></div>
+                      <div class="cccd-field"><span class="label">Ngày sinh:</span><span class="value" id="cccdNgaySinh">-</span></div>
+                      <div class="cccd-field"><span class="label">Giới tính:</span><span class="value" id="cccdGioiTinh">-</span></div>
+                      <div class="cccd-field"><span class="label">Địa chỉ:</span><span class="value" id="cccdDiaChi">-</span></div>
+                    </div>
+                    <div id="cccd-not-found" style="display:none;" class="text-center text-muted py-3">
+<!--                      <i class="bi bi-qr-code" style="font-size:2rem;"></i>-->
+<!--                      <p class="mt-2" id="notFoundMessage">Chưa có dữ liệu. Vui lòng quét CCCD.</p>-->
+<!--                      <p class="small text-danger">Lưu ý: Cần quét đúng mã QR trên CCCD gắn chip (mặt sau).</p>-->
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ===== FORM THÔNG TIN ===== -->
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Mã nhân viên</label>
+                <input type="text" class="form-control bg-light fw-bold text-danger"
+                       th:field="*{maNhanVien}" readonly>
+                <div class="text-muted small mt-1" th:if="${!isEdit}">
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Họ và Tên <span class="text-danger">*</span></label>
+                <input type="text" id="modalHoTen" class="form-control"
+                       th:field="*{hoTen}" placeholder="Nguyễn Văn A" required>
+                <span class="text-danger small" th:if="${#fields.hasErrors('hoTen')}" th:errors="*{hoTen}"></span>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Số Điện Thoại <span class="text-danger">*</span></label>
+                <input type="tel" id="modalSoDienThoai" class="form-control"
+                       th:field="*{soDienThoai}" placeholder="0987654321" required>
+                <span class="text-danger small" th:if="${#fields.hasErrors('soDienThoai')}" th:errors="*{soDienThoai}"></span>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Email <span class="text-danger">*</span></label>
+                <input type="email" id="modalEmail" class="form-control"
+                       th:field="*{email}" required>
+                <span class="text-danger small" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></span>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Ngày Sinh <span class="text-danger">*</span></label>
+                <input type="date" id="modalNgaySinh" class="form-control"
+                       th:field="*{ngaySinh}"
+                       onchange="validateAge(this)"
+                       required
+                       min="1900-01-01">
+                <div class="text-danger small" id="ageError"></div>
+
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Giới Tính</label>
+                <select class="form-select" id="modalGioiTinh" th:field="*{gioiTinh}">
+                  <option value="true">Nam</option>
+                  <option value="false">Nữ</option>
+                </select>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Chức Vụ</label>
+                <select class="form-select" id="modalChucVu" th:field="*{chucVu}">
+                  <option value="Nhân viên">Nhân viên</option>
+                  <option value="Quản lý">Quản lý</option>
+                </select>
+              </div>
+
+              <div class="col-md-6 field-hidden" th:if="${isEdit}">
+                <label class="form-label fw-semibold">Ngày Vào Làm</label>
+                <input type="datetime-local" class="form-control" th:field="*{ngayVaoLam}" readonly>
+              </div>
+
+              <div class="col-md-6 field-hidden" th:if="${isEdit}">
+                <label class="form-label fw-semibold">Trạng Thái Làm Việc</label>
+                <select class="form-select" th:field="*{trangThai}">
+                  <option value="true">Đang làm việc</option>
+                  <option value="false">Đã nghỉ việc</option>
+                </select>
+              </div>
+
+              <div class="col-12">
+                <div class="row g-3">
+                  <div class="col-md-4">
+                    <label class="form-label">Tỉnh/Thành phố</label>
+                    <select class="form-select select2-address" id="province" onchange="getDistricts()">
+                      <option value="">Chọn Tỉnh/Thành</option>
+                    </select>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label">Quận/Huyện</label>
+                    <select class="form-select select2-address" id="district" onchange="getWards()">
+                      <option value="">Chọn Quận/Huyện</option>
+                    </select>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label">Phường/Xã</label>
+                    <select class="form-select select2-address" id="ward">
+                      <option value="">Chọn Phường/Xã</option>
+                    </select>
+                  </div>
+                  <div class="col-md-12">
+                    <label class="form-label">Địa chỉ cụ thể</label>
+                    <input type="text" id="addressDetail" class="form-control" placeholder="Số nhà, tên đường..."
+                           th:value="${nhanVien.diaChi}">
+                    <input type="hidden" id="fullAddress" th:field="*{diaChi}">
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-md-12">
+                <label class="form-label fw-semibold">Ghi Chú</label>
+                <textarea class="form-control" id="modalGhiChu" th:field="*{ghiChu}" rows="2" placeholder="Ghi chú thêm..."></textarea>
+              </div>
+            </div>
+
+            <div class="mt-4 d-flex gap-2">
+              <button type="submit" class="btn btn-danger px-4" id="submitBtn">
+                <i class="bi bi-save me-1"></i>
+                <span th:text="${isEdit} ? 'Cập Nhật' : 'Thêm Mới'"></span>
+              </button>
+              <a th:href="@{/nhan-vien}" class="btn btn-secondary px-4">
+                <i class="bi bi-x-circle me-1"></i> Hủy
+              </a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="https://unpkg.com/@zxing/library@0.20.0/umd/index.js"></script>
+<script>
+  // =============================================
+  // TOAST
+  // =============================================
+  function showToast(message, type, title) {
+    var container = document.getElementById('toastContainer');
+    if (!container) return;
+
+    var icons = {
+      error: 'bi bi-x-circle-fill text-danger',
+      success: 'bi bi-check-circle-fill text-success',
+      warning: 'bi bi-exclamation-triangle-fill text-warning',
+      info: 'bi bi-info-circle-fill text-info'
+    };
+
+    var titles = {
+      error: 'Lỗi!',
+      success: 'Thành công!',
+      warning: 'Cảnh báo!',
+      info: 'Thông tin'
+    };
+
+    var toast = document.createElement('div');
+    toast.className = 'toast-custom ' + type;
+    toast.innerHTML = `
+            <div class="toast-icon"><i class="${icons[type] || icons.success}"></i></div>
+            <div class="toast-content">
+                <div class="toast-title">${title || titles[type] || 'Thông báo'}</div>
+                <div class="toast-message">${message}</div>
+            </div>
+            <button class="toast-close" onclick="this.closest('.toast-custom').remove()">
+                <i class="bi bi-x"></i>
+            </button>
+        `;
+    container.appendChild(toast);
+
+    setTimeout(function() {
+      if (toast.parentNode) {
+        toast.style.animation = 'slideOutRight 0.3s ease forwards';
+        setTimeout(function() { toast.remove(); }, 300);
+      }
+    }, 5000);
+  }
+
+  // =============================================
+  // VALIDATE AGE
+  // =============================================
+  function validateAge(input) {
+    const dateStr = input.value;
+    const ageError = document.getElementById('ageError');
+    if (!dateStr) {
+      ageError.textContent = '';
+      return true;
+    }
+    const birthDate = new Date(dateStr);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
+    if (age < 18) {
+
+      ageError.style.color = '#dc3545';
+      input.classList.add('is-invalid');
+      return false;
+    } else {
+      ageError.style.color = '#28a745';
+      input.classList.remove('is-invalid');
+      return true;
+    }
+  }
+
+  function trimFormData() {
+    const inputs = document.querySelectorAll('#nhanVienForm input, #nhanVienForm textarea');
+    inputs.forEach(input => {
+      if (input.type !== 'hidden' && input.type !== 'submit' && input.type !== 'button') {
+        if (input.value && typeof input.value === 'string') {
+          input.value = input.value.trim();
+        }
+      }
+    });
+  }
+
+  function applyCCCDDataToForm(data) {
+    console.log('Applying CCCD data to form:', data);
+
+    let hasData = false;
+
+    // 1. Áp dụng Họ tên
+    if (data.hoTen && data.hoTen !== '') {
+      const hoTenInput = document.getElementById('modalHoTen');
+      hoTenInput.value = data.hoTen.trim();
+      hoTenInput.classList.add('highlight-field');
+      setTimeout(() => hoTenInput.classList.remove('highlight-field'), 3000);
+      hasData = true;
+      console.log('Đã điền Họ tên:', data.hoTen);
+    }
+
+    // 2. Áp dụng Ngày sinh
+    if (data.ngaySinh && data.ngaySinh !== '') {
+      var dateStr = data.ngaySinh.trim();
+      if (dateStr.includes('/') || dateStr.includes('-')) {
+        var parts = dateStr.split(/[\/\-]/);
+        if (parts.length === 3) {
+          var d = parts[0].padStart(2, '0');
+          var m = parts[1].padStart(2, '0');
+          var y = parts[2];
+          if (y.length === 2) {
+            var yearNum = parseInt(y);
+            y = yearNum >= 50 ? '19' + y : '20' + y;
+          }
+          dateStr = y + '-' + m + '-' + d;
+        }
+      }
+      const ngaySinhInput = document.getElementById('modalNgaySinh');
+      ngaySinhInput.value = dateStr;
+      ngaySinhInput.classList.add('highlight-field');
+      setTimeout(() => ngaySinhInput.classList.remove('highlight-field'), 3000);
+      validateAge(ngaySinhInput);
+      hasData = true;
+      console.log('Đã điền Ngày sinh:', dateStr);
+    }
+
+    // 3. Áp dụng Giới tính
+    if (data.gioiTinh && data.gioiTinh !== '') {
+      const gender = data.gioiTinh.trim().toLowerCase();
+      const gioiTinhSelect = document.getElementById('modalGioiTinh');
+      if (gender === 'nam' || gender === 'male') {
+        gioiTinhSelect.value = 'true';
+      } else if (gender === 'nữ' || gender === 'female') {
+        gioiTinhSelect.value = 'false';
+      }
+      gioiTinhSelect.classList.add('highlight-field');
+      setTimeout(() => gioiTinhSelect.classList.remove('highlight-field'), 3000);
+      hasData = true;
+      console.log('Đã điền Giới tính:', data.gioiTinh);
+    }
+
+    // 4. Áp dụng Địa chỉ
+    if (data.diaChi && data.diaChi !== '') {
+      const addressInput = document.getElementById('addressDetail');
+      addressInput.value = data.diaChi.trim();
+      addressInput.classList.add('highlight-field');
+      setTimeout(() => addressInput.classList.remove('highlight-field'), 3000);
+      hasData = true;
+      console.log('Đã điền Địa chỉ:', data.diaChi);
+
+      setTimeout(function() {
+        parseAndSetAddressFromInput();
+      }, 500);
+    }
+
+    if (hasData) {
+      showToast('Đã tự động điền thông tin từ CCCD vào form!', 'success');
+    } else {
+      showToast('Không có dữ liệu để áp dụng!', 'warning');
+    }
+  }
+
+  let codeReader = null;
+  let isScanning = false;
+  let cccdData = {};
+
+  function isJWT(token) {
+    try {
+      const parts = token.split('.');
+      if (parts.length === 3) {
+        atob(parts[0]);
+        atob(parts[1]);
+        return true;
+      }
+    } catch(e) {}
+    return false;
+  }
+
+  function parseCCCDData(text) {
+    console.log('Raw QR text:', text);
+
+    cccdData = {
+      hoTen: '',
+      ngaySinh: '',
+      gioiTinh: '',
+      diaChi: ''
+    };
+
+    // if (isJWT(text)) {
+    //   console.log('⚠️ Đây là JWT token, không phải dữ liệu CCCD');
+    //   const card = document.getElementById('cccd-info-card');
+    //   const notFound = document.getElementById('cccd-not-found');
+    //   card.style.display = 'none';
+    //   notFound.style.display = 'block';
+    //   document.getElementById('notFoundMessage').textContent =
+    //           'Đây là mã QR từ VNeID (JWT token), không chứa thông tin CCCD. Vui lòng quét mã QR trên mặt sau thẻ CCCD gắn chip.';
+    //   showToast('Đây là mã QR VNeID, không chứa thông tin CCCD!', 'warning');
+    //   return;
+    // }
+
+    try {
+      const data = JSON.parse(text);
+      console.log('JSON Data:', data);
+
+      cccdData = {
+        hoTen: data.hoTen || data.hoten || data.fullName || data.name || data.HoTen || data.FullName || '',
+        ngaySinh: data.ngaySinh || data.ngaysinh || data.birthDate || data.dob || data.NgaySinh || data.BirthDate || '',
+        gioiTinh: data.gioiTinh || data.gioitinh || data.gender || data.sex || data.GioiTinh || data.Gender || '',
+        diaChi: data.diaChi || data.diachi || data.address || data.addr || data.DiaChi || data.Address || ''
+      };
+
+      console.log('Parsed from JSON:', cccdData);
+
+      if (cccdData.hoTen || cccdData.ngaySinh || cccdData.diaChi) {
+        displayCCCDInfo(cccdData);
+        applyCCCDDataToForm(cccdData);
+        return;
+      }
+    } catch (e) {
+      console.log('Không phải JSON, thử định dạng khác');
+    }
+
+    let parts = [];
+    if (text.includes('|')) {
+      parts = text.split('|').map(p => p.trim());
+    } else if (text.includes(',')) {
+      parts = text.split(',').map(p => p.trim());
+    } else if (text.includes('\n')) {
+      parts = text.split('\n').map(p => p.trim()).filter(p => p !== '');
+    } else if (text.includes('"')) {
+      // Thử parse CSV
+      try {
+        const csvRegex = /"([^"]*)"/g;
+        let match;
+        const matches = [];
+        while ((match = csvRegex.exec(text)) !== null) {
+          matches.push(match[1]);
+        }
+        if (matches.length > 0) {
+          parts = matches;
+          console.log('Parsed CSV parts:', parts);
+        }
+      } catch(e) {}
+    }
+
+    if (parts.length === 0) {
+      parts = text.split(/\s+/).filter(p => p !== '');
+    }
+
+    console.log('Parts after split:', parts);
+
+    if (parts.length >= 6) {
+      const filteredParts = parts.filter(p => p !== '');
+      console.log('Filtered parts:', filteredParts);
+
+      if (filteredParts.length >= 5) {
+        if (/^[0-9]{9,12}$/.test(filteredParts[0])) {
+          cccdData.soCCCD = filteredParts[0] || '';
+          cccdData.hoTen = filteredParts[1] || '';
+          cccdData.ngaySinh = filteredParts[2] || '';
+          cccdData.gioiTinh = filteredParts[3] || '';
+          cccdData.diaChi = filteredParts[4] || '';
+
+          console.log('Mapped by position (filtered):', cccdData);
+        }
+      }
+    }
+
+    // Nếu vẫn chưa có dữ liệu, thử tìm theo pattern
+    if (!cccdData.hoTen && !cccdData.ngaySinh) {
+      // Tìm số CCCD (9-12 số)
+      for (let i = 0; i < parts.length; i++) {
+        const p = parts[i];
+        if (p && /^[0-9]{9,12}$/.test(p)) {
+          cccdData.soCCCD = p;
+          if (i + 1 < parts.length && parts[i + 1] && !/^[0-9]{9,12}$/.test(parts[i + 1]) && !parts[i + 1].match(/[0-9]{1,2}[\/\-][0-9]{1,2}[\/\-][0-9]{2,4}/)) {
+            cccdData.hoTen = parts[i + 1];
+          }
+          if (i + 2 < parts.length && parts[i + 2] && parts[i + 2].match(/[0-9]{1,2}[\/\-][0-9]{1,2}[\/\-][0-9]{2,4}/)) {
+            cccdData.ngaySinh = parts[i + 2];
+          }
+          if (i + 3 < parts.length && parts[i + 3] && (parts[i + 3].toLowerCase().includes('nam') || parts[i + 3].toLowerCase().includes('nữ'))) {
+            cccdData.gioiTinh = parts[i + 3];
+          }
+          if (i + 4 < parts.length && parts[i + 4] && parts[i + 4].length > 5) {
+            cccdData.diaChi = parts[i + 4];
+          }
+          break;
+        }
+      }
+    }
+
+    if (!cccdData.hoTen) {
+      for (let i = 0; i < parts.length; i++) {
+        const p = parts[i];
+        if (p && p.length > 5 &&
+                !/^[0-9]{9,12}$/.test(p) &&
+                !p.match(/[0-9]{1,2}[\/\-][0-9]{1,2}[\/\-][0-9]{2,4}/) &&
+                !p.toLowerCase().includes('nam') && !p.toLowerCase().includes('nữ') &&
+                !p.toLowerCase().includes('thành phố') && !p.toLowerCase().includes('tỉnh') &&
+                !p.toLowerCase().includes('quận') && !p.toLowerCase().includes('huyện') &&
+                !p.toLowerCase().includes('phường') && !p.toLowerCase().includes('xã')) {
+          cccdData.hoTen = p;
+          break;
+        }
+      }
+    }
+
+    if (!cccdData.ngaySinh) {
+      for (let i = 0; i < parts.length; i++) {
+        const p = parts[i];
+        if (p && p.match(/[0-9]{1,2}[\/\-][0-9]{1,2}[\/\-][0-9]{2,4}/)) {
+          cccdData.ngaySinh = p;
+          break;
+        }
+      }
+    }
+
+    if (!cccdData.gioiTinh) {
+      for (let i = 0; i < parts.length; i++) {
+        const p = parts[i];
+        if (p) {
+          const lowerP = p.toLowerCase();
+          if (lowerP.includes('nam') || lowerP.includes('male')) {
+            cccdData.gioiTinh = 'Nam';
+            break;
+          } else if (lowerP.includes('nữ') || lowerP.includes('female')) {
+            cccdData.gioiTinh = 'Nữ';
+            break;
+          }
+        }
+      }
+    }
+
+    if (!cccdData.diaChi) {
+      for (let i = 0; i < parts.length; i++) {
+        const p = parts[i];
+        if (p && p.length > 10) {
+          const lowerP = p.toLowerCase();
+          if (lowerP.includes('thành phố') || lowerP.includes('tỉnh') ||
+                  lowerP.includes('quận') || lowerP.includes('huyện') ||
+                  lowerP.includes('phường') || lowerP.includes('xã') ||
+                  lowerP.includes('đường') || lowerP.includes('số') ||
+                  lowerP.includes('ngõ') || lowerP.includes('tp.')) {
+            cccdData.diaChi = p;
+            break;
+          }
+        }
+      }
+    }
+
+    console.log('Final parsed CCCD data:', cccdData);
+
+    if (cccdData.hoTen || cccdData.ngaySinh || cccdData.diaChi) {
+      displayCCCDInfo(cccdData);
+      applyCCCDDataToForm(cccdData);
+    } else {
+      const card = document.getElementById('cccd-info-card');
+      const notFound = document.getElementById('cccd-not-found');
+      card.style.display = 'none';
+      notFound.style.display = 'block';
+      document.getElementById('notFoundMessage').textContent =
+              'Không đọc được thông tin từ CCCD. Vui lòng thử lại với mã QR đúng.';
+      showToast('Không đọc được thông tin từ CCCD!', 'warning');
+    }
+  }
+
+  function startScan() {
+    const video = document.getElementById('video');
+    const placeholder = document.getElementById('scanPlaceholder');
+    const scanBtn = document.getElementById('scanBtn');
+    const stopBtn = document.getElementById('stopScanBtn');
+    const resetBtn = document.getElementById('resetScanBtn');
+
+    if (isScanning) {
+      showToast('Đang quét, vui lòng đợi!', 'warning');
+      return;
+    }
+
+    if (typeof ZXing === 'undefined') {
+      showToast('Đang tải thư viện quét mã... Vui lòng thử lại sau!', 'warning');
+      loadZXingLibrary();
+      return;
+    }
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      showToast('Trình duyệt không hỗ trợ camera! Vui lòng dùng Chrome/Edge.', 'error');
+      return;
+    }
+
+    video.style.display = 'block';
+    placeholder.style.display = 'none';
+    scanBtn.style.display = 'none';
+    stopBtn.style.display = 'inline-block';
+    resetBtn.style.display = 'inline-block';
+    isScanning = true;
+
+    if (codeReader) {
+      try { codeReader.reset(); } catch(e) {}
+      codeReader = null;
+    }
+
+    codeReader = new ZXing.BrowserMultiFormatReader();
+
+    navigator.mediaDevices.enumerateDevices()
+            .then(devices => {
+              const videoDevices = devices.filter(d => d.kind === 'videoinput');
+              let deviceId = videoDevices[0]?.deviceId;
+
+              const backCamera = videoDevices.find(d =>
+                      d.label.toLowerCase().includes('back') ||
+                      d.label.toLowerCase().includes('environment') ||
+                      d.label.toLowerCase().includes('rear')
+              );
+              if (backCamera) deviceId = backCamera.deviceId;
+
+              return codeReader.decodeFromVideoDevice(deviceId, video, (result, err) => {
+                if (result) {
+                  const text = result.getText();
+                  console.log('QR Code detected:', text);
+                  parseCCCDData(text);
+                  stopScan();
+                }
+                if (err && !(err instanceof ZXing.NotFoundException)) {
+                  console.error('Scan error:', err);
+                }
+              });
+            })
+            .catch(error => {
+              console.error('Camera error:', error);
+              let msg = 'Không thể khởi động camera';
+              if (error.message?.includes('Permission')) {
+                msg = 'Vui lòng cho phép truy cập camera!\nNhấn vào trên thanh địa chỉ và cho phép camera.';
+              } else if (error.message?.includes('NotFound')) {
+                msg = 'Không tìm thấy camera! Vui lòng kết nối camera.';
+              }
+              showToast(msg, 'error');
+              resetScanUI();
+            });
+  }
+
+  function loadZXingLibrary() {
+    return new Promise((resolve, reject) => {
+      if (typeof ZXing !== 'undefined') { resolve(); return; }
+      const script = document.createElement('script');
+      script.src = 'https://unpkg.com/@zxing/library@0.20.0/umd/index.js';
+      script.onload = () => { console.log('ZXing loaded'); resolve(); };
+      script.onerror = () => { reject(new Error('Failed to load ZXing')); };
+      document.head.appendChild(script);
+    });
+  }
+
+  function stopScan() {
+    if (codeReader) {
+      try { codeReader.reset(); } catch(e) {}
+      codeReader = null;
+    }
+    isScanning = false;
+
+    const video = document.getElementById('video');
+    if (video && video.srcObject) {
+      video.srcObject.getTracks().forEach(track => track.stop());
+      video.srcObject = null;
+    }
+    resetScanUI();
+  }
+
+  function resetScanUI() {
+    const video = document.getElementById('video');
+    const placeholder = document.getElementById('scanPlaceholder');
+    const scanBtn = document.getElementById('scanBtn');
+    const stopBtn = document.getElementById('stopScanBtn');
+    const resetBtn = document.getElementById('resetScanBtn');
+
+    if (video) {
+      video.style.display = 'none';
+      if (video.srcObject) {
+        video.srcObject.getTracks().forEach(track => track.stop());
+        video.srcObject = null;
+      }
+    }
+    if (placeholder) placeholder.style.display = 'flex';
+    if (scanBtn) scanBtn.style.display = 'inline-block';
+    if (stopBtn) stopBtn.style.display = 'none';
+    if (resetBtn) resetBtn.style.display = 'none';
+  }
+
+  function displayCCCDInfo(data) {
+    const card = document.getElementById('cccd-info-card');
+    const notFound = document.getElementById('cccd-not-found');
+
+    console.log('Displaying CCCD info:', data);
+
+    if (data.hoTen || data.ngaySinh || data.diaChi) {
+      card.style.display = 'block';
+      notFound.style.display = 'none';
+      document.getElementById('cccdHoTen').textContent = data.hoTen || '-';
+      document.getElementById('cccdNgaySinh').textContent = data.ngaySinh || '-';
+      document.getElementById('cccdGioiTinh').textContent = data.gioiTinh || '-';
+      document.getElementById('cccdDiaChi').textContent = data.diaChi || '-';
+
+      // showToast('Đã đọc được thông tin CCCD!', 'success');
+    } else {
+      card.style.display = 'none';
+      notFound.style.display = 'block';
+      document.getElementById('notFoundMessage').textContent =
+              'Không đọc được thông tin từ CCCD. Vui lòng thử lại với mã QR đúng.';
+      showToast('Không đọc được thông tin từ CCCD!', 'warning');
+    }
+  }
+
+  const host = "https://provinces.open-api.vn/api/";
+  let provincesData = [];
+  let isAddressSet = false;
+
+  function loadProvinces() {
+    fetch(host + "?depth=1")
+            .then(res => res.json())
+            .then(data => {
+              provincesData = data;
+              let html = '<option value="">Chọn Tỉnh/Thành</option>';
+              data.forEach(p => html += `<option value="${p.code}">${p.name}</option>`);
+              $('#province').html(html).trigger('change.select2');
+              setTimeout(function() {
+                parseAndSetAddressFromInput();
+              }, 500);
+            })
+            .catch(error => console.error('Error loading provinces:', error));
+  }
+
+  function getDistricts() {
+    let code = $('#province').val();
+    if (!code) {
+      $('#district').html('<option value="">Chọn Quận/Huyện</option>').trigger('change.select2');
+      $('#ward').html('<option value="">Chọn Phường/Xã</option>').trigger('change.select2');
+      return;
+    }
+    fetch(host + "p/" + code + "?depth=2")
+            .then(res => res.json())
+            .then(data => {
+              let html = '<option value="">Chọn Quận/Huyện</option>';
+              data.districts.forEach(d => html += `<option value="${d.code}">${d.name}</option>`);
+              $('#district').html(html).trigger('change.select2');
+              $('#ward').html('<option value="">Chọn Phường/Xã</option>').trigger('change.select2');
+            })
+            .catch(error => console.error('Error loading districts:', error));
+  }
+
+  function getWards() {
+    let code = $('#district').val();
+    if (!code) {
+      $('#ward').html('<option value="">Chọn Phường/Xã</option>').trigger('change.select2');
+      return;
+    }
+    fetch(host + "d/" + code + "?depth=2")
+            .then(res => res.json())
+            .then(data => {
+              let html = '<option value="">Chọn Phường/Xã</option>';
+              data.wards.forEach(w => html += `<option value="${w.code}">${w.name}</option>`);
+              $('#ward').html(html).trigger('change.select2');
+            })
+            .catch(error => console.error('Error loading wards:', error));
+  }
+
+  function parseAndSetAddressFromInput() {
+    if (isAddressSet) return;
+    var diaChi = document.getElementById('fullAddress')?.value || '';
+    if (!diaChi || diaChi === '' || diaChi === 'null') return;
+    isAddressSet = true;
+
+    const parts = diaChi.split(',').map(p => p.trim());
+    let addressDetail = '', wardName = '', districtName = '', provinceName = '';
+
+    for (let i = parts.length - 1; i >= 0; i--) {
+      const part = parts[i].toLowerCase().trim();
+      if (part.includes('thành phố') || part.includes('tỉnh') || part.includes('tp.') || part.includes('t.')) {
+        if (!provinceName) { provinceName = parts[i].trim(); continue; }
+      }
+      if (part.includes('quận') || part.includes('huyện') || part.includes('q.') || part.includes('h.')) {
+        if (!districtName) { districtName = parts[i].trim(); continue; }
+      }
+      if (part.includes('phường') || part.includes('xã') || part.includes('p.') || part.includes('x.')) {
+        if (!wardName) { wardName = parts[i].trim(); continue; }
+      }
+      if (!addressDetail) addressDetail = parts[i].trim();
+      else addressDetail = parts[i].trim() + ', ' + addressDetail;
+    }
+
+    if (!provinceName && parts.length >= 1) provinceName = parts[parts.length - 1].trim();
+    if (!districtName && parts.length >= 2) districtName = parts[parts.length - 2].trim();
+    if (!wardName && parts.length >= 3) wardName = parts[parts.length - 3].trim();
+    if (!addressDetail && parts.length >= 4) addressDetail = parts.slice(0, parts.length - 3).join(', ').trim();
+
+    document.getElementById('addressDetail').value = addressDetail;
+
+    if (provinceName && provincesData.length > 0) {
+      let province = provincesData.find(p => p.name.toLowerCase() === provinceName.toLowerCase());
+      if (province) {
+        $('#province').val(province.code).trigger('change.select2');
+        setTimeout(function() {
+          if (districtName) {
+            fetch(host + "p/" + province.code + "?depth=2")
+                    .then(res => res.json())
+                    .then(data => {
+                      let district = data.districts.find(d => d.name.toLowerCase() === districtName.toLowerCase());
+                      if (district) {
+                        $('#district').val(district.code).trigger('change.select2');
+                        setTimeout(function() {
+                          if (wardName) {
+                            fetch(host + "d/" + district.code + "?depth=2")
+                                    .then(res => res.json())
+                                    .then(data => {
+                                      let ward = data.wards.find(w => w.name.toLowerCase() === wardName.toLowerCase());
+                                      if (ward) $('#ward').val(ward.code).trigger('change.select2');
+                                    });
+                          }
+                        }, 500);
+                      }
+                    });
+          }
+        }, 500);
+      }
+    }
+  }
+
+  // =============================================
+  // SELECT2
+  // =============================================
+  $(document).ready(function() {
+    $('.select2-address').select2({
+      theme: "bootstrap-5",
+      width: '100%',
+      placeholder: "Chọn..."
+    });
+  });
+
+  // =============================================
+  // FORM SUBMIT
+  // =============================================
+  document.querySelector("#nhanVienForm").addEventListener("submit", function(event) {
+    trimFormData();
+
+    const ngaySinhInput = document.getElementById('modalNgaySinh');
+    if (!validateAge(ngaySinhInput)) {
+      event.preventDefault();
+      showToast('Nhân viên phải đủ 18 tuổi trở lên!', 'warning');
+      return;
+    }
+
+    const hoTen = document.getElementById('modalHoTen').value.trim();
+    const soDienThoai = document.getElementById('modalSoDienThoai').value.trim();
+    const email = document.getElementById('modalEmail').value.trim();
+
+    if (!hoTen) {
+      event.preventDefault();
+      showToast('Vui lòng nhập họ và tên!', 'warning');
+      return;
+    }
+    if (!soDienThoai) {
+      event.preventDefault();
+      showToast('Vui lòng nhập số điện thoại!', 'warning');
+      return;
+    }
+    if (!email) {
+      event.preventDefault();
+      showToast('Vui lòng nhập email!', 'warning');
+      return;
+    }
+
+    const phoneRegex = /^[0-9]{10,11}$/;
+    if (!phoneRegex.test(soDienThoai)) {
+      event.preventDefault();
+      showToast('Số điện thoại không hợp lệ! (10-11 số)', 'warning');
+      return;
+    }
+
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(email)) {
+      event.preventDefault();
+      showToast('Email không hợp lệ!', 'warning');
+      return;
+    }
+
+    let p = $('#province').find(':selected').text();
+    let d = $('#district').find(':selected').text();
+    let w = $('#ward').find(':selected').text();
+    let detail = document.getElementById('addressDetail').value.trim();
+
+    let pText = (p === 'Chọn Tỉnh/Thành' || p === 'Chọn...') ? '' : p.trim();
+    let dText = (d === 'Chọn Quận/Huyện' || d === 'Chọn...') ? '' : d.trim();
+    let wText = (w === 'Chọn Phường/Xã' || w === 'Chọn...') ? '' : w.trim();
+
+    let addressParts = [detail, wText, dText, pText].filter(part => part !== '');
+    document.getElementById('fullAddress').value = addressParts.join(', ');
+
+    document.getElementById('loadingOverlay').style.display = 'flex';
+    document.getElementById('submitBtn').disabled = true;
+  });
+
+  // =============================================
+  // DOM READY
+  // =============================================
+  document.addEventListener("DOMContentLoaded", function() {
+    loadProvinces();
+
+    const ngaySinhInput = document.getElementById('modalNgaySinh');
+    if (ngaySinhInput && ngaySinhInput.value) validateAge(ngaySinhInput);
+
+    // ===== SET MAX DATE CHO NGÀY SINH (18 TUỔI) =====
+    if (ngaySinhInput) {
+      const today = new Date();
+      const maxDate = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
+      const maxDateStr = maxDate.toISOString().split('T')[0];
+      ngaySinhInput.setAttribute('max', maxDateStr);
+      console.log('Max date set to:', maxDateStr);
+    }
+
+    var successMsg = document.querySelector('meta[name="successMess"]')?.getAttribute('content') || '';
+    var errorMsg = document.querySelector('meta[name="errorMess"]')?.getAttribute('content') || '';
+
+    if (successMsg && successMsg !== '' && successMsg !== 'null' && successMsg !== 'undefined') {
+      showToast(successMsg, 'success');
+    }
+    if (errorMsg && errorMsg !== '' && errorMsg !== 'null' && errorMsg !== 'undefined') {
+      showToast(errorMsg, 'error');
+    }
+  });
+</script>
+
+</body>
+</html>

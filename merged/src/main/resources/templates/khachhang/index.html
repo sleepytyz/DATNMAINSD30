@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Quản Lý Khách Hàng</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+
+    <meta name="successMess" th:content="${successMess}">
+    <meta name="errorMess" th:content="${errorMess}">
+
+    <style>
+        /* ===== TOAST ===== */
+        .toast-container-custom {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            max-width: 420px;
+            width: 100%;
+        }
+        .toast-custom {
+            background: #fff;
+            border-radius: 12px;
+            padding: 16px 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+            border-left: 5px solid #dc3545;
+            animation: slideInRight 0.4s ease;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        .toast-custom.success { border-left-color: #28a745; }
+        .toast-custom.warning { border-left-color: #ffc107; }
+        .toast-custom.error { border-left-color: #dc3545; }
+        .toast-custom .toast-content { flex: 1; }
+        .toast-custom .toast-title { font-weight: 700; font-size: 0.95rem; color: #2d3748; }
+        .toast-custom .toast-message { font-size: 0.85rem; color: #6c757d; margin-top: 2px; white-space: pre-line; }
+        .toast-custom .toast-close {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            color: #adb5bd;
+            cursor: pointer;
+            padding: 0 4px;
+            transition: color 0.2s;
+        }
+        .toast-custom .toast-close:hover { color: #dc3545; }
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideOutRight {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+
+        /* ===== SWITCH ===== */
+        .form-switch .form-check-input {
+            width: 3.5em;
+            height: 1.75em;
+            margin-top: 0;
+            cursor: pointer;
+            background-color: #dc3545;
+            border-color: #dc3545;
+        }
+        .form-switch .form-check-input:checked {
+            background-color: #28a745;
+            border-color: #28a745;
+        }
+        .form-switch .form-check-input:focus {
+            box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.25);
+        }
+
+        /* ===== PAGINATION ===== */
+        .pagination-custom {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            flex-wrap: wrap;
+        }
+        .pagination-custom .page-item {
+            display: inline-block;
+        }
+        .pagination-custom .page-item .page-link {
+            border: none;
+            border-radius: 8px;
+            padding: 6px 14px;
+            color: #495057;
+            font-weight: 600;
+            font-size: 0.85rem;
+            transition: all 0.3s ease;
+            background: transparent;
+            min-width: 36px;
+            text-align: center;
+            text-decoration: none;
+            display: block;
+        }
+        .pagination-custom .page-item .page-link:hover {
+            background: #fff5f5;
+            color: #c92327;
+        }
+        .pagination-custom .page-item.active .page-link {
+            background: linear-gradient(135deg, #c92327, #a01a1e);
+            color: white;
+            box-shadow: 0 2px 8px rgba(201, 35, 39, 0.3);
+        }
+        .pagination-custom .page-item.disabled .page-link {
+            color: #adb5bd;
+            cursor: not-allowed;
+            pointer-events: none;
+            opacity: 0.5;
+        }
+
+        /* ===== TABLE FOOTER ===== */
+        .table-footer {
+            background: #f8f9fa;
+            padding: 12px 20px;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            border-radius: 0 0 16px 16px;
+        }
+        .table-footer .info-text {
+            font-size: 0.85rem;
+            color: #6c757d;
+        }
+        .table-footer .info-text strong {
+            color: #2d3748;
+        }
+
+        /* ===== BADGE ===== */
+        .badge-active {
+            background: #10B981;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 20px;
+            font-size: 11px;
+        }
+        .badge-locked {
+            background: #EF4444;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 20px;
+            font-size: 11px;
+        }
+
+        /* ===== FILTER - CUSTOM ===== */
+        .filter-section {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 24px 20px 20px 20px;
+        }
+
+        /* Container chính */
+        .filter-container {
+            display: flex;
+            flex-direction: row;
+            align-items: flex-end;
+            flex-wrap: wrap;
+            width: 100%;
+            gap: 16px;
+        }
+
+        /* Item tìm kiếm - TO, chiếm nhiều diện tích */
+        .filter-item-search {
+            flex: 2.5 1 350px;
+            min-width: 280px;
+        }
+
+        /* Item trạng thái - VỪA */
+        .filter-item-status {
+            flex: 1.5 1 220px;
+            min-width: 200px;
+        }
+
+        /* Item reset - NHỎ */
+        .filter-item-reset {
+            flex: 0 0 120px;
+            min-width: 100px;
+        }
+
+        /* Item actions - NHỎ */
+        .filter-item-actions {
+            flex: 0 1 auto;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 10px;
+            min-width: 180px;
+        }
+
+        /* Label */
+        .filter-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 6px;
+            height: 24px;
+            line-height: 24px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .filter-label i {
+            font-size: 14px;
+        }
+
+        /* Input - TO */
+        .filter-input {
+            height: 48px;
+            border-radius: 8px 0 0 8px;
+            font-size: 15px;
+            border: 2px solid #ced4da;
+            border-right: none;
+            background: #fff;
+            padding: 0 16px;
+            width: 100%;
+            outline: none;
+            flex: 1;
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+
+        .filter-input:focus {
+            border-color: #c92327;
+            box-shadow: 0 0 0 0.25rem rgba(201, 35, 39, 0.15);
+        }
+
+        .filter-input::placeholder {
+            color: #adb5bd;
+            font-size: 14px;
+        }
+
+        /* Select - TO */
+        .filter-select {
+            height: 48px;
+            border-radius: 8px;
+            font-size: 15px;
+            border: 2px solid #ced4da;
+            background: #fff;
+            padding: 0 40px 0 16px;
+            width: 100%;
+            outline: none;
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 12 12'%3E%3Cpath fill='%23495057' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 16px center;
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+
+        .filter-select:focus {
+            border-color: #c92327;
+            box-shadow: 0 0 0 0.25rem rgba(201, 35, 39, 0.15);
+        }
+
+        /* Input group */
+        .filter-input-group {
+            display: flex;
+            width: 100%;
+        }
+
+        .filter-input-group .filter-btn-search {
+            border-radius: 0 8px 8px 0;
+            padding: 0 24px;
+            background: #c92327;
+            color: #fff;
+            border: 2px solid #c92327;
+            border-left: none;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: background 0.2s ease, border-color 0.2s ease;
+            font-size: 18px;
+        }
+
+        .filter-input-group .filter-btn-search:hover {
+            background: #a01a1e;
+            border-color: #a01a1e;
+        }
+
+        /* Button chung - TO HƠN */
+        .filter-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            text-decoration: none;
+            white-space: nowrap;
+            padding: 0 24px;
+            height: 48px;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: all 0.2s ease;
+        }
+
+        .filter-btn:hover {
+            text-decoration: none;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+        }
+
+        .filter-btn i {
+            font-size: 16px;
+        }
+
+        /* Reset */
+        .filter-btn-secondary {
+            background: #6c757d;
+            color: #fff;
+            width: 100%;
+        }
+        .filter-btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        /* Thêm */
+        .filter-btn-danger {
+            background: #c92327;
+            color: #fff;
+        }
+        .filter-btn-danger:hover {
+            background: #a01a1e;
+            box-shadow: 0 4px 15px rgba(201, 35, 39, 0.3);
+        }
+
+        /* Xuất Excel */
+        .filter-btn-success {
+            background: #28a745;
+            color: #fff;
+        }
+        .filter-btn-success:hover {
+            background: #1e7e34;
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+        }
+
+        .filter-hidden-label {
+            visibility: hidden;
+            display: block;
+            height: 24px;
+            line-height: 24px;
+            margin-bottom: 6px;
+        }
+
+        /* ===== SEARCH SUGGESTIONS ===== */
+        .search-wrapper {
+            position: relative;
+            flex: 1;
+            display: flex;
+            z-index: 99 !important;
+        }
+
+        .suggestions-dropdown {
+            position: fixed !important;
+            background: #ffffff;
+            border: 1px solid #d1d5db;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+            max-height: 400px !important;
+            min-height: 60px;
+            overflow-y: auto !important;
+            z-index: 999999 !important;
+            display: none !important;
+            min-width: 350px;
+            max-width: 500px;
+            width: auto;
+            padding: 6px 0;
+        }
+
+        .suggestions-dropdown.show {
+            display: block !important;
+        }
+
+        .suggestions-dropdown .suggestion-item {
+            padding: 10px 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid #f3f4f6;
+            transition: all 0.15s ease;
+            min-height: 44px;
+        }
+
+        .suggestions-dropdown .suggestion-item:last-child {
+            border-bottom: none;
+        }
+
+        .suggestions-dropdown .suggestion-item:hover {
+            background: #fef2f2;
+        }
+
+        .suggestions-dropdown .suggestion-item .suggestion-code {
+            font-weight: 700;
+            color: #dc2626;
+            font-size: 0.82rem;
+            min-width: 80px;
+            flex-shrink: 0;
+            background: #fef2f2;
+            padding: 2px 10px;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .suggestions-dropdown .suggestion-item .suggestion-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .suggestions-dropdown .suggestion-item .suggestion-name {
+            font-size: 0.9rem;
+            color: #1f2937;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .suggestions-dropdown .suggestion-item .suggestion-detail {
+            font-size: 0.75rem;
+            color: #6c757d;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 2px;
+            flex-wrap: wrap;
+        }
+
+        .suggestions-dropdown .suggestion-item .suggestion-detail .badge {
+            font-size: 0.65rem;
+            padding: 2px 8px;
+        }
+
+        .suggestions-dropdown .suggestion-item .highlight {
+            color: #dc2626;
+            font-weight: 700;
+            background: #fef2f2;
+            padding: 0 4px;
+            border-radius: 3px;
+        }
+
+        .suggestions-dropdown .suggestion-empty {
+            padding: 20px;
+            text-align: center;
+            color: #6b7280;
+            font-size: 0.9rem;
+        }
+
+        .suggestions-dropdown .suggestion-loading {
+            padding: 18px;
+            text-align: center;
+            color: #6b7280;
+            font-size: 0.85rem;
+        }
+
+        .suggestions-dropdown .suggestion-loading .spinner-border {
+            width: 1.2rem;
+            height: 1.2rem;
+            margin-right: 10px;
+        }
+
+        .suggestions-dropdown::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .suggestions-dropdown::-webkit-scrollbar-track {
+            background: #f3f4f6;
+            border-radius: 10px;
+        }
+
+        .suggestions-dropdown::-webkit-scrollbar-thumb {
+            background: #dc2626;
+            border-radius: 10px;
+        }
+
+        .suggestions-dropdown::-webkit-scrollbar-thumb:hover {
+            background: #b91c1c;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 992px) {
+            .filter-item-search {
+                flex: 2 1 280px;
+                min-width: 240px;
+            }
+            .filter-item-status {
+                flex: 1 1 200px;
+                min-width: 180px;
+            }
+            .filter-item-reset {
+                flex: 0 0 100px;
+                min-width: 90px;
+            }
+            .filter-item-actions {
+                min-width: 160px;
+            }
+            .filter-btn {
+                height: 44px;
+                font-size: 14px;
+                padding: 0 18px;
+            }
+            .filter-input,
+            .filter-select,
+            .filter-input-group .filter-btn-search {
+                height: 44px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .filter-container {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 12px;
+            }
+            .filter-item-search,
+            .filter-item-status,
+            .filter-item-reset,
+            .filter-item-actions {
+                flex: 1 1 100%;
+                min-width: unset;
+            }
+            .filter-item-actions {
+                justify-content: stretch;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            .filter-item-actions .filter-btn {
+                flex: 1;
+                height: 46px;
+                font-size: 15px;
+                justify-content: center;
+                min-width: 120px;
+            }
+            .filter-item-reset .filter-btn {
+                height: 46px;
+                font-size: 15px;
+                justify-content: center;
+            }
+            .filter-input,
+            .filter-select,
+            .filter-input-group .filter-btn-search {
+                height: 46px;
+            }
+            .filter-input-group .filter-btn-search {
+                padding: 0 18px;
+            }
+            .filter-hidden-label {
+                display: none;
+            }
+            .filter-section {
+                padding: 16px 14px;
+                border-radius: 10px;
+            }
+
+            .suggestions-dropdown {
+                min-width: 280px !important;
+                max-width: 85vw !important;
+                max-height: 350px !important;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .filter-item-actions .filter-btn {
+                font-size: 13px;
+                padding: 0 12px;
+                height: 42px;
+                min-width: 80px;
+            }
+            .filter-item-actions .filter-btn i {
+                display: none;
+            }
+            .filter-btn-danger i,
+            .filter-btn-success i {
+                display: none;
+            }
+            .filter-btn-danger::before {
+                content: "+";
+                font-weight: 700;
+                margin-right: 4px;
+            }
+            .filter-btn-success::before {
+                content: "📊";
+                margin-right: 4px;
+            }
+            .filter-input,
+            .filter-select,
+            .filter-input-group .filter-btn-search {
+                height: 42px;
+                font-size: 14px;
+            }
+            .filter-input-group .filter-btn-search {
+                padding: 0 14px;
+                font-size: 16px;
+            }
+            .filter-btn {
+                height: 42px;
+                font-size: 13px;
+                padding: 0 12px;
+            }
+            .filter-item-reset .filter-btn {
+                height: 42px;
+                font-size: 13px;
+            }
+            .filter-section {
+                padding: 12px 10px;
+                border-radius: 8px;
+            }
+            .filter-label {
+                font-size: 12px;
+                height: 20px;
+                line-height: 20px;
+                margin-bottom: 4px;
+            }
+
+            .suggestions-dropdown {
+                min-width: 230px !important;
+                max-width: 90vw !important;
+                max-height: 280px !important;
+            }
+            .suggestions-dropdown .suggestion-item {
+                padding: 6px 10px;
+                min-height: 34px;
+                gap: 8px;
+            }
+            .suggestions-dropdown .suggestion-item .suggestion-code {
+                font-size: 0.68rem;
+                min-width: 55px;
+                padding: 2px 6px;
+            }
+            .suggestions-dropdown .suggestion-item .suggestion-name {
+                font-size: 0.78rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="wrapper">
+    <div sec:authorize="hasRole('ADMIN')">
+        <div th:replace="fragments/sidebaradmin :: sidebar-admin"></div>
+    </div>
+
+    <div sec:authorize="hasRole('STAFF')">
+        <div th:replace="fragments/sidebarstaff :: sidebar-staff"></div>
+    </div>
+
+    <div class="content-body">
+        <div th:replace="~{fragments/header :: header('Quản lý khách hàng', 'Khách hàng')}"></div>
+
+        <div class="page-content">
+            <div class="toast-container-custom" id="toastContainer"></div>
+
+            <div class="card card-custom mb-4">
+                <div class="card-header text-white" style="background:#c92327;">
+                    <h5 class="mb-0">
+                        <i class="bi bi-funnel-fill me-2"></i>
+                        Bộ lọc tìm kiếm
+                    </h5>
+                </div>
+
+                <div class="card-body filter-section">
+                    <div class="filter-container">
+                        <div class="filter-item filter-item-search">
+                            <form th:action="@{/khach-hang/tim-kiem}" method="get" style="display:contents;">
+                                <input type="hidden" name="page" value="0">
+                                <label class="filter-label">
+                                    <i class="bi bi-search me-1"></i>Tìm kiếm
+                                </label>
+                                <div class="filter-input-group">
+                                    <div class="search-wrapper" style="flex:1; position:relative; display:flex;">
+                                        <input type="text"
+                                               name="keyword"
+                                               th:value="${keyword}"
+                                               class="filter-input"
+                                               id="searchInput"
+                                               placeholder="Tìm theo mã, tên, SĐT hoặc email..."
+                                               autocomplete="off"
+                                               style="border-radius: 8px 0 0 8px; border-right: none; height: 48px; font-size: 15px;">
+                                        <button class="filter-btn-search" type="submit" id="searchButton"
+                                                style="height: 48px; padding: 0 24px; font-size: 18px; border-radius: 0 8px 8px 0;">
+                                            <i class="bi bi-search"></i>
+                                        </button>
+                                        <div class="suggestions-dropdown" id="suggestionsDropdown">
+                                            <div class="suggestion-loading" style="display: none;">
+                                                <div class="spinner-border text-danger spinner-border-sm" role="status">
+                                                    <span class="visually-hidden">Loading...</span>
+                                                </div>
+                                                Đang tìm kiếm...
+                                            </div>
+                                            <div id="suggestionsList"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="filter-item filter-item-status">
+                            <form th:action="@{/khach-hang/hien-thi}" method="get" style="display:contents;">
+                                <label class="filter-label">
+                                    <i class="bi bi-funnel me-1"></i>Trạng thái
+                                </label>
+                                <select class="filter-select" name="status" onchange="this.closest('form').submit()"
+                                        style="height: 48px; font-size: 15px; border-radius: 8px;">
+                                    <option value="">Tất cả</option>
+                                    <option value="true" th:selected="${selectedStatus == 'true'}">Hoạt động</option>
+                                    <option value="false" th:selected="${selectedStatus == 'false'}">Ngừng hoạt động</option>
+                                </select>
+                            </form>
+                        </div>
+                        <div class="filter-item filter-item-reset">
+                            <span class="filter-hidden-label">&nbsp;</span>
+                            <a th:href="@{/khach-hang/hien-thi}" class="filter-btn filter-btn-secondary"
+                               style="height: 48px; font-size: 15px; border-radius: 8px; padding: 0 24px; display: inline-flex; align-items: center; gap: 8px;">
+                                <i class="bi bi-arrow-clockwise"></i> Reset
+                            </a>
+                        </div>
+                        <div class="filter-item filter-item-actions">
+                            <span class="filter-hidden-label">&nbsp;</span>
+                            <a th:href="@{/khach-hang/add-view}" class="filter-btn filter-btn-danger"
+                               style="height: 48px; font-size: 15px; border-radius: 8px; padding: 0 24px; display: inline-flex; align-items: center; gap: 8px;">
+                                <i class="bi bi-plus-circle"></i> Thêm
+                            </a>
+                            <a th:href="@{/khach-hang/export-excel}" class="filter-btn filter-btn-success"
+                               style="height: 48px; font-size: 15px; border-radius: 8px; padding: 0 24px; display: inline-flex; align-items: center; gap: 8px;">
+                                <i class="bi bi-file-earmark-excel"></i> Excel
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm border-0" style="border-radius: 16px; overflow: hidden;">
+                <div class="card-body p-0">
+                    <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
+                        <h5 class="mb-0 fw-bold text-secondary">
+                         Danh Sách Khách Hàng
+                        </h5>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light text-uppercase fs-7">
+                            <tr>
+                                <th width="50" class="text-center">STT</th>
+                                <th class="text-center">Mã KH</th>
+                                <th class="text-center">Họ tên</th>
+                                <th class="text-center">SĐT</th>
+                                <th class="text-center">Email</th>
+                                <th class="text-center">Trạng thái</th>
+                                <th width="150" class="text-center">Hành động</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="ok, row : ${khachHangs}">
+                                <td class="text-center" th:text="${row.count + (currentPage * size)}"></td>
+                                <td class="fw-bold" th:text="${ok.maKH}"></td>
+                                <td class="text-center" th:text="${ok.hoTen}"></td>
+                                <td class="text-center" th:text="${ok.sdt}"></td>
+                                <td class="text-center" th:text="${ok.email}"></td>
+                                <td class="text-center">
+                                    <span th:if="${ok.trangThai == true}" class="badge-active">Hoạt động</span>
+                                    <span th:if="${ok.trangThai == false}" class="badge-locked">Ngừng hoạt động</span>
+                                </td>
+                                <td class="text-center">
+                                    <a class="btn btn-sm btn-outline-danger"
+                                       th:href="@{/khach-hang/edit/{id}(id=${ok.maKH})}"
+                                       title="Xem chi tiết">
+                                        <i class="bi bi-eye-fill"></i>
+                                    </a>
+
+                                    <div class="form-check form-switch d-inline-block align-middle ms-2">
+                                        <input class="form-check-input" type="checkbox" role="switch"
+                                               th:checked="${ok.trangThai}"
+                                               th:data-id="${ok.maKH}"
+                                               th:data-status="${selectedStatus}"
+                                               onchange="toggleStatus(this)"
+                                               title="Bật/Tắt trạng thái">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr th:if="${khachHangs == null or khachHangs.isEmpty()}">
+                                <td colspan="7" class="text-center py-4 text-muted">
+                                    <i class="bi bi-inbox" style="font-size:24px;display:block;margin-bottom:6px"></i>
+                                    Không có dữ liệu khách hàng
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- ===== PAGINATION ===== -->
+                    <div class="table-footer" th:if="${totalPages > 0}">
+                        <div class="info-text">
+                            <i class="bi bi-database me-1"></i>
+                            Tổng: <strong th:text="${totalItems}">0</strong> bản ghi
+                            <span class="mx-1">|</span>
+                            Trang <strong th:text="${currentPage + 1}">1</strong> / <strong th:text="${totalPages}">1</strong>
+                        </div>
+
+                        <nav aria-label="Page navigation">
+                            <ul class="pagination-custom">
+                                <li class="page-item" th:classappend="${currentPage == 0} ? 'disabled'">
+                                    <a class="page-link" th:href="@{/khach-hang/hien-thi(page=0, size=${size}, status=${selectedStatus})}">
+                                        <i class="bi bi-chevron-double-left"></i>
+                                    </a>
+                                </li>
+                                <li class="page-item" th:classappend="${currentPage == 0} ? 'disabled'">
+                                    <a class="page-link" th:href="@{/khach-hang/hien-thi(page=${currentPage - 1}, size=${size}, status=${selectedStatus})}">
+                                        <i class="bi bi-chevron-left"></i>
+                                    </a>
+                                </li>
+                                <li class="page-item" th:each="i : ${#numbers.sequence(0, totalPages - 1)}"
+                                    th:if="${i >= 0 && i < totalPages && ((i >= currentPage - 2 && i <= currentPage + 2) || i == 0 || i == totalPages - 1)}"
+                                    th:classappend="${currentPage == i} ? 'active' : ''">
+                                    <span class="page-link" th:if="${i == 2 && currentPage > 3}" style="border: none; background: transparent; cursor: default;">...</span>
+                                    <a class="page-link" th:unless="${i == 2 && currentPage > 3}"
+                                       th:href="@{/khach-hang/hien-thi(page=${i}, size=${size}, status=${selectedStatus})}"
+                                       th:text="${i + 1}">
+                                    </a>
+                                    <span class="page-link" th:if="${i == totalPages - 3 && currentPage < totalPages - 4}" style="border: none; background: transparent; cursor: default;">...</span>
+                                </li>
+                                <li class="page-item" th:classappend="${currentPage + 1 >= totalPages} ? 'disabled'">
+                                    <a class="page-link" th:href="@{/khach-hang/hien-thi(page=${currentPage + 1}, size=${size}, status=${selectedStatus})}">
+                                        <i class="bi bi-chevron-right"></i>
+                                    </a>
+                                </li>
+                                <li class="page-item" th:classappend="${currentPage + 1 >= totalPages} ? 'disabled'">
+                                    <a class="page-link" th:href="@{/khach-hang/hien-thi(page=${totalPages - 1}, size=${size}, status=${selectedStatus})}">
+                                        <i class="bi bi-chevron-double-right"></i>
+                                    </a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    function showToast(message, type, title) {
+        var container = document.getElementById('toastContainer');
+        if (!container) return;
+
+        var titles = {
+            error: 'Lỗi!',
+            success: 'Thành công!',
+            warning: 'Cảnh báo!',
+            info: 'Thông tin'
+        };
+
+        var toast = document.createElement('div');
+        toast.className = 'toast-custom ' + type;
+        toast.innerHTML = `
+            <div class="toast-content">
+                <div class="toast-title">${title || titles[type] || 'Thông báo'}</div>
+                <div class="toast-message">${message}</div>
+            </div>
+            <button class="toast-close" onclick="this.closest('.toast-custom').remove()">
+                ×
+            </button>
+        `;
+        container.appendChild(toast);
+
+        setTimeout(function() {
+            if (toast.parentNode) {
+                toast.style.animation = 'slideOutRight 0.3s ease forwards';
+                setTimeout(function() { toast.remove(); }, 300);
+            }
+        }, 5000);
+    }
+
+    function toggleStatus(element) {
+        var id = element.getAttribute('data-id');
+        var status = element.getAttribute('data-status') || '';
+        var isChecked = element.checked;
+        var action = isChecked ? 'unlock' : 'lock';
+        var confirmMsg = isChecked ? 'Bạn có chắc chắn muốn MỞ KHÓA tài khoản này?' : 'Bạn có chắc chắn muốn KHÓA tài khoản này?';
+
+        if (confirm(confirmMsg)) {
+            var url = '/khach-hang/' + action + '/' + id;
+            if (status && status !== '') {
+                url += '?status=' + status;
+            }
+            window.location.href = url;
+        } else {
+            element.checked = !isChecked;
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        var successMsg = document.querySelector('meta[name="successMess"]')?.getAttribute('content') || '';
+        var errorMsg = document.querySelector('meta[name="errorMess"]')?.getAttribute('content') || '';
+
+        if (successMsg && successMsg !== '' && successMsg !== 'null' && successMsg !== 'undefined') {
+            showToast(successMsg, 'success');
+        }
+        if (errorMsg && errorMsg !== '' && errorMsg !== 'null' && errorMsg !== 'undefined') {
+            showToast(errorMsg, 'error');
+        }
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('searchInput');
+        const suggestionsDropdown = document.getElementById('suggestionsDropdown');
+        const suggestionsList = document.getElementById('suggestionsList');
+        const loadingEl = document.querySelector('.suggestion-loading');
+
+        if (!searchInput || !suggestionsDropdown || !suggestionsList) {
+            console.error('❌ Không tìm thấy element cần thiết!');
+            return;
+        }
+
+        let debounceTimer = null;
+        let currentRequest = null;
+
+        function updateDropdownPosition() {
+            const rect = searchInput.getBoundingClientRect();
+            const dropdownWidth = Math.min(rect.width, 450);
+            suggestionsDropdown.style.left = rect.left + 'px';
+            suggestionsDropdown.style.top = (rect.bottom + 4) + 'px';
+            suggestionsDropdown.style.width = dropdownWidth + 'px';
+            suggestionsDropdown.style.minWidth = Math.min(rect.width, 350) + 'px';
+            suggestionsDropdown.style.maxWidth = '450px';
+        }
+
+        function highlightText(text, keyword) {
+            if (!keyword || !text) return text;
+            const regex = new RegExp('(' + keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
+            return text.replace(regex, '<span class="highlight">$1</span>');
+        }
+
+        function showSuggestions(data, keyword) {
+            suggestionsList.innerHTML = '';
+
+            if (!data || data.length === 0) {
+                suggestionsList.innerHTML = `
+                <div class="suggestion-empty">
+                    <i class="bi bi-search me-1"></i>
+                    Không tìm thấy khách hàng nào cho "<strong>${keyword}</strong>"
+                </div>
+            `;
+                suggestionsDropdown.classList.add('show');
+                updateDropdownPosition();
+                return;
+            }
+
+            const maxDisplay = 10;
+            const displayData = data.slice(0, maxDisplay);
+
+            displayData.forEach((item) => {
+                const div = document.createElement('div');
+                div.className = 'suggestion-item';
+
+                const highlightedName = highlightText(item.hoTen, keyword);
+                const highlightedCode = highlightText(item.maKH, keyword);
+
+                // Xác định màu badge cho trạng thái
+                const statusClass = item.trangThai === 'Hoạt động' ? 'bg-success' : 'bg-danger';
+
+                div.innerHTML = `
+                <span class="suggestion-code">${highlightedCode}</span>
+                <div class="suggestion-info">
+                    <div class="suggestion-name">${highlightedName}</div>
+                    <div class="suggestion-detail">
+                        <span><i class="bi bi-telephone me-1"></i>${item.sdt || 'Chưa có'}</span>
+                        <span><i class="bi bi-envelope me-1"></i>${item.email || ''}</span>
+                        <span class="badge ${statusClass}">${item.trangThai}</span>
+                    </div>
+                </div>
+            `;
+
+                div.addEventListener('click', function() {
+                    // Điền từ khóa vào input
+                    searchInput.value = item.hoTen;
+                    suggestionsDropdown.classList.remove('show');
+
+                    // Submit form tìm kiếm
+                    const form = searchInput.closest('form');
+                    if (form) {
+                        form.submit();
+                    } else {
+                        // Fallback: redirect với keyword
+                        const url = new URL(window.location.href);
+                        url.searchParams.set('keyword', item.hoTen);
+                        url.searchParams.set('page', '0');
+                        window.location.href = url.toString();
+                    }
+                });
+
+                div.addEventListener('mousedown', function(e) {
+                    e.preventDefault();
+                });
+
+                suggestionsList.appendChild(div);
+            });
+
+            const totalItems = data.length;
+            const countDiv = document.createElement('div');
+            countDiv.className = 'suggestion-item';
+            countDiv.style.background = '#f8f9fa';
+            countDiv.style.justifyContent = 'center';
+            countDiv.style.color = '#6b7280';
+            countDiv.style.fontSize = '0.8rem';
+            countDiv.style.cursor = 'default';
+            countDiv.style.borderBottom = 'none';
+            countDiv.style.fontWeight = '500';
+            countDiv.style.padding = '6px 18px';
+
+            if (totalItems > maxDisplay) {
+                countDiv.innerHTML = `
+                <i class="bi bi-list-ul me-1"></i>
+                Hiển thị <strong>${maxDisplay}</strong> / <strong>${totalItems}</strong> khách hàng
+            `;
+            } else {
+                countDiv.innerHTML = `
+                <i class="bi bi-list-ul me-1"></i>
+                Tìm thấy <strong>${totalItems}</strong> khách hàng
+            `;
+            }
+            suggestionsList.appendChild(countDiv);
+
+            suggestionsDropdown.classList.add('show');
+            updateDropdownPosition();
+            suggestionsDropdown.scrollTop = 0;
+        }
+
+        function fetchSuggestions(keyword) {
+            if (!keyword || keyword.trim().length < 1) {
+                suggestionsDropdown.classList.remove('show');
+                return;
+            }
+
+            loadingEl.style.display = 'block';
+            suggestionsList.innerHTML = '';
+            suggestionsDropdown.classList.add('show');
+            updateDropdownPosition();
+
+            if (currentRequest) {
+                currentRequest.abort();
+            }
+            const csrfToken = document.querySelector('meta[name="_csrf"]');
+            const csrfHeader = document.querySelector('meta[name="_csrf_header"]');
+            const token = csrfToken ? csrfToken.getAttribute('content') : '';
+            const header = csrfHeader ? csrfHeader.getAttribute('content') : 'X-CSRF-TOKEN';
+
+            const url = `/khach-hang/api/search-suggestions?q=${encodeURIComponent(keyword.trim())}`;
+            currentRequest = new XMLHttpRequest();
+            currentRequest.open('GET', url, true);
+            currentRequest.setRequestHeader('Content-Type', 'application/json');
+            if (token) {
+                currentRequest.setRequestHeader(header, token);
+            }
+            currentRequest.onload = function() {
+                loadingEl.style.display = 'none';
+                if (currentRequest.status === 200) {
+                    try {
+                        const data = JSON.parse(currentRequest.responseText);
+                        showSuggestions(data, keyword.trim());
+                    }
+                    catch (e) {
+                        console.error('❌ Parse error:', e);
+                        suggestionsDropdown.classList.remove('show');
+                    }
+                } else {
+                    suggestionsDropdown.classList.remove('show');
+                }
+                currentRequest = null;
+            };
+            currentRequest.onerror = function() {
+                loadingEl.style.display = 'none';
+                suggestionsDropdown.classList.remove('show');
+                currentRequest = null;
+            };
+
+            currentRequest.send();
+        }
+        searchInput.addEventListener('input', function() {
+            const keyword = this.value;
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(function() {
+                fetchSuggestions(keyword);
+            }, 300);
+        });
+        searchInput.addEventListener('focus', function() {
+            if (this.value && this.value.trim().length >= 1) {
+                fetchSuggestions(this.value);
+            }
+        });
+        searchInput.addEventListener('blur', function() {
+            setTimeout(function() {
+                suggestionsDropdown.classList.remove('show');
+            }, 300);
+        });
+        searchInput.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                const items = suggestionsList.querySelectorAll('.suggestion-item');
+                if (items.length === 0) return;
+
+                let currentIndex = -1;
+                items.forEach((item, index) => {
+                    if (item.classList.contains('active')) {
+                        currentIndex = index;
+                        item.classList.remove('active');
+                    }
+                });
+
+                if (e.key === 'ArrowDown') {
+                    currentIndex = (currentIndex + 1) % items.length;
+                } else {
+                    currentIndex = (currentIndex - 1 + items.length) % items.length;
+                }
+
+                items[currentIndex].classList.add('active');
+                items[currentIndex].scrollIntoView({ block: 'nearest' });
+                return;
+            }
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const activeItem = suggestionsList.querySelector('.suggestion-item.active');
+                if (activeItem) {
+                    activeItem.click();
+                    return;
+                }
+                suggestionsDropdown.classList.remove('show');
+                const form = searchInput.closest('form');
+                if (form) {
+                    form.submit();
+                }
+            }
+
+            if (e.key === 'Escape') {
+                suggestionsDropdown.classList.remove('show');
+            }
+        });
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.search-wrapper')) {
+                suggestionsDropdown.classList.remove('show');
+            }
+        });
+        window.addEventListener('resize', function() {
+            if (suggestionsDropdown.classList.contains('show')) {
+                updateDropdownPosition();
+            }
+        });
+        window.addEventListener('scroll', function() {
+            if (suggestionsDropdown.classList.contains('show')) {
+                updateDropdownPosition();
+            }
+        });
+    });
+</script>
+
+</body>
+</html>

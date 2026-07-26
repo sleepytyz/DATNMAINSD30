@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!--
+  ============================================================================
+  WIDGET THỜI GIAN THỰC CHO TRANG QUẢN LÝ (fragment: realtime-quanly)
+  Được nhúng vào cuối các sidebar (admin / staff / chung) nên TỰ ĐỘNG có mặt
+  trên mọi màn hình quản lý. Chức năng:
+    • Kết nối WebSocket (SockJS + STOMP) tới /ws
+    • Nghe:  /topic/quanly/don-hang   → đơn online mới + đổi trạng thái đơn
+             /topic/quanly/ton-kho    → cảnh báo hết hàng / sắp hết hàng
+             /topic/quanly/module     → trạng thái hoạt động của từng module
+    • Toast + âm báo khi có ĐƠN ONLINE MỚI, chuông + badge số chưa đọc,
+      chấm màu thể hiện sức khoẻ hệ thống (xanh/vàng/đỏ)
+    • Phát CustomEvent 'fs-don-hang' / 'fs-ton-kho' / 'fs-module' trên window
+      để từng trang (VD: /donhang/index, dashboard) tự cập nhật giao diện.
+  Tự chứa 100%: CSS scoped + không phụ thuộc Bootstrap JS.
+  ============================================================================
+-->
+<div th:fragment="realtime-quanly">
+    <style>
+        #fsRtFab { position: fixed; right: 22px; bottom: 22px; z-index: 1900; }
+        #fsRtBtn {
+            width: 54px; height: 54px; border-radius: 999px; border: 0; cursor: pointer;
+            background: #101828; color: #fff; font-size: 22px; position: relative;
+            box-shadow: 0 10px 26px rgba(16,24,40,.35); transition: transform .15s;
+            display: grid; place-items: center;
+        }
+        #fsRtBtn:hover { transform: translateY(-2px); }
+        #fsRtDot {
+            position: absolute; top: 3px; left: 3px; width: 13px; height: 13px; border-radius: 999px;
+            background: #98a2b3; border: 2.5px solid #101828;
+        }
+        #fsRtDot.ok { background: #12b76a; } #fsRtDot.warn { background: #f79009; } #fsRtDot.bad { background: #f04438; }
+        #fsRtBadge {
+            position: absolute; top: -4px; right: -4px; min-width: 21px; height: 21px; padding: 0 5px;
+            background: #f04438; color: #fff; border-radius: 999px; font-size: 11.5px; font-weight: 800;
+            display: none; place-items: center; border: 2px solid #fff; font-family: system-ui, sans-serif;
+        }
+        #fsRtBadge.show { display: grid; }
+        #fsRtPanel {
+            position: fixed; right: 22px; bottom: 86px; width: 360px; max-width: calc(100vw - 34px);
+            background: #fff; border-radius: 16px; box-shadow: 0 24px 60px rgba(16,24,40,.28);
+            z-index: 1900; display: none; overflow: hidden; font-family: system-ui, -apple-system, sans-serif;
+            border: 1px solid #e9ecf2;
+        }
+        #fsRtPanel.open { display: block; animation: fsRtUp .2s ease; }
+        @keyframes fsRtUp { from { opacity: 0; transform: translateY(10px); } }
+        #fsRtPanel .fsrt-head {
+            padding: 13px 16px; background: #101828; color: #fff; font-weight: 700; font-size: 14px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        #fsRtPanel .fsrt-head small { display: block; font-weight: 500; font-size: 11.5px; color: #9aa7bd; }
+        #fsRtList { max-height: 340px; overflow: auto; }
+        .fsrt-item { padding: 11px 15px; border-bottom: 1px solid #f1f3f7; font-size: 13px; display: flex; gap: 10px; }
+        .fsrt-item i { font-size: 16px; margin-top: 1px; }
+        .fsrt-item .khi { color: #98a2b3; font-size: 11px; }
+        .fsrt-item.new i { color: #d92d20; } .fsrt-item.tt i { color: #1570ef; }
+        .fsrt-item.kho i { color: #f79009; } .fsrt-item.het i { color: #f04438; }
+        .fsrt-empty { padding: 26px; text-align: center; color: #98a2b3; font-size: 13px; }
+        #fsRtToasts {
+            position: fixed; top: 76px; right: 20px; z-index: 2000; display: grid; gap: 10px;
+            max-width: 372px; font-family: system-ui, -apple-system, sans-serif;
+        }
+        .fsrt-toast {
+            display: flex; gap: 11px; background: #101828; color: #fff; border-radius: 13px;
+            padding: 13px 15px; box-shadow: 0 16px 40px rgba(16,24,40,.35); font-size: 13.5px;
+            animation: fsRtIn .25s ease; align-items: flex-start; border-left: 4px solid #667085;
+        }
+        .fsrt-toast b { display: block; font-size: 13.5px; }
+        .fsrt-toast small { color: #c5cddb; font-size: 12.3px; line-height: 1.45; display: block; }
+        .fsrt-toast i { font-size: 19px; margin-top: 1px; }
+        .fsrt-toast.new { border-left-color: #d92d20; background: linear-gradient(100deg, #26140d, #101828 55%); }
+        .fsrt-toast.new i { color: #ff7a4d; }
+        .fsrt-toast.info { border-left-color: #1570ef; } .fsrt-toast.info i { color: #7db4f7; }
+        .fsrt-toast.warn { border-left-color: #f79009; } .fsrt-toast.warn i { color: #fdb022; }
+        .fsrt-toast.err  { border-left-color: #f04438; } .fsrt-toast.err i  { color: #ff8a80; }
+        .fsrt-toast.out { animation: fsRtOut .22s ease forwards; }
+        @keyframes fsRtIn { from { opacity: 0; transform: translateX(26px); } }
+        @keyframes fsRtOut { to { opacity: 0; transform: translateX(26px); } }
+    </style>
+
+    <div id="fsRtToasts" aria-live="polite"></div>
+    <div id="fsRtFab">
+        <button type="button" id="fsRtBtn" title="Thông báo thời gian thực">
+            <i class="bi bi-bell-fill"></i>
+            <span id="fsRtDot" title="Trạng thái hệ thống"></span>
+            <span id="fsRtBadge">0</span>
+        </button>
+    </div>
+    <div id="fsRtPanel">
+        <div class="fsrt-head">
+            <div>Thông báo thời gian thực
+                <small id="fsRtConnText">Đang kết nối máy chủ...</small></div>
+            <i class="bi bi-broadcast"></i>
+        </div>
+        <div id="fsRtList"><div class="fsrt-empty">Chưa có sự kiện nào trong phiên này.<br>
+            Đơn online mới, đổi trạng thái, cảnh báo tồn kho... sẽ hiện tại đây ngay lập tức.</div></div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <script>
+        (function () {
+            if (window.__fsRealtimeInit) return;   // chống khởi tạo trùng
+            window.__fsRealtimeInit = true;
+
+            var btn = document.getElementById('fsRtBtn');
+            var dot = document.getElementById('fsRtDot');
+            var badge = document.getElementById('fsRtBadge');
+            var panel = document.getElementById('fsRtPanel');
+            var list = document.getElementById('fsRtList');
+            var connText = document.getElementById('fsRtConnText');
+            var chuaDoc = 0;
+
+            function tien(n) { return Number(n || 0).toLocaleString('vi-VN') + '\u20ab'; }
+
+            // ---- Âm báo (WebAudio, không cần file) ----
+            var audioCtx = null;
+            function beep() {
+                try {
+                    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+                    if (audioCtx.state === 'suspended') audioCtx.resume();
+                    [880, 1175].forEach(function (f, i) {
+                        var o = audioCtx.createOscillator(), g = audioCtx.createGain();
+                        o.connect(g); g.connect(audioCtx.destination);
+                        o.frequency.value = f; o.type = 'sine';
+                        var t = audioCtx.currentTime + i * 0.14;
+                        g.gain.setValueAtTime(0.0001, t);
+                        g.gain.exponentialRampToValueAtTime(0.18, t + 0.02);
+                        g.gain.exponentialRampToValueAtTime(0.0001, t + 0.13);
+                        o.start(t); o.stop(t + 0.15);
+                    });
+                } catch (e) { /* trình duyệt chặn audio trước tương tác đầu tiên */ }
+            }
+
+            // ---- Toast ----
+            function toast(type, tieuDe, noiDung, giu) {
+                var box = document.getElementById('fsRtToasts');
+                var t = document.createElement('div');
+                t.className = 'fsrt-toast ' + type;
+                var icon = type === 'new' ? 'bi-cart-plus-fill'
+                    : type === 'warn' ? 'bi-exclamation-triangle-fill'
+                        : type === 'err' ? 'bi-x-octagon-fill' : 'bi-info-circle-fill';
+                t.innerHTML = '<i class="bi ' + icon + '"></i><span><b></b><small></small></span>';
+                t.querySelector('b').textContent = tieuDe;
+                t.querySelector('small').textContent = noiDung;
+                box.appendChild(t);
+                setTimeout(function () {
+                    t.classList.add('out');
+                    setTimeout(function () { t.remove(); }, 240);
+                }, giu || 5200);
+            }
+
+            // ---- Danh sách trong panel + badge ----
+            function ghiSuKien(cls, icon, html) {
+                var empty = list.querySelector('.fsrt-empty');
+                if (empty) empty.remove();
+                var item = document.createElement('div');
+                item.className = 'fsrt-item ' + cls;
+                var gio = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                item.innerHTML = '<i class="bi ' + icon + '"></i><span>' + html
+                    + '<span class="khi"> • ' + gio + '</span></span>';
+                list.insertBefore(item, list.firstChild);
+                while (list.children.length > 30) list.removeChild(list.lastChild);
+                if (!panel.classList.contains('open')) {
+                    chuaDoc++;
+                    badge.textContent = chuaDoc > 99 ? '99+' : chuaDoc;
+                    badge.classList.add('show');
+                }
+            }
+            function esc(s) {
+                return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
+                    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+                });
+            }
+
+            btn.addEventListener('click', function () {
+                panel.classList.toggle('open');
+                if (panel.classList.contains('open')) {
+                    chuaDoc = 0; badge.classList.remove('show');
+                }
+                // mở khoá audio sau tương tác đầu tiên
+                try { audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
+            });
+
+            // ---- Xử lý từng loại thông điệp ----
+            function xuLyDonHang(msg) {
+                if (msg.loai === 'DON_HANG_MOI') {
+                    beep();
+                    toast('new', '\uD83D\uDED2 Đơn online mới: ' + msg.maHoaDon,
+                        (msg.tenKhachHang || 'Khách hàng') + ' — ' + tien(msg.tongTien)
+                        + ' — ' + (msg.soLuongSanPham || 0) + ' sản phẩm • ' + (msg.phuongThucThanhToan || ''), 8000);
+                    ghiSuKien('new', 'bi-cart-plus-fill',
+                        '<b>Đơn online mới ' + esc(msg.maHoaDon) + '</b><br>'
+                        + esc(msg.tenKhachHang) + ' • ' + tien(msg.tongTien)
+                        + ' • ' + esc(msg.soLuongSanPham) + ' SP');
+                } else if (msg.loai === 'DOI_TRANG_THAI') {
+                    toast('info', 'Đơn ' + msg.maHoaDon + ': ' + msg.trangThaiMoi,
+                        (msg.trangThaiCu || '') + ' → ' + (msg.trangThaiMoi || '')
+                        + ' • bởi ' + (msg.nguoiThucHien || 'hệ thống'));
+                    ghiSuKien('tt', 'bi-arrow-repeat',
+                        '<b>' + esc(msg.maHoaDon) + '</b>: ' + esc(msg.trangThaiCu) + ' → <b>'
+                        + esc(msg.trangThaiMoi) + '</b> (' + esc(msg.nguoiThucHien) + ')');
+                }
+                window.dispatchEvent(new CustomEvent('fs-don-hang', { detail: msg }));
+            }
+
+            function xuLyTonKho(msg) {
+                var bienThe = esc(msg.tenSanPham) + ' (' + esc(msg.mauSac) + '/' + esc(msg.kichThuoc) + ')';
+                if (msg.loai === 'HET_HANG') {
+                    toast('err', 'Hết hàng!', bienThe + ' vừa hết hàng — cần nhập thêm.', 7000);
+                    ghiSuKien('het', 'bi-x-octagon-fill', '<b>Hết hàng:</b> ' + bienThe);
+                } else if (msg.loai === 'SAP_HET_HANG') {
+                    toast('warn', 'Sắp hết hàng', bienThe + ' chỉ còn ' + msg.soLuongTon + ' sản phẩm.');
+                    ghiSuKien('kho', 'bi-exclamation-triangle-fill',
+                        '<b>Sắp hết:</b> ' + bienThe + ' — còn ' + esc(msg.soLuongTon));
+                }
+                window.dispatchEvent(new CustomEvent('fs-ton-kho', { detail: msg }));
+            }
+
+            function xuLyHoTro(msg) {
+                if (msg.nguoiGui === 'KHACH') {
+                    var xem = (msg.noiDung || '').length > 90 ? msg.noiDung.substring(0, 90) + '…' : (msg.noiDung || '');
+                    toast('info', '\uD83D\uDCAC Tin nhắn hỗ trợ: ' + (msg.tenHienThi || 'Khách'), xem, 6500);
+                    ghiSuKien('tt', 'bi-chat-dots-fill',
+                        '<b>' + esc(msg.tenHienThi || 'Khách') + '</b> nhắn: ' + esc(xem)
+                        + ' — <a href="/hotro/index" style="color:#7db4f7">tr\u1ea3 l\u1eddi</a>');
+                }
+                window.dispatchEvent(new CustomEvent('fs-hotro', { detail: msg }));
+            }
+
+            function xuLyLienHe(msg) {
+                beep();
+                toast('warn', '\u2709\uFE0F Liên hệ mới: ' + (msg.hoTen || 'Khách'),
+                    (msg.xemTruoc || '') + ' — trả lời qua Gmail trong module Liên hệ.', 8000);
+                ghiSuKien('kho', 'bi-envelope-exclamation-fill',
+                    '<b>' + esc(msg.hoTen) + '</b> (' + esc(msg.email) + ') gửi liên hệ: '
+                    + esc(msg.xemTruoc) + ' — <a href="/lienhe/index" style="color:#7db4f7">xử lý</a>');
+                window.dispatchEvent(new CustomEvent('fs-lien-he', { detail: msg }));
+            }
+
+            function xuLyModule(msg) {
+                if (msg.loai !== 'TRANG_THAI_MODULE') return;
+                dot.className = msg.tongThe === 'SU_CO' ? 'bad' : (msg.tongThe === 'CANH_BAO' ? 'warn' : 'ok');
+                dot.id = 'fsRtDot';
+                connText.textContent = msg.tongThe === 'SU_CO'
+                    ? 'Có ' + msg.soSuCo + ' module gặp sự cố!'
+                    : (msg.tongThe === 'CANH_BAO'
+                        ? msg.soCanhBao + ' module đang cảnh báo'
+                        : 'Hệ thống hoạt động bình thường • ' + (msg.thoiGianKiemTra || ''));
+                window.dispatchEvent(new CustomEvent('fs-module', { detail: msg }));
+            }
+
+            // ---- Kết nối STOMP + tự kết nối lại ----
+            function ketNoi() {
+                if (typeof SockJS === 'undefined' || typeof Stomp === 'undefined') {
+                    connText.textContent = 'Không tải được thư viện WebSocket.';
+                    dot.className = 'bad'; return;
+                }
+                var sock = new SockJS('/ws');
+                var client = Stomp.over(sock);
+                client.debug = null;
+                client.connect({}, function () {
+                    dot.className = 'ok';
+                    connText.textContent = 'Đã kết nối — đang lắng nghe sự kiện';
+                    client.subscribe('/topic/quanly/don-hang', function (f) {
+                        try { xuLyDonHang(JSON.parse(f.body)); } catch (e) {}
+                    });
+                    client.subscribe('/topic/quanly/ton-kho', function (f) {
+                        try { xuLyTonKho(JSON.parse(f.body)); } catch (e) {}
+                    });
+                    client.subscribe('/topic/quanly/module', function (f) {
+                        try { xuLyModule(JSON.parse(f.body)); } catch (e) {}
+                    });
+                    client.subscribe('/topic/hotro/quanly', function (f) {
+                        try { xuLyHoTro(JSON.parse(f.body)); } catch (e) {}
+                    });
+                    client.subscribe('/topic/quanly/lien-he', function (f) {
+                        try { xuLyLienHe(JSON.parse(f.body)); } catch (e) {}
+                    });
+                }, function () {
+                    dot.className = 'bad';
+                    connText.textContent = 'Mất kết nối — thử lại sau 5 giây...';
+                    setTimeout(ketNoi, 5000);
+                });
+            }
+            ketNoi();
+        })();
+    </script>
+
+    <!-- ===== NÚT THU GỌN / MỞ RỘNG SIDEBAR (dùng chung mọi trang quản lý) ===== -->
+    <style>
+        .sidebar { transition: transform .25s ease; }
+        body.fs-sb-an .sidebar { transform: translateX(-100%); }
+        .content-body { transition: margin-left .25s ease, width .25s ease; }
+        body.fs-sb-an .content-body { margin-left: 0 !important; width: 100% !important; }
+        .main-header { transition: left .25s ease; }
+        body.fs-sb-an .main-header { left: 0 !important; }
+        #fsSbNut {
+            position: fixed; top: 15px; left: 258px; z-index: 1960;
+            width: 36px; height: 36px; border-radius: 999px; cursor: pointer;
+            border: 1px solid #e5e7eb; background: #fff; color: #101828;
+            box-shadow: 0 4px 14px rgba(16,24,40,.16);
+            display: grid; place-items: center; font-size: 15px;
+            transition: left .25s ease, transform .15s ease;
+        }
+        #fsSbNut:hover { transform: scale(1.08); }
+        #fsSbNut i { transition: transform .25s ease; }
+        body.fs-sb-an #fsSbNut { left: 12px; }
+        body.fs-sb-an #fsSbNut i { transform: rotate(180deg); }
+    </style>
+    <script>
+        (function () {
+            if (window.__fsSbToggleInit) return;
+            window.__fsSbToggleInit = true;
+
+            // Áp lại trạng thái người dùng đã chọn (lưu trong trình duyệt)
+            try { if (localStorage.getItem('fsSbAn') === '1') document.body.classList.add('fs-sb-an'); } catch (e) {}
+
+            // Widget realtime đang nằm TRONG <nav class="sidebar">; khi sidebar bị
+            // translateX thì các phần tử position:fixed bên trong sẽ trôi theo
+            // => chuyển chúng ra thẳng <body> để luôn đứng yên.
+            ['fsRtToasts', 'fsRtFab', 'fsRtPanel'].forEach(function (id) {
+                var e = document.getElementById(id);
+                if (e && e.parentElement !== document.body) document.body.appendChild(e);
+            });
+
+            var nut = document.createElement('button');
+            nut.id = 'fsSbNut'; nut.type = 'button';
+            nut.title = 'Thu gọn / mở rộng menu';
+            nut.innerHTML = '<i class="bi bi-chevron-left"></i>';
+            nut.addEventListener('click', function () {
+                var an = document.body.classList.toggle('fs-sb-an');
+                try { localStorage.setItem('fsSbAn', an ? '1' : '0'); } catch (e) {}
+            });
+            document.body.appendChild(nut);
+        })();
+    </script>
+
+</div>
+</body>
+</html>

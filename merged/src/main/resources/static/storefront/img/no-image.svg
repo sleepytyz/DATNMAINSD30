@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <rect width="400" height="400" fill="#f2f3f6"/>
+  <g fill="none" stroke="#c8cfda" stroke-width="10" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M70 240c0-14 10-24 26-26l60-8c14-2 22-8 30-18l16-20c6-8 16-10 24-4l84 56c14 9 20 20 20 34v6c0 10-8 18-18 18H88c-10 0-18-8-18-18v-20z"/>
+    <path d="M180 200l18 14M204 184l18 14M228 168l18 14"/>
+    <path d="M70 278h260"/>
+  </g>
+  <text x="200" y="330" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" fill="#9aa4b2">FS Shoes</text>
+</svg>

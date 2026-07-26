@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/client-layout :: head('Theo dõi đơn hàng')}"></head>
+<body>
+<header th:replace="~{fragments/client-layout :: header}"></header>
+
+<section class="fs-page-hero">
+    <div class="fs-container">
+        <h1>Theo dõi <em>đơn hàng</em></h1>
+        <p>Tra cứu công khai — không cần đăng nhập. Nhập mã đơn và số điện thoại đã dùng khi đặt hàng.</p>
+    </div>
+</section>
+
+<div class="fs-container" style="max-width:640px">
+    <div class="fs-alert fs-alert-error" th:if="${loi}">
+        <i class="bi bi-x-circle-fill"></i><span th:text="${loi}"></span></div>
+
+    <div class="fs-panel" style="margin-top:22px">
+        <h3><i class="bi bi-search"></i> Tra cứu đơn hàng</h3>
+        <form th:action="@{/theo-doi-don-hang/tra-cuu}" method="get">
+            <div class="fs-field">
+                <label>Mã đơn hàng *</label>
+                <input type="text" name="maHoaDon" required placeholder="VD: HD250101103000"
+                       th:value="${maHoaDon}">
+            </div>
+            <div class="fs-field">
+                <label>Số điện thoại đặt hàng *</label>
+                <input type="text" name="soDienThoai" required placeholder="09xxxxxxxx"
+                       th:value="${soDienThoai}">
+            </div>
+            <button type="submit" class="fs-btn fs-btn-primary fs-btn-block fs-btn-lg">
+                <i class="bi bi-truck"></i> Tra cứu ngay</button>
+        </form>
+        <div class="fs-alert fs-alert-info" style="margin-bottom:0">
+            <i class="bi bi-info-circle-fill"></i>
+            <span>Mã đơn được hiển thị ngay sau khi đặt hàng thành công (dạng <b>HD...</b>).
+            Nếu có tài khoản, bạn có thể xem toàn bộ đơn tại
+            <a th:href="@{/ca-nhan/don-hang}" style="color:inherit;text-decoration:underline">Đơn hàng của tôi</a>.</span>
+        </div>
+    </div>
+</div>
+
+<footer th:replace="~{fragments/client-layout :: footer}"></footer>
+<div th:replace="~{fragments/client-layout :: toast}"></div>
+<th:block th:replace="~{fragments/client-layout :: scripts}"></th:block>
+</body>
+</html>

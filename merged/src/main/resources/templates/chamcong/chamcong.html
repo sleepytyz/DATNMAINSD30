@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Chấm công – FS Shop</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+
+    <meta name="_csrf" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:content="${_csrf.headerName}">
+
+    <style>
+        .page-title { font-size: 22px; font-weight: 700; }
+        .page-sub { font-size: 13px; color: #6B7280; margin-top: 2px; margin-bottom: 20px; }
+
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .stat-card {
+            background: #fff;
+            border: 1px solid #E5E7EB;
+            border-radius: 10px;
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .stat-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+        .stat-icon.blue { background: #EFF6FF; color: #1E40AF; }
+        .stat-icon.green { background: #ECFDF5; color: #065F46; }
+        .stat-icon.yellow { background: #FEF3C7; color: #92400E; }
+        .stat-icon.purple { background: #F5F3FF; color: #6D28D9; }
+        .stat-info .stat-number { font-size: 22px; font-weight: 700; color: #1A1A1A; }
+        .stat-info .stat-label { font-size: 12.5px; color: #6B7280; }
+
+        .schedule-card {
+            background: #fff;
+            border: 1px solid #E5E7EB;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .schedule-card-header {
+            padding: 13px 18px;
+            border-bottom: 1px solid #E5E7EB;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-weight: 700;
+            font-size: 14px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .schedule-wrap { overflow-x: auto; }
+
+        .schedule-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 700px;
+        }
+        .schedule-table thead tr th {
+            border-bottom: 2px solid #E5E7EB;
+            background: #FAFAFA;
+            padding: 10px 12px;
+            text-align: center;
+            font-size: 12px;
+            font-weight: 600;
+            color: #6B7280;
+            white-space: nowrap;
+        }
+        .schedule-table thead tr th:first-child {
+            text-align: left;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: .06em;
+            color: #9CA3AF;
+            text-transform: uppercase;
+            width: 120px;
+            background: #F9FAFB;
+        }
+        .col-day-name {
+            font-size: 12.5px;
+            font-weight: 700;
+            color: #1A1A1A;
+            display: block;
+            margin-bottom: 2px;
+        }
+        .col-day-date {
+            font-size: 11px;
+            color: #9CA3AF;
+            font-weight: 400;
+        }
+        .col-today th {
+            background: #FEF2F2 !important;
+            color: #E53935 !important;
+        }
+        .col-today th .col-day-name { color: #E53935; }
+        .col-today th .col-day-date { color: #E53935; opacity: .7; }
+
+        .schedule-table tbody tr td {
+            border-bottom: 1px solid #F3F4F6;
+            border-right: 1px solid #F3F4F6;
+            padding: 10px 8px;
+            vertical-align: middle;
+            height: 92px;
+        }
+        .schedule-table tbody tr td:first-child {
+            background: #FAFAFA;
+            border-right: 2px solid #E5E7EB;
+            padding: 12px 14px;
+            vertical-align: middle;
+        }
+        .schedule-table tbody tr:last-child td { border-bottom: none; }
+        .cell-today { background: #FFFBFB !important; }
+
+        .ca-name { font-weight: 700; font-size: 13px; color: #1A1A1A; }
+        .ca-time { font-size: 11.5px; color: #9CA3AF; margin-top: 2px; }
+
+        .work-card {
+            background: #fff;
+            border: 1px solid #EEF0F3;
+            border-radius: 8px;
+            padding: 8px 10px;
+            text-align: center;
+            transition: box-shadow .15s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            min-height: 60px;
+        }
+        .work-card:hover { box-shadow: 0 2px 10px rgba(0,0,0,.08); }
+
+        .status-badge {
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+        .status-badge.pending { background: #FEF3C7; color: #92400E; }
+        .status-badge.checked-in { background: #DBEAFE; color: #1E40AF; }
+        .status-badge.checked-out { background: #D1FAE5; color: #065F46; }
+        .status-badge.absent { background: #FEE2E2; color: #991B1B; }
+
+        .btn-check {
+            padding: 4px 12px;
+            border-radius: 6px;
+            border: none;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all .15s;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .btn-check-in {
+            background: #2563EB !important;
+            color: #fff !important;
+            display: inline-flex !important;
+        }
+        .btn-check-in:hover { background: #1D4ED8; }
+        .btn-check-in:disabled { opacity: .5; cursor: not-allowed; }
+
+        .btn-check-out {
+            background: #059669;
+            color: #fff;
+        }
+        .btn-check-out:hover { background: #047857; }
+        .btn-check-out:disabled { opacity: .5; cursor: not-allowed; }
+
+        /* [THÊM] Panel chấm công hôm nay ở đầu trang */
+        .today-attendance {
+            background: #fff;
+            border: 1px solid #E5E7EB;
+            border-left: 4px solid #2563EB;
+            border-radius: 12px;
+            padding: 18px 22px;
+            margin-bottom: 22px;
+            box-shadow: 0 1px 3px rgba(0,0,0,.05);
+        }
+        .today-attendance-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .today-empty {
+            color: #6B7280;
+            font-size: 14px;
+            padding: 6px 0;
+        }
+        .today-ca-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .today-ca-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+            padding: 12px 16px;
+            background: #F9FAFB;
+            border: 1px solid #EEF0F3;
+            border-radius: 10px;
+        }
+        .today-ca-name {
+            font-weight: 600;
+            color: #1F2937;
+            font-size: 14.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .today-ca-status { margin-top: 4px; }
+
+        /* [THÊM] Nhãn trạng thái tự động: Đúng giờ / Đến muộn / Vắng mặt */
+        .tt-badge {
+            display: inline-block;
+            padding: 2px 9px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            margin-left: 5px;
+            white-space: nowrap;
+        }
+        .tt-dunggio { background: #DCFCE7; color: #166534; }
+        .tt-muon    { background: #FEF3C7; color: #92400E; }
+        .tt-vang    { background: #FEE2E2; color: #991B1B; }
+        /* [SỬA] Nút chấm công ở panel đầu trang dùng class RIÊNG (btn-cc) để KHÔNG bị
+           đè bởi class .btn-check của Bootstrap (Bootstrap ẩn .btn-check đi). */
+        .btn-cc {
+            display: inline-flex !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            position: static !important;
+            clip: auto !important;
+            pointer-events: auto !important;
+            align-items: center;
+            gap: 6px;
+            padding: 9px 18px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #fff !important;
+            cursor: pointer;
+            transition: all .15s;
+        }
+        .btn-cc-in { background: #2563EB !important; }
+        .btn-cc-in:hover { background: #1D4ED8 !important; }
+        .btn-cc-out { background: #059669 !important; }
+        .btn-cc-out:hover { background: #047857 !important; }
+        .btn-cc:disabled { opacity: .55 !important; cursor: not-allowed; }
+
+        .time-info {
+            font-size: 12px;
+            color: #6B7280;
+            margin-top: 2px;
+        }
+        .time-info strong { color: #1A1A1A; }
+
+        .cell-empty {
+            color: #E5E7EB;
+            font-size: 18px;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 60px;
+        }
+
+        .week-nav {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .week-nav-btn {
+            width: 30px;
+            height: 30px;
+            border-radius: 6px;
+            border: 1.5px solid #E5E7EB;
+            background: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            color: #374151;
+            font-size: 13px;
+            transition: border-color .15s;
+            cursor: pointer;
+        }
+        .week-nav-btn:hover {
+            border-color: #E53935;
+            color: #E53935;
+        }
+        .week-range {
+            font-size: 13px;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .toast-container-custom {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+        }
+        .toast-custom {
+            background: #fff;
+            border-radius: 10px;
+            padding: 14px 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,.1);
+            border: 1px solid #E5E7EB;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 10px;
+            min-width: 300px;
+            animation: slideIn 0.3s ease;
+        }
+        .toast-custom.toast-success { border-left: 4px solid #059669; }
+        .toast-custom.toast-error { border-left: 4px solid #E53935; }
+        .toast-custom .toast-icon { font-size: 20px; }
+        .toast-custom .toast-message { flex: 1; font-size: 13px; color: #1A1A1A; }
+        .toast-custom .toast-close {
+            cursor: pointer;
+            font-size: 18px;
+            color: #9CA3AF;
+            background: none;
+            border: none;
+            padding: 0;
+        }
+        .toast-custom .toast-close:hover { color: #374151; }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .empty-state {
+            padding: 60px;
+            text-align: center;
+            color: #9CA3AF;
+        }
+        .empty-state i { font-size: 40px; display: block; margin-bottom: 10px; }
+
+        @media (max-width: 768px) {
+            .stats-row { grid-template-columns: 1fr 1fr; }
+        }
+        @media (max-width: 576px) {
+            .stats-row { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+<div class="wrapper">
+    <div sec:authorize="hasRole('STAFF')" th:replace="~{fragments/sidebarstaff :: sidebar-staff}"></div>
+    <div sec:authorize="hasRole('ADMIN')" th:replace="~{fragments/sidebaradmin :: sidebar-admin}"></div>
+    <div class="content-wrapper">
+
+        <div th:replace="~{fragments/header :: header('Chấm công', 'Giao ca & chấm công')}"></div>
+
+        <div class="content-body">
+
+            <div class="page-title">Chấm công</div>
+
+            <div class="alert alert-danger" th:if="${nhanVien == null}">
+                Tài khoản của bạn chưa được liên kết với hồ sơ nhân viên nào. Vui lòng liên hệ quản trị viên để được gán hồ sơ nhân viên cho tài khoản này.
+            </div>
+
+            <th:block th:if="${nhanVien != null}">
+                <div class="page-sub" th:text="'Xin chào, ' + ${nhanVien.hoTen} + '!'"></div>
+
+                <!-- Stats -->
+                <div class="stats-row">
+                    <div class="stat-card">
+                        <div class="stat-icon blue"><i class="bi bi-calendar-check"></i></div>
+                        <div class="stat-info">
+                            <div class="stat-number" th:text="${soNgayDaCham}">0</div>
+                            <div class="stat-label">Ngày đã chấm công trong tuần</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon green"><i class="bi bi-clock-history"></i></div>
+                        <div class="stat-info">
+                            <div class="stat-number" th:text="${tongSoGioLam}">0</div>
+                            <div class="stat-label">Tổng giờ làm trong tuần</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon yellow"><i class="bi bi-calendar-week"></i></div>
+                        <div class="stat-info">
+                            <div class="stat-number" th:text="${listNgay.size()}">0</div>
+                            <div class="stat-label">Số ngày làm việc trong tuần</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon purple"><i class="bi bi-person-badge"></i></div>
+                        <div class="stat-info">
+                            <div class="stat-number" th:text="${nhanVien.maNhanVien}">0</div>
+                            <div class="stat-label">Mã nhân viên</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- [THÊM] CHẤM CÔNG HÔM NAY - nút nổi bật ở đầu trang -->
+                <div class="today-attendance">
+                    <div class="today-attendance-title">
+                        <i class="bi bi-alarm" style="color:#2563EB"></i>
+                        Chấm công hôm nay
+                        <span th:text="${#temporals.format(today, 'dd/MM/yyyy')}"
+                              style="font-weight:400;color:#6B7280;font-size:13px;"></span>
+                    </div>
+
+                    <!-- Không có ca nào hôm nay -->
+                    <div th:if="${chamCongHomNay == null or chamCongHomNay.isEmpty()}"
+                         class="today-empty">
+                        <i class="bi bi-cup-hot"></i> Hôm nay bạn không có ca làm việc nào.
+                    </div>
+
+                    <!-- Có ca hôm nay: mỗi ca một nút -->
+                    <div class="today-ca-list" th:unless="${chamCongHomNay == null or chamCongHomNay.isEmpty()}">
+                        <div class="today-ca-item" th:each="cc : ${chamCongHomNay}"
+                             th:data-machamcong="${cc.maChamCong}">
+                            <div class="today-ca-info">
+                                <div class="today-ca-name">
+                                    <i class="bi bi-clock"></i>
+                                    <span th:text="${cc.caLamViec != null ? cc.caLamViec.tenCa : 'Ca'}">Ca sáng</span>
+                                    <span th:if="${cc.caLamViec != null}"
+                                          th:text="'(' + ${cc.caLamViec.gioBatDau} + ' - ' + ${cc.caLamViec.gioKetThuc} + ')'"
+                                          style="color:#6B7280;font-weight:400;"></span>
+                                </div>
+                                <div class="today-ca-status">
+                                    <span th:if="${cc.gioVao == null and cc.gioRa == null}"
+                                          class="status-badge pending">Chưa chấm công</span>
+                                    <span th:if="${cc.gioVao != null and cc.gioRa == null}"
+                                          class="status-badge checked-in">
+                                        Đã check-in lúc <strong th:text="${#temporals.format(cc.gioVao, 'HH:mm:ss')}"></strong>
+                                    </span>
+                                    <span th:if="${cc.gioVao != null and cc.gioRa != null}"
+                                          class="status-badge checked-out">
+                                        Hoàn thành • <strong
+                                        th:with="tongPhut=${cc.soGioLam != null ? T(java.lang.Math).round(cc.soGioLam.doubleValue() * 60) : 0}"
+                                        th:text="${cc.soGioLam == null ? '' :
+                                                  (tongPhut >= 60
+                                                    ? (tongPhut / 60) + 'h ' + (tongPhut % 60) + 'p'
+                                                    : tongPhut + ' phút')}"></strong>
+                                    </span>
+
+                                    <!-- [THÊM] Trạng thái tự động: Đúng giờ / Đến muộn -->
+                                    <span th:if="${cc.gioVao != null and cc.trangThaiChamCong == 'DUNG_GIO'}"
+                                          class="tt-badge tt-dunggio">
+                                        <i class="bi bi-check-circle-fill"></i> Đúng giờ
+                                    </span>
+                                    <span th:if="${cc.gioVao != null and cc.trangThaiChamCong == 'DEN_MUON'}"
+                                          class="tt-badge tt-muon"
+                                          th:text="'⚠ Đến muộn ' + ${cc.soPhutMuon} + ' phút'">
+                                    </span>
+                                </div>
+                            </div>
+                            <!-- [SỬA] Đã BỎ nút Check-in / Check-out ở đây.
+                                 Nay MỞ CA = tự động chấm công vào, ĐÓNG CA = tự động chấm công ra.
+                                 Nhân viên chỉ cần thao tác một nơi (trang Ca bán hàng), tránh
+                                 phải bấm 2 lần cho cùng một việc "bắt đầu / kết thúc làm việc". -->
+                            <div class="today-ca-action">
+                                <a th:if="${cc.gioVao == null}" href="/giao-ca/phien"
+                                   class="btn-cc btn-cc-in" style="text-decoration:none;">
+                                    <i class="bi bi-unlock"></i> Mở ca để chấm công
+                                </a>
+                                <a th:if="${cc.gioVao != null and cc.gioRa == null}" href="/giao-ca/phien"
+                                   class="btn-cc btn-cc-out" style="text-decoration:none;">
+                                    <i class="bi bi-box-arrow-left"></i> Đóng ca để kết thúc
+                                </a>
+                                <span th:if="${cc.gioVao != null and cc.gioRa != null}"
+                                      style="color:#16A34A;font-weight:600;font-size:13px;">
+                                    <i class="bi bi-check-circle-fill"></i> Đã xong
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Schedule Card -->
+                <div class="schedule-card">
+                    <div class="schedule-card-header">
+                    <span>
+                        <i class="bi bi-calendar-week me-2" style="color:#E53935"></i>
+                        Lịch chấm công tuần
+                    </span>
+
+                        <div class="week-nav">
+                        <span class="week-range" style="color:#9CA3AF; font-weight:500; margin-right:8px;"
+                              title="Ngày hệ thống (server) đang tính là hôm nay. Nút Check-in chỉ hiện khi ngày của ca TRÙNG với ngày này.">
+                            <i class="bi bi-info-circle"></i> Hôm nay (server):
+                            <strong th:text="${#temporals.format(today, 'dd/MM/yyyy')}" style="color:#374151;"></strong>
+                        </span>
+                            <a th:href="@{/cham-cong(tuan=${tuanHienTai - 1})}" class="week-nav-btn">
+                                <i class="bi bi-chevron-left"></i>
+                            </a>
+                            <span class="week-range">
+                            <span th:text="${#temporals.format(startOfWeek, 'dd/MM/yyyy')}"></span>
+                            –
+                            <span th:text="${#temporals.format(endOfWeek, 'dd/MM/yyyy')}"></span>
+                        </span>
+                            <a th:href="@{/cham-cong(tuan=${tuanHienTai + 1})}" class="week-nav-btn">
+                                <i class="bi bi-chevron-right"></i>
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="schedule-wrap" th:if="${listNgay != null and !listNgay.isEmpty() and allCa != null and !allCa.isEmpty()}">
+                        <table class="schedule-table">
+                            <thead>
+                            <tr>
+                                <th>CA / NGÀY</th>
+                                <th th:each="ngay : ${listNgay}"
+                                    th:classappend="${ngay.isEqual(today)} ? 'col-today'">
+                                <span class="col-day-name"
+                                      th:text="${#temporals.format(ngay, 'EEE', new java.util.Locale('vi'))}">
+                                </span>
+                                    <span class="col-day-date"
+                                          th:text="${#temporals.format(ngay, 'dd/MM/yyyy')}">
+                                </span>
+                                </th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="ca : ${allCa}">
+                                <td>
+                                    <div class="ca-name" th:text="${ca.tenCa}"></div>
+                                    <div class="ca-time" th:text="${ca.gioBatDau + ' - ' + ca.gioKetThuc}"></div>
+                                </td>
+
+                                <td th:each="ngay : ${listNgay}"
+                                    th:classappend="${ngay.isEqual(today)} ? 'cell-today'">
+
+                                    <th:block th:with="
+                                    chamCong = ${chamCongMap != null
+                                                and chamCongMap.get(ngay) != null
+                                                and chamCongMap.get(ngay).get(ca) != null
+                                                ? chamCongMap.get(ngay).get(ca)
+                                                : null}">
+
+                                        <!-- Có lịch chấm công -->
+                                        <div th:if="${chamCong != null}" class="work-card"
+                                             th:data-machamcong="${chamCong.maChamCong}"
+                                             th:data-ngay="${#temporals.format(chamCong.ngayChamCong, 'yyyy-MM-dd')}">
+
+                                            <!-- Trạng thái -->
+                                            <span th:if="${chamCong.gioVao == null and chamCong.gioRa == null
+                                                           and chamCong.trangThaiChamCong != 'VANG_MAT'}"
+                                                  class="status-badge pending">Chưa chấm công</span>
+                                            <span th:if="${chamCong.gioVao != null and chamCong.gioRa == null
+                                                           and chamCong.trangThaiChamCong != 'QUEN_CHECKOUT'}"
+                                                  class="status-badge checked-in">Đang làm</span>
+                                            <span th:if="${chamCong.gioVao != null and chamCong.gioRa != null}"
+                                                  class="status-badge checked-out">Đã check-out</span>
+
+                                            <!-- [THÊM] Trạng thái tự động -->
+                                            <span th:if="${chamCong.trangThaiChamCong == 'VANG_MAT'}"
+                                                  class="tt-badge tt-vang">
+                                                <i class="bi bi-x-circle-fill"></i> Vắng mặt
+                                            </span>
+                                            <span th:if="${chamCong.trangThaiChamCong == 'QUEN_CHECKOUT'}"
+                                                  class="tt-badge tt-muon">
+                                                <i class="bi bi-exclamation-triangle-fill"></i> Quên chấm công ra
+                                            </span>
+                                            <span th:if="${chamCong.gioVao != null and chamCong.trangThaiChamCong == 'DUNG_GIO'}"
+                                                  class="tt-badge tt-dunggio">Đúng giờ</span>
+                                            <span th:if="${chamCong.gioVao != null and chamCong.trangThaiChamCong == 'DEN_MUON'}"
+                                                  class="tt-badge tt-muon"
+                                                  th:text="'Muộn ' + ${chamCong.soPhutMuon} + 'p'"></span>
+
+                                            <!-- Thời gian -->
+                                            <div class="time-info">
+                                            <span th:if="${chamCong.gioVao != null}">
+                                                <i class="bi bi-box-arrow-in-right"></i>
+                                                <strong th:text="${#temporals.format(chamCong.gioVao, 'HH:mm:ss')}"></strong>
+                                            </span>
+                                                <span th:if="${chamCong.gioRa != null}">
+                                                &nbsp;→&nbsp;
+                                                <i class="bi bi-box-arrow-left"></i>
+                                                <strong th:text="${#temporals.format(chamCong.gioRa, 'HH:mm:ss')}"></strong>
+                                            </span>
+                                                <span th:if="${chamCong.soGioLam != null}">
+                                                <br/><i class="bi bi-hourglass"></i>
+                                                <strong
+                                                    th:with="tongPhut=${T(java.lang.Math).round(chamCong.soGioLam.doubleValue() * 60)}"
+                                                    th:text="${tongPhut >= 60
+                                                                ? (tongPhut / 60) + 'h ' + (tongPhut % 60) + 'p'
+                                                                : tongPhut + ' phút'}"></strong>
+                                            </span>
+                                            </div>
+                                        </div>
+
+                                        <!-- Không có lịch -->
+                                        <div th:if="${chamCong == null}" class="cell-empty">
+                                            <i class="bi bi-dash"></i>
+                                        </div>
+
+                                    </th:block>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Empty state -->
+                    <div class="empty-state" th:if="${listNgay == null or listNgay.isEmpty()}">
+                        <i class="bi bi-calendar-x"></i>
+                        <p style="font-size:14px">Không có lịch làm việc trong tuần này</p>
+                        <p style="font-size:12.5px;color:#B0B7C3">Vui lòng liên hệ quản lý để được phân ca</p>
+                    </div>
+
+                </div>
+            </th:block>
+
+        </div>
+    </div>
+</div>
+
+<!-- Toast -->
+<div class="toast-container-custom" id="toastContainer"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    const csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute('content') || '';
+    const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content') || 'X-CSRF-TOKEN';
+
+    function showToast(message, type = 'success') {
+        const container = document.getElementById('toastContainer');
+        if (!container) return;
+
+        const toast = document.createElement('div');
+        toast.className = `toast-custom toast-${type}`;
+        const icon = type === 'success' ? 'bi-check-circle-fill text-success' : 'bi-exclamation-circle-fill text-danger';
+        toast.innerHTML = `
+            <i class="bi ${icon} toast-icon"></i>
+            <span class="toast-message">${message}</span>
+            <button class="toast-close" onclick="this.closest('.toast-custom').remove()">&times;</button>
+        `;
+        container.appendChild(toast);
+
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%)';
+                toast.style.transition = 'all 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }
+        }, 4000);
+    }
+
+    function checkin(btn) {
+        const card = btn.closest('.work-card');
+        if (!card) return;
+
+        const maChamCong = card.dataset.machamcong;
+        if (!maChamCong) {
+            showToast('Không tìm thấy mã chấm công', 'error');
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Đang xử lý...';
+
+        fetch('/cham-cong/checkin', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                [csrfHeader]: csrfToken
+            },
+            body: JSON.stringify({ maChamCong: parseInt(maChamCong) })
+        })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showToast(data.message, 'error');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="bi bi-box-arrow-in-right"></i> Check-in';
+                }
+            })
+            .catch(err => {
+                showToast('Lỗi kết nối: ' + err.message, 'error');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-box-arrow-in-right"></i> Check-in';
+            });
+    }
+
+    function checkout(btn) {
+        const card = btn.closest('.work-card');
+        if (!card) return;
+
+        const maChamCong = card.dataset.machamcong;
+        if (!maChamCong) {
+            showToast('Không tìm thấy mã chấm công', 'error');
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Đang xử lý...';
+
+        fetch('/cham-cong/checkout', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                [csrfHeader]: csrfToken
+            },
+            body: JSON.stringify({ maChamCong: parseInt(maChamCong) })
+        })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showToast(data.message, 'error');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="bi bi-box-arrow-left"></i> Check-out';
+                }
+            })
+            .catch(err => {
+                showToast('Lỗi kết nối: ' + err.message, 'error');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-box-arrow-left"></i> Check-out';
+            });
+    }
+
+    // [THÊM] Check-in/Check-out cho panel "Chấm công hôm nay" ở đầu trang.
+    // Đọc mã chấm công trực tiếp từ thuộc tính data-machamcong của nút, không phụ
+    // thuộc vào ô lịch/nested map -> luôn hoạt động.
+    function chamCongTop(btn, url, iconLabel) {
+        const maChamCong = btn.getAttribute('data-machamcong');
+        if (!maChamCong) {
+            showToast('Không tìm thấy mã chấm công', 'error');
+            return;
+        }
+        btn.disabled = true;
+        btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Đang xử lý...';
+
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                [csrfHeader]: csrfToken
+            },
+            body: JSON.stringify({ maChamCong: parseInt(maChamCong) })
+        })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    setTimeout(() => location.reload(), 1200);
+                } else {
+                    showToast(data.message, 'error');
+                    btn.disabled = false;
+                    btn.innerHTML = iconLabel;
+                }
+            })
+            .catch(err => {
+                showToast('Lỗi kết nối: ' + err.message, 'error');
+                btn.disabled = false;
+                btn.innerHTML = iconLabel;
+            });
+    }
+
+    function checkinTop(btn) {
+        chamCongTop(btn, '/cham-cong/checkin', '<i class="bi bi-box-arrow-in-right"></i> Check-in');
+    }
+
+    function checkoutTop(btn) {
+        chamCongTop(btn, '/cham-cong/checkout', '<i class="bi bi-box-arrow-left"></i> Check-out');
+    }
+
+    /*]]>*/
+</script>
+</body>
+</html>

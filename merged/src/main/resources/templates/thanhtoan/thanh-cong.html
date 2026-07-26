@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/client-layout :: head(${hoaDon != null && hoaDon.trangThai == 'Đã huỷ'} ? 'Đặt hàng không thành công' : (${hoaDon != null && hoaDon.trangThai == 'Chờ thanh toán'} ? 'Chờ thanh toán đơn hàng' : 'Đặt hàng thành công'))}"></head>
+<body>
+<header th:replace="~{fragments/client-layout :: header}"></header>
+
+<div class="fs-container" style="max-width:900px">
+    <div class="fs-alert fs-alert-success" th:if="${thongBaoThanhToan}" style="margin-top:18px">
+        <i class="bi bi-patch-check-fill"></i><span th:text="${thongBaoThanhToan}"></span></div>
+    <div class="fs-alert fs-alert-warn" th:if="${canhBaoThanhToan}" style="margin-top:18px">
+        <i class="bi bi-exclamation-triangle-fill"></i><span th:text="${canhBaoThanhToan}"></span></div>
+    <div class="fs-alert fs-alert-error" th:if="${loiThanhToan}" style="margin-top:18px">
+        <i class="bi bi-x-octagon-fill"></i><span th:text="${loiThanhToan}"></span></div>
+
+    <div class="fs-panel" style="text-align:center; margin-top:22px">
+        <div th:switch="${hoaDon.trangThai}"
+             th:styleappend="${hoaDon.trangThai == 'Đã huỷ'} ? 'background:#fde8e8;color:#c92327' :
+                             (${hoaDon.trangThai == 'Chờ thanh toán' || hoaDon.trangThai == 'Chờ xác nhận'} ? 'background:#fff4e5;color:#b54708' :
+                             'background:var(--fs-green-soft);color:var(--fs-green)')"
+             style="width:74px;height:74px;border-radius:999px;display:grid;place-items:center;font-size:36px;margin:6px auto 12px">
+            <i th:case="'Đã huỷ'" class="bi bi-x-lg"></i>
+            <i th:case="'Chờ thanh toán'" class="bi bi-hourglass-split"></i>
+            <i th:case="'Chờ xác nhận'" class="bi bi-hourglass-split"></i>
+            <i th:case="*" class="bi bi-check-lg"></i>
+        </div>
+        <h1 style="font-size:24px;font-weight:900;letter-spacing:-.4px"
+            th:text="${hoaDon.trangThai == 'Đã huỷ'} ? 'Đặt hàng không thành công' : (${hoaDon.trangThai == 'Chờ thanh toán'} ? 'Đặt hàng thành công — chờ thanh toán' : 'Đặt hàng thành công!')">Đặt hàng thành công!</h1>
+        <p style="color:var(--fs-muted);margin:8px 0 14px"
+           th:if="${vnPay && hoaDon.trangThai == 'Chờ thanh toán'}">
+            Đơn của bạn đã được ghi nhận nhưng <b>chưa được xác nhận</b>. Vui lòng bấm
+            <b>“Thanh toán ngay qua VNPay”</b> bên dưới — thanh toán thành công, đơn sẽ tự động
+            chuyển sang trạng thái <b>Đã xác nhận</b> và được chuẩn bị giao.</p>
+        <p style="color:var(--fs-muted);margin:8px 0 14px" th:if="${chuyenKhoan && hoaDon.trangThai == 'Chờ thanh toán'}">
+            Đơn của bạn đã được ghi nhận nhưng <b>chưa thanh toán</b>. Vui lòng quét mã VietQR bên dưới
+            để chuyển khoản, sau đó bấm <b>“Tôi đã chuyển khoản”</b> — đơn sẽ chuyển sang
+            <b>Chờ xác nhận</b> để cửa hàng đối soát và duyệt.</p>
+        <p style="color:var(--fs-muted);margin:8px 0 14px" th:if="${chuyenKhoan && hoaDon.trangThai == 'Chờ xác nhận'}">
+            Bạn đã báo chuyển khoản — đơn đang <b>chờ cửa hàng đối soát</b> giao dịch.
+            Xác minh xong, quầy sẽ <b>Xác nhận</b> và chuẩn bị giao hàng; trạng thái tự cập nhật.</p>
+        <p style="color:var(--fs-muted);margin:8px 0 14px" th:unless="${hoaDon.trangThai == 'Chờ thanh toán' || hoaDon.trangThai == 'Đã huỷ' || (chuyenKhoan && hoaDon.trangThai == 'Chờ xác nhận')}">
+            Cảm ơn bạn đã mua sắm tại FS Shoes. Đơn hàng đã được chuyển <b>ngay lập tức</b>
+            đến quầy quản lý bán hàng để xử lý.</p>
+        <p style="color:var(--fs-muted);margin:8px 0 14px" th:if="${hoaDon.trangThai == 'Đã huỷ'}">
+            Rất tiếc, đơn hàng này <b>đã bị huỷ</b>. Xem lý do ở thông báo phía trên hoặc trong mục
+            <a th:href="@{/ca-nhan/don-hang/{ma}(ma=${hoaDon.maHoaDon})}"
+               style="text-decoration:underline;color:inherit">Đơn hàng của tôi</a>.</p>
+        <div>
+            Mã đơn hàng: <b th:text="${hoaDon.maHoaDon}" style="color:var(--fs-primary)">HD250101...</b>
+            &nbsp;•&nbsp;
+            <span id="fsTTChip" class="fs-tt"
+                  th:classappend="${hoaDon.trangThai == 'Chờ thanh toán' || hoaDon.trangThai == 'Chờ xác nhận'} ? ' fs-tt-cho' :
+                                  (${hoaDon.trangThai == 'Đã xác nhận'} ? ' fs-tt-xacnhan' :
+                                  (${hoaDon.trangThai == 'Đang giao'} ? ' fs-tt-giao' :
+                                  (${hoaDon.trangThai == 'Đã giao'} ? ' fs-tt-xong' : ' fs-tt-huy')))"
+                  th:text="${hoaDon.trangThai}">Chờ xác nhận</span>
+        </div>
+        <p style="font-size:12.5px;color:var(--fs-muted);margin-top:8px">
+            <i class="bi bi-broadcast"></i> Trạng thái trên trang này sẽ <b>tự cập nhật</b> khi cửa hàng xử lý đơn — không cần tải lại.</p>
+    </div>
+
+    <!-- ============ ĐÃ BÁO CHUYỂN KHOẢN — CHỜ QUẦY ĐỐI SOÁT ============ -->
+    <div class="fs-panel" th:if="${chuyenKhoan && hoaDon.trangThai == 'Chờ xác nhận'}"
+         style="border-left:4px solid #f6a723">
+        <h3><i class="bi bi-hourglass-split" style="color:#b54708"></i>
+            Đã ghi nhận chuyển khoản — chờ cửa hàng đối soát</h3>
+        <p style="color:var(--fs-muted);margin-bottom:0">
+            Thời điểm bạn xác nhận:
+            <b th:text="${hoaDon.ngayThanhToan != null ? #temporals.format(hoaDon.ngayThanhToan,'HH:mm dd/MM/yyyy') : '—'}"></b>
+            • Nội dung đối soát: <b th:text="${hoaDon.maHoaDon}"></b>.
+            Quầy quản lý sẽ kiểm tra sao kê và <b>Xác nhận</b> đơn — trạng thái tự cập nhật tại đây và trong
+            <a th:href="@{/ca-nhan/don-hang/{ma}(ma=${hoaDon.maHoaDon})}"
+               style="text-decoration:underline;color:inherit">Đơn hàng của tôi</a>.</p>
+    </div>
+
+    <!-- ============ THANH TOÁN VNPAY (chờ khách thanh toán) ============ -->
+    <div class="fs-panel" th:if="${vnPay && hoaDon.trangThai == 'Chờ thanh toán'}">
+        <h3><i class="bi bi-credit-card-2-front"></i> Thanh toán online qua VNPay
+            <span class="fs-tag-sandbox">SANDBOX</span></h3>
+        <p style="color:var(--fs-muted)">Bấm nút bên dưới để mở cổng VNPay. Sau khi thanh toán
+            thành công, hệ thống <b>kiểm tra chữ ký giao dịch</b> rồi tự động chuyển đơn sang
+            <b>ĐÃ XÁC NHẬN</b> — đúng chuẩn cổng thanh toán (Return URL + webhook IPN).</p>
+        <a th:href="@{/thanh-toan/vnpay/{ma}(ma=${hoaDon.maHoaDon})}"
+           class="fs-btn fs-btn-primary fs-btn-lg" style="width:100%;justify-content:center">
+            <i class="bi bi-shield-lock-fill"></i> Thanh toán ngay qua VNPay</a>
+        <p style="font-size:12px;color:var(--fs-muted);margin-top:10px;margin-bottom:0">
+            Thẻ test sandbox: Ngân hàng <b>NCB</b> — Số thẻ <b>9704198526191432198</b> —
+            Chủ thẻ <b>NGUYEN VAN A</b> — Phát hành <b>07/15</b> — OTP <b>123456</b>.
+            Chưa muốn thanh toán? Bạn có thể huỷ đơn miễn phí trong
+            <a th:href="@{/ca-nhan/don-hang/{ma}(ma=${hoaDon.maHoaDon})}"
+               style="text-decoration:underline;color:inherit">Đơn hàng của tôi</a>.</p>
+    </div>
+
+    <!-- ============ ĐÃ GHI NHẬN CHUYỂN KHOẢN ============ -->
+    <div class="fs-panel" th:if="${vnPay && hoaDon.trangThai != 'Chờ thanh toán' && hoaDon.trangThai != 'Đã huỷ'}"
+         style="border-left:4px solid var(--fs-green)">
+        <h3><i class="bi bi-patch-check-fill" style="color:var(--fs-green)"></i> Đã ghi nhận thanh toán online</h3>
+        <p style="color:var(--fs-muted)">
+            Thời điểm xác nhận: <b th:text="${hoaDon.ngayThanhToan != null ? #temporals.format(hoaDon.ngayThanhToan,'HH:mm dd/MM/yyyy') : '—'}"></b>
+            • Nội dung đối soát: <b th:text="${hoaDon.maHoaDon}"></b>.
+            Cửa hàng sẽ kiểm tra giao dịch và chuẩn bị hàng cho bạn.</p>
+    </div>
+
+    <!-- ============ CHUYỂN KHOẢN VIETQR (chờ khách thanh toán) ============ -->
+    <div class="fs-panel" th:if="${chuyenKhoan && hoaDon.trangThai == 'Chờ thanh toán'}">
+        <h3><i class="bi bi-qr-code-scan"></i> Thanh toán chuyển khoản</h3>
+        <div style="display:grid;grid-template-columns:230px 1fr;gap:20px;align-items:center">
+            <img th:src="${qrUrl}" alt="Mã VietQR thanh toán"
+                 style="width:230px;border:1px solid var(--fs-line);border-radius:12px">
+            <div>
+                <p style="margin-bottom:10px">Quét mã bằng ứng dụng ngân hàng bất kỳ — số tiền và nội dung đã được điền sẵn:</p>
+                <div class="fs-sum-row"><span>Ngân hàng</span><b th:text="${nganHang}">MB</b></div>
+                <div class="fs-sum-row"><span>Số tài khoản</span><b th:text="${soTaiKhoan}">0344552008</b></div>
+                <div class="fs-sum-row"><span>Chủ tài khoản</span><b th:text="${chuTaiKhoan}">TRUONG HAI MINH</b></div>
+                <div class="fs-sum-row"><span>Số tiền</span>
+                    <b th:text="${#numbers.formatDecimal(hoaDon.tongTien,0,'POINT',0,'COMMA')} + '₫'" style="color:var(--fs-primary)">2.350.000₫</b></div>
+                <div class="fs-sum-row"><span>Nội dung</span><b th:text="${hoaDon.maHoaDon}">HD2501...</b></div>
+                <div class="fs-alert fs-alert-warn">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                    <span>Vui lòng ghi đúng nội dung <b th:text="${hoaDon.maHoaDon}"></b> để cửa hàng đối soát nhanh nhất.</span>
+                </div>
+                <form th:action="@{/thanh-toan/da-chuyen-khoan/{ma}(ma=${hoaDon.maHoaDon})}" method="post"
+                      onsubmit="return confirm('Xác nhận bạn ĐÃ chuyển khoản đúng số tiền và nội dung của đơn này?')">
+                    <button type="submit" class="fs-btn fs-btn-primary fs-btn-lg" style="width:100%">
+                        <i class="bi bi-check2-circle"></i> Tôi đã chuyển khoản</button>
+                </form>
+                <p style="font-size:12px;color:var(--fs-muted);margin-top:8px;margin-bottom:0">
+                    Bấm nút trên sau khi chuyển khoản — đơn chuyển sang <b>Chờ xác nhận</b> để quầy
+                    <b>đối soát giao dịch</b> rồi duyệt (lúc đó mới trừ kho). Chưa chuyển khoản?
+                    Bạn có thể huỷ đơn miễn phí trong
+                    <a th:href="@{/ca-nhan/don-hang/{ma}(ma=${hoaDon.maHoaDon})}"
+                       style="text-decoration:underline;color:inherit">Đơn hàng của tôi</a>.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ THÔNG TIN ĐƠN ============ -->
+    <div class="fs-panel">
+        <h3><i class="bi bi-receipt"></i> Chi tiết đơn hàng</h3>
+        <div class="fs-sum-row"><span>Thời gian đặt</span>
+            <b th:text="${#temporals.format(hoaDon.ngayTao, 'HH:mm dd/MM/yyyy')}">10:30 01/01/2025</b></div>
+        <div class="fs-sum-row"><span>Giao đến</span>
+            <b style="text-align:right;max-width:70%" th:text="${hoaDon.diaChiGiaoHang}">Địa chỉ</b></div>
+        <div class="fs-sum-row"><span>Thanh toán</span><b th:text="${hoaDon.phuongThucThanhToan}">COD</b></div>
+        <div class="fs-sum-row" th:if="${hoaDon.ghiChu != null && !#strings.isEmpty(hoaDon.ghiChu)}">
+            <span>Ghi chú</span><b style="text-align:right;max-width:70%" th:text="${hoaDon.ghiChu}"></b></div>
+
+        <div style="border-top:1.5px dashed var(--fs-line); margin-top:10px; padding-top:6px">
+            <div class="fs-mini-line" th:each="ct : ${chiTiet}">
+                <img th:src="${ct.sanPhamChiTiet != null && ct.sanPhamChiTiet.anhDaiDien != null
+                              ? '/images/' + ct.sanPhamChiTiet.anhDaiDien : '/storefront/img/no-image.svg'}"
+                     alt="" onerror="this.src='/storefront/img/no-image.svg'">
+                <div>
+                    <div class="ten" th:text="${ct.sanPhamChiTiet != null && ct.sanPhamChiTiet.sanPham != null
+                                               ? ct.sanPhamChiTiet.sanPham.tenSanPham : 'Sản phẩm'}">Tên</div>
+                    <div class="pl">
+                        <span th:if="${ct.sanPhamChiTiet != null && ct.sanPhamChiTiet.mauSac != null}"
+                              th:text="${ct.sanPhamChiTiet.mauSac.tenMauSac}">Đen</span> /
+                        <span th:if="${ct.sanPhamChiTiet != null && ct.sanPhamChiTiet.kichThuoc != null}"
+                              th:text="${ct.sanPhamChiTiet.kichThuoc.tenKichThuoc}">42</span>
+                        <span th:text="'  ×' + ${ct.soLuong}">×2</span>
+                    </div>
+                </div>
+                <div class="tt" th:text="${#numbers.formatDecimal(ct.thanhTien,0,'POINT',0,'COMMA')} + '₫'">2.400.000₫</div>
+            </div>
+        </div>
+
+        <div class="fs-sum-row" style="margin-top:8px"><span>Phí vận chuyển</span>
+            <span th:text="${hoaDon.tienShip != null && hoaDon.tienShip.signum() > 0
+                             ? #numbers.formatDecimal(hoaDon.tienShip,0,'POINT',0,'COMMA') + '₫' : 'Miễn phí'}">Miễn phí</span></div>
+        <div class="fs-sum-row total"><span>Tổng thanh toán</span>
+            <b th:text="${#numbers.formatDecimal(hoaDon.tongTien,0,'POINT',0,'COMMA')} + '₫'">2.350.000₫</b></div>
+    </div>
+
+    <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin:6px 0 44px">
+        <a th:href="@{/ca-nhan/don-hang/{ma}(ma=${hoaDon.maHoaDon})}" class="fs-btn fs-btn-primary">
+            <i class="bi bi-truck"></i> Theo dõi đơn hàng</a>
+        <a th:href="@{/cua-hang/san-pham}" class="fs-btn fs-btn-outline">
+            <i class="bi bi-bag"></i> Tiếp tục mua sắm</a>
+    </div>
+</div>
+
+<footer th:replace="~{fragments/client-layout :: footer}"></footer>
+<div th:replace="~{fragments/client-layout :: toast}"></div>
+<th:block th:replace="~{fragments/client-layout :: scripts}"></th:block>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+<script th:inline="javascript">
+    /* Kết nối WebSocket: trạng thái đơn tự cập nhật khi quầy quản lý thao tác */
+    fsKetNoiDonHang(/*[[${hoaDon.maHoaDon}]]*/ '');
+</script>
+</body>
+</html>

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/client-layout :: head('Đăng nhập')}"></head>
+<body>
+<div class="fs-auth">
+    <div class="fs-auth-brand">
+        <div class="fs-auth-brand-inner">
+            <a th:href="@{/}" class="fs-logo">
+                <span class="fs-logo-badge"><i class="bi bi-lightning-charge-fill"></i></span>
+                <span class="fs-logo-text" style="color:#fff">FS<em>SHOES</em></span>
+            </a>
+            <h2>Chào mừng trở lại <em>FS Shoes</em></h2>
+            <p>Đăng nhập để đặt hàng nhanh hơn, theo dõi đơn theo thời gian thực và nhận voucher dành riêng cho bạn.</p>
+            <ul>
+                <li><i class="bi bi-check-circle-fill"></i> Sổ địa chỉ & thanh toán 1 chạm</li>
+                <li><i class="bi bi-check-circle-fill"></i> Theo dõi đơn hàng thời gian thực</li>
+                <li><i class="bi bi-check-circle-fill"></i> Voucher riêng & lịch sử mua hàng</li>
+                <li><i class="bi bi-check-circle-fill"></i> Đánh giá sản phẩm đã mua</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="fs-auth-form">
+        <div class="fs-auth-card">
+            <h1>Đăng nhập</h1>
+            <p class="sub">Nhập tài khoản FS Shoes của bạn để tiếp tục.</p>
+
+            <div class="fs-alert fs-alert-error" th:if="${param.error}">
+                <i class="bi bi-x-circle-fill"></i><span>Tên đăng nhập hoặc mật khẩu không đúng, hoặc tài khoản đã bị khoá.</span></div>
+            <div class="fs-alert fs-alert-success" th:if="${param.logout}">
+                <i class="bi bi-check-circle-fill"></i><span>Bạn đã đăng xuất thành công.</span></div>
+            <div class="fs-alert fs-alert-success" th:if="${param.registered}">
+                <i class="bi bi-check-circle-fill"></i><span>Đăng ký thành công! Hãy đăng nhập để bắt đầu mua sắm.</span></div>
+            <div class="fs-alert fs-alert-warn" th:if="${param.expired}">
+                <i class="bi bi-exclamation-triangle-fill"></i><span>Phiên đăng nhập đã hết hạn (tài khoản được đăng nhập ở nơi khác).</span></div>
+
+            <form th:action="@{/login}" method="post">
+                <div class="fs-field">
+                    <label>Tên đăng nhập</label>
+                    <input type="text" name="username" required autofocus placeholder="VD: kh001">
+                </div>
+                <div class="fs-field">
+                    <label>Mật khẩu</label>
+                    <input type="password" name="password" required placeholder="••••••••">
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin:4px 0 14px">
+                    <label class="fs-check" style="margin:0">
+                        <input type="checkbox" name="remember-me"> Ghi nhớ đăng nhập</label>
+                    <a th:href="@{/forgot}" style="font-size:13px;color:var(--fs-primary);font-weight:600">Quên mật khẩu?</a>
+                </div>
+                <button type="submit" class="fs-btn fs-btn-primary fs-btn-lg fs-btn-block">
+                    <i class="bi bi-box-arrow-in-right"></i> Đăng nhập</button>
+            </form>
+
+            <p class="fs-auth-alt">Chưa có tài khoản?
+                <a th:href="@{/register}">Đăng ký ngay</a> •
+                <a th:href="@{/}">Về trang chủ</a></p>
+        </div>
+    </div>
+</div>
+</body>
+</html>

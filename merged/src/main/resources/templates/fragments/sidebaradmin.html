@@ -1,0 +1,215 @@
+<!-- sidebar-admin.html -->
+<nav class="sidebar" th:fragment="sidebar-admin">
+    <style>
+        .sidebar-header{
+            background: #fff;
+            border-bottom: 1px solid #e5e5e5;
+        }
+    </style>
+
+    <div>
+        <div class="sidebar-header">
+            <img th:src="@{/storefront/img/logo.jpg}" style="background:#fff;border-radius:12px;object-fit:cover" alt="FS Shop Logo">
+        </div>
+
+        <div class="sidebar-menu-wrapper">
+            <div class="menu-heading">Chính</div>
+            <a href="/"><i class="bi bi-house-door"></i> Trang Chủ</a>
+            <a href="/banhang/index"><i class="bi bi-cart3"></i> Bán hàng</a>
+
+            <!-- Menu Sản phẩm -->
+            <a href="#"
+               class="menu-parent"
+               onclick="toggleSubMenu(event)">
+                <div>
+                    <i class="bi bi-box-seam me-2"></i>
+                    Sản phẩm
+                </div>
+                <i class="bi bi-chevron-down arrow"></i>
+            </a>
+            <div class="submenu">
+                <a href="/sanpham/index">
+                    <i class="bi bi-box"></i>
+                    Danh sách sản phẩm
+                </a>
+                <a href="/sanphamct/index">
+                    <i class="bi bi-grid"></i>
+                    Sản phẩm chi tiết
+                </a>
+            </div>
+
+            <!-- Menu Thuộc tính sản phẩm -->
+            <a href="#"
+               class="menu-parent"
+               onclick="toggleSubMenu(event)">
+                <div>
+                    <i class="bi bi-sliders2 me-2"></i>
+                    Thuộc tính sản phẩm
+                </div>
+                <i class="bi bi-chevron-down arrow"></i>
+            </a>
+            <div class="submenu">
+                <a href="/danhmucsp/index">
+                    <i class="bi bi-tags"></i>
+                    Danh mục
+                </a>
+                <a href="/thuonghieu/index">
+                    <i class="bi bi-tag"></i>
+                    Thương hiệu
+                </a>
+                <a href="/chatlieu/index">
+                    <i class="bi bi-layers"></i>
+                    Chất liệu
+                </a>
+                <a href="/mausac/index">
+                    <i class="bi bi-palette"></i>
+                    Màu sắc
+                </a>
+                <a href="/kichthuoc/index">
+                    <i class="bi bi-rulers"></i>
+                    Kích thước
+                </a>
+                <a href="/kieugiay/index">
+                    <i class="bi bi-shoe-prints"></i>
+                    Kiểu giày
+                </a>
+            </div>
+
+            <!-- Menu Hóa đơn -->
+            <a href="#"
+               class="menu-parent"
+               onclick="toggleSubMenu(event)">
+                <div>
+                    <i class="bi bi-receipt-cutoff me-2"></i>
+                    Hóa đơn
+                </div>
+                <i class="bi bi-chevron-down arrow"></i>
+            </a>
+            <div class="submenu">
+                <a href="/donhang/index">
+                    <i class="bi bi-truck"></i>
+                    Danh sách đơn hàng
+                </a>
+                <a href="/hoa-don/index">
+                    <i class="bi bi-receipt"></i>
+                    Danh sách hóa đơn
+                </a>
+            </div>
+
+            <div class="menu-heading">Quản Lý</div>
+            <a href="/nhan-vien"
+               th:classappend="${activeMenu == 'nhanvien'} ? ' active'">
+                <i class="bi bi-people"></i>
+                Nhân viên
+            </a>
+            <a href="/khach-hang/hien-thi"
+               th:classappend="${activeMenu == 'khachhang'} ? ' active'">
+                <i class="bi bi-person-lines-fill"></i>
+                Khách hàng
+            </a>
+
+            <div class="menu-heading">Khuyến Mãi</div>
+
+            <!-- Menu Giảm giá -->
+            <a href="#"
+               class="menu-parent"
+               onclick="toggleSubMenu(event)">
+                <div>
+                    <i class="bi bi-percent me-2"></i>
+                    Giảm giá
+                </div>
+                <i class="bi bi-chevron-down arrow"></i>
+            </a>
+            <div class="submenu">
+                <a href="/giamgia/index">
+                    <i class="bi bi-ticket"></i>
+                    Giảm giá
+                </a>
+                <a href="/dot-giam-gia/hien-thi">
+                    <i class="bi bi-card-list"></i>
+                    Đợt giảm giá
+                </a>
+            </div>
+
+            <div class="menu-heading">Báo Cáo</div>
+
+            <a href="#"
+               class="menu-parent"
+               th:classappend="${activeMenu == 'giaoca'} ? ' active'"
+               onclick="toggleSubMenu(event)">
+                <div>
+                    <i class="bi bi-calendar2-check me-2"></i>
+                    Giao ca &amp; chấm công
+                </div>
+                <i class="bi bi-chevron-down arrow"></i>
+            </a>
+            <div class="submenu">
+                <a href="/giao-ca/ca-lam-viec"
+                   th:classappend="${activeMenu == 'calamviec'} ? ' active'">
+                    <i class="bi bi-clock"></i>
+                    Ca làm việc
+                </a>
+                <a href="/giao-ca/lich-nhan-vien"
+                   th:classappend="${activeMenu == 'lichlamviec'} ? ' active'">
+                    <i class="bi bi-calendar3"></i>
+                    Lịch nhân viên
+                </a>
+                <a href="/giao-ca/giam-sat"
+                   th:classappend="${activeMenu == 'phienbanhang'} ? ' active'">
+                    <i class="bi bi-cash-stack"></i>
+                    Lịch sử hoạt động
+                </a>
+            </div>
+
+            <a href="/lienhe/index"><i class="bi bi-envelope-paper"></i> Liên hệ</a>
+            <a href="/danhgia/index"><i class="bi bi-star-half"></i> Đánh giá</a>
+            <a href="/hotro/index"><i class="bi bi-headset"></i> Hỗ trợ trực tuyến</a>
+            <a href="/thong-ke/doanh-thu"
+               th:classappend="${activeMenu == 'thongke'} ? ' active'">
+                <i class="bi bi-bar-chart-line"></i> Thống kê
+            </a>
+        </div>
+    </div>
+
+    <div class="sidebar-footer">
+        <a href="/nv-ca-nhan"
+           th:classappend="${activeMenu == 'nvcanhan'} ? ' active'"
+           class="d-flex align-items-center gap-2 text-secondary text-decoration-none fw-semibold"
+           style="font-size: 14px; margin-bottom: 10px;">
+            <i class="bi bi-person-circle"></i> Thông tin cá nhân
+        </a>
+        <a href="javascript:void(0);"
+           onclick="document.getElementById('logout-form-admin').submit();"
+           class="d-flex align-items-center gap-2 text-secondary text-decoration-none fw-semibold"
+           style="font-size: 14px;">
+            <i class="bi bi-box-arrow-right text-danger"></i> Đăng xuất
+        </a>
+
+        <form id="logout-form-admin" th:action="@{/logout}" method="post" style="display: none;"></form>
+    </div>
+
+    <script>
+        function toggleSubMenu(event){
+            event.preventDefault();
+            const parent = event.currentTarget;
+            const submenu = parent.nextElementSibling;
+            submenu.classList.toggle("show");
+            parent.querySelector(".arrow").classList.toggle("rotate");
+        }
+
+        // Tự động mở submenu khi đang active
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.submenu').forEach(function(sub) {
+                if (sub.querySelector('.active')) {
+                    sub.classList.add('show');
+                    const parent = sub.previousElementSibling;
+                    if (parent && parent.querySelector('.arrow')) {
+                        parent.querySelector('.arrow').classList.add('rotate');
+                    }
+                }
+            });
+        });
+    </script>
+
+    <div th:replace="~{fragments/quanly-realtime :: realtime-quanly}"></div>
+</nav>
