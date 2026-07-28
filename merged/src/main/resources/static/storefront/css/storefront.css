@@ -1107,3 +1107,13 @@ body.fs-auth-body .fs-auth { height: 100vh; }
 .fs-vc-dang small { display: block; color: #067647; font-weight: 700; font-size: 12px; }
 .fs-vc-bo { border: 0; background: transparent; color: var(--fs-primary); font-weight: 800;
     font-size: 12.5px; cursor: pointer; text-decoration: underline; font-family: inherit; }
+
+/* ===== Vòng tròn trạng thái ở trang kết quả đặt hàng ===== */
+.fs-kq-icon {
+    width: 74px; height: 74px; border-radius: 999px;
+    display: grid; place-items: center; font-size: 36px;
+    margin: 6px auto 12px;          /* auto hai bên = luôn nằm giữa */
+}
+.fs-kq-icon.fs-kq-ok  { background: var(--fs-green-soft); color: var(--fs-green); }
+.fs-kq-icon.fs-kq-cho { background: #fff4e5; color: #b54708; }
+.fs-kq-icon.fs-kq-huy { background: #fde8e8; color: #c92327; }

@@ -218,7 +218,105 @@ public class DonHangOnlineService {
         }
         trangThaiModuleService.phatNgay();
 
+        // ===== EMAIL xác nhận đặt hàng (gửi SAU KHI đơn đã lưu chắc chắn) =====
+        guiThuXacNhanDatHang(hoaDonDaLuu);
+
         return hoaDonDaLuu;
+    }
+
+    /**
+     * ĐẶT LỊCH gửi THƯ XIN LỖI khi đơn bị huỷ vì hết hàng (khách khác thanh toán trước).
+     *
+     * Hai điều quan trọng:
+     *  1) Thư chỉ gửi SAU KHI giao dịch huỷ đơn commit — mọi trục trặc email không thể
+     *     làm hỏng việc huỷ đơn (tránh lỗi "Transaction silently rolled back").
+     *  2) Mọi dữ liệu được đọc ra THÀNH CHUỖI NGAY BÂY GIỜ, khi entity còn gắn phiên
+     *     Hibernate. Nếu để tới sau commit mới đọc quan hệ (khách hàng, chi tiết đơn)
+     *     thì phiên đã đóng, dữ liệu LAZY không nạp được và thư lặng lẽ không được gửi.
+     */
+    private void guiThuXinLoi(HoaDon hoaDon) {
+        try {
+            if (hoaDon == null || hoaDon.getMaKhachHang() == null) {
+                System.out.println("[EMAIL] Đơn huỷ không có thông tin khách — bỏ qua thư xin lỗi.");
+                return;
+            }
+            final String maHD = hoaDon.getMaHoaDon();
+            final String email = hoaDon.getMaKhachHang().getEmail();
+            if (email == null || email.isBlank()) {
+                System.out.println("[EMAIL] Đơn " + maHD + " bị huỷ nhưng khách không có email.");
+                return;
+            }
+            final String hoTen = hoaDon.getMaKhachHang().getHoTen();
+            final String phuongThuc = hoaDon.getPhuongThucThanhToan();
+
+            String ten = null;
+            try {
+                java.util.List<HoaDonChiTiet> ds = hoaDonChiTietService.findByHoaDOn(hoaDon);
+                if (ds != null && !ds.isEmpty()) {
+                    SanPhamChiTiet spct = ds.get(0).getSanPhamChiTiet();
+                    if (spct != null && spct.getSanPham() != null) {
+                        ten = spct.getSanPham().getTenSanPham();
+                        if (ds.size() > 1) ten += " (và " + (ds.size() - 1) + " sản phẩm khác)";
+                    }
+                }
+            } catch (Exception bqua) {
+                System.err.println("[EMAIL] Không đọc được tên sản phẩm: " + bqua.getMessage());
+            }
+            final String tenSp = ten;
+
+            Runnable gui = () -> emailService.guiEmailXinLoiHetHang(email, hoTen, maHD, tenSp, phuongThuc);
+
+            if (org.springframework.transaction.support.TransactionSynchronizationManager.isSynchronizationActive()) {
+                org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization(
+                        new org.springframework.transaction.support.TransactionSynchronization() {
+                            @Override
+                            public void afterCommit() {
+                                gui.run();
+                            }
+                        });
+            } else {
+                gui.run();
+            }
+        } catch (Exception ex) {
+            System.err.println("[EMAIL] Bỏ qua lỗi chuẩn bị thư xin lỗi: " + ex.getMessage());
+        }
+    }
+
+    /**
+     * Đặt lịch gửi THƯ XÁC NHẬN ĐẶT HÀNG — chỉ gửi sau khi giao dịch tạo đơn commit.
+     * Mọi thông tin được lấy ra thành chuỗi NGAY BÂY GIỜ (khi entity còn gắn với phiên),
+     * nên lúc gửi thư không cần truy vấn lại CSDL — vừa nhanh vừa không thể gây lỗi.
+     */
+    private void guiThuXacNhanDatHang(HoaDon hoaDon) {
+        try {
+            if (hoaDon == null || hoaDon.getMaKhachHang() == null) return;
+            final String email = hoaDon.getMaKhachHang().getEmail();
+            if (email == null || email.isBlank()) return;
+
+            final String hoTen = hoaDon.getMaKhachHang().getHoTen();
+            final String maHD = hoaDon.getMaHoaDon();
+            final java.math.BigDecimal tongTien = hoaDon.getTongTien();
+            final String phuongThuc = hoaDon.getPhuongThucThanhToan();
+            final String trangThai = hoaDon.getTrangThai();
+            final String diaChi = hoaDon.getDiaChiGiaoHang();
+
+            Runnable gui = () -> emailService.guiEmailDatHangThanhCong(
+                    email, hoTen, maHD, tongTien, phuongThuc, trangThai, diaChi);
+
+            if (org.springframework.transaction.support.TransactionSynchronizationManager.isSynchronizationActive()) {
+                org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization(
+                        new org.springframework.transaction.support.TransactionSynchronization() {
+                            @Override
+                            public void afterCommit() {
+                                gui.run();
+                            }
+                        });
+            } else {
+                gui.run();
+            }
+        } catch (Exception ex) {
+            System.err.println("[EMAIL] Bỏ qua lỗi chuẩn bị thư xác nhận đặt hàng: " + ex.getMessage());
+        }
     }
 
     /**
@@ -300,8 +398,9 @@ public class DonHangOnlineService {
         hoaDon.setTrangThai("Đã xác nhận");
         hoaDonRepo.save(hoaDon);
 
-        // Realtime: báo đổi trạng thái + cảnh báo nếu biến thể vừa chạm ngưỡng sắp/hết hàng
-        thongBaoRealtimeService.trangThaiDonThayDoi(hoaDon, trangThaiCu, "Quản lý bán hàng");
+        // Realtime: KHÔNG đẩy thông báo lên bảng của quản lý (trang bán hàng đã tự hiện
+        // thông báo khi nhân viên bấm Xác nhận) — chỉ cập nhật trang khách + gửi email khách.
+        thongBaoRealtimeService.trangThaiDonThayDoiKhongBaoQuanLy(hoaDon, trangThaiCu, "Quản lý bán hàng");
         for (SanPhamChiTiet spct : dsDaTru) {
             thongBaoRealtimeService.kiemTraVaCanhBaoTonKho(spct);
         }
@@ -478,64 +577,4 @@ public class DonHangOnlineService {
      * GỬI THƯ XIN LỖI khi đơn bị huỷ vì hết hàng (khách khác thanh toán xong trước).
      * Chạy nền và nuốt mọi lỗi: không được để việc gửi mail làm hỏng luồng thanh toán.
      */
-    /**
-     * ĐẶT LỊCH gửi thư xin lỗi — chỉ gửi SAU KHI giao dịch huỷ đơn đã commit thành công.
-     *
-     * Vì sao phải làm vậy: trước đây thư được gửi NGAY TRONG giao dịch và bọc try-catch.
-     * Nếu một truy vấn bên trong (ví dụ đọc chi tiết hoá đơn) ném lỗi, Spring đã đánh dấu
-     * giao dịch là "rollback-only" rồi; try-catch nuốt lỗi nên luồng vẫn chạy tiếp, đến lúc
-     * commit thì bung UnexpectedRollbackException ("Transaction silently rolled back")
-     * và khách nhận trang lỗi 500 dù đơn đã được xử lý. Đẩy việc gửi thư ra sau commit
-     * khiến mọi trục trặc của email KHÔNG BAO GIỜ ảnh hưởng tới việc huỷ đơn.
-     */
-    private void guiThuXinLoi(HoaDon hoaDon) {
-        if (hoaDon == null || hoaDon.getMaHoaDon() == null) return;
-        final String maHD = hoaDon.getMaHoaDon();
-
-        if (org.springframework.transaction.support.TransactionSynchronizationManager.isSynchronizationActive()) {
-            org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization(
-                    new org.springframework.transaction.support.TransactionSynchronization() {
-                        @Override
-                        public void afterCommit() {
-                            guiThuXinLoiNgay(maHD);   // giao dịch đã commit an toàn
-                        }
-                    });
-        } else {
-            guiThuXinLoiNgay(maHD);
-        }
-    }
-
-    /** Đọc lại đơn rồi gửi thư xin lỗi. Chạy ngoài giao dịch huỷ đơn nên lỗi ở đây là vô hại. */
-    private void guiThuXinLoiNgay(String maHoaDon) {
-        try {
-            HoaDon hd = hoaDonRepo.findById(maHoaDon).orElse(null);
-            if (hd == null || hd.getMaKhachHang() == null) return;
-
-            String email = hd.getMaKhachHang().getEmail();
-            if (email == null || email.isBlank()) {
-                System.out.println("[EMAIL] Đơn " + maHoaDon + " bị huỷ nhưng khách không có email.");
-                return;
-            }
-
-            // Tên sản phẩm chỉ để thư nêu rõ mặt hàng — thiếu cũng không sao
-            String tenSp = null;
-            try {
-                java.util.List<HoaDonChiTiet> ds = hoaDonChiTietService.findByHoaDOn(hd);
-                if (ds != null && !ds.isEmpty()) {
-                    SanPhamChiTiet spct = ds.get(0).getSanPhamChiTiet();
-                    if (spct != null && spct.getSanPham() != null) {
-                        tenSp = spct.getSanPham().getTenSanPham();
-                        if (ds.size() > 1) tenSp += " (và " + (ds.size() - 1) + " sản phẩm khác)";
-                    }
-                }
-            } catch (Exception bqua) {
-                System.err.println("[EMAIL] Không đọc được tên sản phẩm: " + bqua.getMessage());
-            }
-
-            emailService.guiEmailXinLoiHetHang(email, hd.getMaKhachHang().getHoTen(),
-                    maHoaDon, tenSp, hd.getPhuongThucThanhToan());
-        } catch (Exception ex) {
-            System.err.println("[EMAIL] Bỏ qua lỗi gửi thư xin lỗi đơn " + maHoaDon + ": " + ex.getMessage());
-        }
-    }
 }

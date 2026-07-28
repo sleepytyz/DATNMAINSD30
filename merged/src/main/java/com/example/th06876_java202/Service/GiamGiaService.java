@@ -27,6 +27,19 @@ public class GiamGiaService {
      * vì DB có thể lưu "Đang hoạt động" hoặc "Hoạt động". Coi là ngừng khi trạng thái
      * chứa "ngừng/khoá/huỷ"; các trạng thái còn lại (kể cả rỗng) xem như đang chạy.
      */
+    /** Định dạng tiền kiểu Việt Nam: 500000 -> "500.000₫". */
+    private static String tien(java.math.BigDecimal v) {
+        if (v == null) return "0₫";
+        java.text.DecimalFormatSymbols kyHieu = new java.text.DecimalFormatSymbols(java.util.Locale.US);
+        kyHieu.setGroupingSeparator('.');
+        return new java.text.DecimalFormat("#,###", kyHieu).format(v) + "\u20AB";
+    }
+
+    /** Định dạng ngày giờ ngắn gọn: "08:30 25/07/2026". */
+    private static String ngay(java.time.LocalDateTime t) {
+        return t == null ? "" : t.format(java.time.format.DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy"));
+    }
+
     public static boolean dangHoatDong(String trangThai) {
         if (trangThai == null) return true;
         String t = trangThai.trim().toLowerCase();
@@ -225,26 +238,29 @@ public class GiamGiaService {
         }
         java.time.LocalDateTime bayGio = java.time.LocalDateTime.now();
         if (gg.getNgayBatDau() != null && bayGio.isBefore(gg.getNgayBatDau())) {
-            return "Mã giảm giá chưa đến thời gian sử dụng.";
+            return "Mã này bắt đầu áp dụng từ " + ngay(gg.getNgayBatDau()) + " — bạn vui lòng quay lại sau.";
         }
         if (gg.getNgayKetThuc() != null && bayGio.isAfter(gg.getNgayKetThuc())) {
-            return "Mã giảm giá đã hết hạn.";
+            return "Mã này đã hết hạn lúc " + ngay(gg.getNgayKetThuc()) + ".";
         }
 
         if ((gg.getIsVoHan() == null || !gg.getIsVoHan()) &&
                 (gg.getSoLuong() == null || gg.getSoLuong() <= 0)) {
-            return "Mã giảm giá đã hết lượt sử dụng.";
+            return "Mã này đã hết lượt sử dụng.";
         }
 
         if (gg.getDonToiThieu() != null && tongTienHang.compareTo(gg.getDonToiThieu()) < 0) {
-            return "Đơn hàng chưa đạt giá trị tối thiểu " + gg.getDonToiThieu().toBigInteger() + " đ để áp dụng mã này.";
+            java.math.BigDecimal conThieu = gg.getDonToiThieu().subtract(tongTienHang);
+            return "Mã này chỉ áp dụng cho đơn từ " + tien(gg.getDonToiThieu())
+                    + ". Đơn của bạn đang " + tien(tongTienHang)
+                    + " — cần mua thêm " + tien(conThieu) + " nữa.";
         }
         if (gg.getLoaiApDung() != null && gg.getLoaiApDung() == 2) {
             if (maKhachHang == null) return "Bạn cần đăng nhập để sử dụng mã giảm giá này.";
             GiamGiaChiTiet ct = giamGiaChiTietRepo
                     .findByKhachHang_MaKHAndGiamGia_MaGiamGia(maKhachHang, gg.getMaGiamGia())
                     .orElse(null);
-            if (ct == null) return "Mã giảm giá này không áp dụng cho tài khoản của bạn.";
+            if (ct == null) return "Mã này chỉ dành riêng cho một số khách hàng — tài khoản của bạn chưa được tặng mã.";
             if (ct.getTrangThaiSuDung() != null && ct.getTrangThaiSuDung() == 1) return "Bạn đã sử dụng mã giảm giá này.";
         }
         return null;

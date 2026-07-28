@@ -13,6 +13,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -103,6 +104,33 @@ public class GioHangController {
         kq.put("thongBao", "Đã xoá sản phẩm khỏi giỏ hàng.");
         return kq;
     }
+    /**
+     * ÁP VOUCHER BẰNG FORM THẬT (không cần JavaScript).
+     * Kết quả được đặt vào flash rồi chuyển hướng về giỏ hàng, nên thông báo LUÔN hiện
+     * kể cả khi JavaScript của trang gặp trục trặc — đây là cách chắc chắn nhất để
+     * khách biết vì sao mã không áp dụng được (ví dụ đơn chưa đạt mức tối thiểu).
+     */
+    @PostMapping("/ap-dung-voucher-form")
+    public String apDungVoucherForm(@RequestParam String maVoucher,
+                                    Authentication authentication,
+                                    RedirectAttributes ra) {
+        String loi = gioHangService.apDungVoucher(gioHang, maKhachHangHienTai(authentication), maVoucher);
+        if (loi != null) {
+            ra.addFlashAttribute("loiVoucher", loi);
+        } else {
+            ra.addFlashAttribute("thongBaoVoucher", "Đã áp dụng mã giảm giá \"" + maVoucher.trim() + "\".");
+        }
+        return "redirect:/gio-hang";
+    }
+
+    /** Bỏ voucher bằng form thật. */
+    @PostMapping("/bo-voucher-form")
+    public String boVoucherForm(RedirectAttributes ra) {
+        gioHang.setMaGiamGiaApDung(null);
+        ra.addFlashAttribute("thongBaoVoucher", "Đã bỏ mã giảm giá.");
+        return "redirect:/gio-hang";
+    }
+
     @PostMapping("/ap-dung-voucher")
     @ResponseBody
     public Map<String, Object> apDungVoucher(@RequestParam String maVoucher,

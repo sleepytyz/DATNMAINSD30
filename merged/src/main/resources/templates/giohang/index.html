@@ -94,15 +94,29 @@
                  th:style="${gio.voucherApDung == null} ? 'display:none'">
                 <span><i class="bi bi-ticket-perforated-fill"></i>
                     Mã <b id="fsVoucherTen" th:text="${gio.voucherApDung != null ? gio.voucherApDung.tenGiamGia : ''}">FSSALE10</b></span>
-                <button type="button" class="js-bo-voucher" title="Bỏ mã"><i class="bi bi-x-circle"></i></button>
+                <form method="post" th:action="@{/gio-hang/bo-voucher-form}" style="display:inline">
+                    <button type="submit" class="js-bo-voucher" title="Bỏ mã"><i class="bi bi-x-circle"></i></button>
+                </form>
             </div>
 
             <!-- Voucher: nhập / chọn -->
             <div id="fsVoucherNhap" th:style="${gio.voucherApDung != null} ? 'display:none'">
-                <form class="fs-voucher-box" id="fsVoucherForm">
+                <form class="fs-voucher-box" id="fsVoucherForm" method="post"
+                      th:action="@{/gio-hang/ap-dung-voucher-form}">
                     <input type="text" name="maVoucher" placeholder="Nhập mã giảm giá" autocomplete="off">
                     <button type="submit" class="fs-btn fs-btn-dark fs-btn-sm">Áp dụng</button>
                 </form>
+                <!-- Thông báo kết quả áp voucher: SERVER render (chắc chắn hiện),
+                     khối rỗng bên dưới dành cho thông báo động nếu JS hoạt động. -->
+                <div th:if="${loiVoucher}"
+                     style="margin-top:9px;padding:9px 12px;border-radius:10px;font-size:13px;line-height:1.5;
+                            border:1px solid #fecdca;background:#fef3f2;color:#b42318"
+                     th:text="${loiVoucher}"></div>
+                <div th:if="${thongBaoVoucher}"
+                     style="margin-top:9px;padding:9px 12px;border-radius:10px;font-size:13px;line-height:1.5;
+                            border:1px solid #a6f4c5;background:#ecfdf3;color:#067647"
+                     th:text="${thongBaoVoucher}"></div>
+                <div id="fsVoucherLoi" style="display:none"></div>
                 <div th:if="${voucherGoiY != null && !voucherGoiY.isEmpty()}">
                     <div class="fs-voucher-pick"><i class="bi bi-stars"></i> Voucher bạn có thể dùng:</div>
                     <div class="fs-voucher-list">
@@ -118,10 +132,14 @@
                         <span th:if="${v.donToiThieu != null && v.donToiThieu.signum() > 0}"
                               th:text="' | Đơn từ ' + ${#numbers.formatDecimal(v.donToiThieu,0,'POINT',0,'COMMA')} + '₫'"> | Đơn từ 200K</span>
                     </span>
-                            <button type="button" class="js-ap-voucher"
+                            <form method="post" th:action="@{/gio-hang/ap-dung-voucher-form}"
+                                  style="display:inline">
+                            <input type="hidden" name="maVoucher" th:value="${v.maGiamGia}">
+                            <button type="submit" class="js-ap-voucher"
                                     th:attr="data-ma=${v.maGiamGia}">
                                 Dùng
                             </button>
+                            </form>
                         </div>
                     </div>
                 </div>
@@ -181,13 +199,27 @@
                 });
         }
 
+        // Hiện thông báo NGAY trong khung voucher (chắc chắn thấy được), đồng thời
+        // bắn toast nếu trang có sẵn. Trước đây chỉ dựa vào toast nên khi toast không
+        // hiện được thì khách không biết vì sao mã không áp dụng.
         function bao(thongDiep, loai) {
+            var o = document.getElementById('fsVoucherLoi');
+            if (o) {
+                var doLoi = (loai === 'err');
+                o.style.display = '';
+                o.style.cssText = 'display:block;margin-top:9px;padding:9px 12px;border-radius:10px;'
+                    + 'font-size:13px;line-height:1.5;border:1px solid '
+                    + (doLoi ? '#fecdca;background:#fef3f2;color:#b42318' : '#a6f4c5;background:#ecfdf3;color:#067647');
+                o.textContent = thongDiep;
+                clearTimeout(window.__fsVcHen);
+                window.__fsVcHen = setTimeout(function () { o.style.display = 'none'; }, 8000);
+            }
             if (window.fsToast) fsToast(thongDiep, loai);
-            else alert(thongDiep);
+            else if (!o) alert(thongDiep);
         }
 
         // Bấm chip voucher gợi ý
-        document.querySelectorAll('.js-ap-voucher').forEach(function (btn) {
+        [].forEach.call([], function (btn) {
             btn.addEventListener('click', function () {
                 var nut = this;
                 var maVoucher = nut.dataset.ma || nut.dataset.ten;
@@ -212,7 +244,7 @@
 
         // Nhập mã thủ công
         var form = document.getElementById('fsVoucherForm');
-        if (form) form.addEventListener('submit', function (e) {
+        if (false) form.addEventListener('submit', function (e) {
             e.preventDefault();
             var input = this.querySelector('input[name="maVoucher"]');
             var maVoucher = input ? input.value.trim() : '';
@@ -235,7 +267,7 @@
         });
 
         // Bỏ mã đang áp dụng
-        var nutBo = document.querySelector('.js-bo-voucher');
+        var nutBo = null;
         if (nutBo) nutBo.addEventListener('click', function () {
             goiVoucher('/gio-hang/bo-voucher')
                 .then(function (data) {

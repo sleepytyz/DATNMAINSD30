@@ -38,6 +38,7 @@ public class ThongBaoRealtimeService {
     private static final DateTimeFormatter FMT_GIO = DateTimeFormatter.ofPattern("HH:mm:ss dd/MM/yyyy");
 
     private final SimpMessagingTemplate messagingTemplate;
+    private final com.example.th06876_java202.Service.EmailService emailService;
 
     // =====================================================================
     // 1) ĐƠN HÀNG ONLINE MỚI  →  bên Quản lý (hoá đơn chờ xác nhận)
@@ -99,8 +100,74 @@ public class ThongBaoRealtimeService {
         msg.put("tongTien", giaTri(hoaDon.getTongTien()));
         msg.put("thoiGian", thoiGianHienTai());
 
-        guiSauCommit(TOPIC_QUANLY_DON_HANG, msg);
+        // KHÔNG đẩy lên bảng thông báo của QUẢN LÝ nữa: trang quản lý bán hàng / quản lý
+        // đơn hàng đã tự hiện thông báo riêng khi nhân viên thao tác, nên đẩy thêm ở đây
+        // gây thông báo trùng ở mọi trạng thái (xác nhận, giao hàng, huỷ...).
+        // Vẫn cập nhật realtime cho TRANG CỦA KHÁCH và vẫn gửi email cho khách.
         guiSauCommit(TOPIC_DON_HANG_PREFIX + hoaDon.getMaHoaDon(), msg);
+        guiEmailDoiTrangThai(hoaDon, trangThaiCu, nguoiThucHien);
+    }
+
+    /**
+     * Bản KHÔNG BÁO CHO QUẢN LÝ — dùng khi chính quản lý vừa thao tác nên màn hình của
+     * họ đã có thông báo riêng rồi (ví dụ bấm Xác nhận đơn ở trang bán hàng). Vẫn cập
+     * nhật realtime cho TRANG CỦA KHÁCH và vẫn gửi email cho khách như bình thường.
+     */
+    public void trangThaiDonThayDoiKhongBaoQuanLy(HoaDon hoaDon, String trangThaiCu, String nguoiThucHien) {
+        if (hoaDon == null) return;
+
+        Map<String, Object> msg = new HashMap<>();
+        msg.put("loai", "TRANG_THAI_DON");
+        msg.put("maHoaDon", hoaDon.getMaHoaDon());
+        msg.put("trangThaiCu", trangThaiCu);
+        msg.put("trangThaiMoi", hoaDon.getTrangThai());
+        msg.put("nguoiThucHien", nguoiThucHien);
+        msg.put("thoiDiem", java.time.LocalDateTime.now().toString());
+
+        // CHỈ đẩy cho khách theo dõi đơn — KHÔNG đẩy lên bảng thông báo của quản lý
+        guiSauCommit(TOPIC_DON_HANG_PREFIX + hoaDon.getMaHoaDon(), msg);
+        guiEmailDoiTrangThai(hoaDon, trangThaiCu, nguoiThucHien);
+    }
+
+    /**
+     * Gửi email báo khách khi đơn ONLINE đổi trạng thái.
+     *
+     * Đây là điểm móc CHUNG: mọi nơi đổi trạng thái đơn (quầy xác nhận, giao hàng,
+     * khách huỷ, khách báo đã chuyển khoản...) đều đi qua trangThaiDonThayDoi nên chỉ
+     * cần gắn ở đây là phủ toàn bộ. Thư luôn gửi SAU KHI giao dịch commit.
+     */
+    private void guiEmailDoiTrangThai(HoaDon hoaDon, String trangThaiCu, String nguoiThucHien) {
+        try {
+            // Đơn tại quầy khách mua trực tiếp, không cần thư theo dõi trạng thái
+            if (!"Online".equalsIgnoreCase(hoaDon.getLoaiBan())) return;
+            // Đơn huỷ vì hết hàng đã có THƯ XIN LỖI riêng — tránh gửi trùng hai thư
+            if (nguoiThucHien != null && nguoiThucHien.contains("hết hàng")) return;
+            if (hoaDon.getMaKhachHang() == null) return;
+
+            final String email = hoaDon.getMaKhachHang().getEmail();
+            if (email == null || email.isBlank()) return;
+
+            final String hoTen = hoaDon.getMaKhachHang().getHoTen();
+            final String maHD = hoaDon.getMaHoaDon();
+            final String ttCu = trangThaiCu;
+            final String ttMoi = hoaDon.getTrangThai();
+            if (ttMoi == null || ttMoi.equals(ttCu)) return;   // không đổi thì thôi
+
+            Runnable gui = () -> emailService.guiEmailDoiTrangThai(email, hoTen, maHD, ttCu, ttMoi);
+
+            if (TransactionSynchronizationManager.isSynchronizationActive()) {
+                TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        gui.run();
+                    }
+                });
+            } else {
+                gui.run();
+            }
+        } catch (Exception ex) {
+            System.err.println("[EMAIL] Bỏ qua lỗi chuẩn bị thư đổi trạng thái: " + ex.getMessage());
+        }
     }
 
     // =====================================================================

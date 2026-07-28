@@ -92,11 +92,11 @@ public class HoaDonService {
     public void suatt(String mahd) {
         HoaDon hd = repo.findById(mahd).orElse(null);
         if (hd != null && "Chờ xác nhận".equals(hd.getTrangThai())) {
+            // xacNhanDonTruTonKho đã LÀM TRỌN VẸN: trừ tồn kho, đổi trạng thái sang
+            // "Đã xác nhận", lưu đơn VÀ phát thông báo realtime + email cho khách.
+            // Trước đây ở đây đổi trạng thái + phát thông báo LẦN NỮA -> quản lý nhận
+            // thông báo đúp và khách nhận 2 email. Nay chỉ gọi đúng một lần.
             donHangOnlineService.xacNhanDonTruTonKho(hd);
-            String cu = hd.getTrangThai();
-            hd.setTrangThai("Đã xác nhận");
-            repo.save(hd);
-            thongBaoRealtimeService.trangThaiDonThayDoi(hd, cu, "Quản lý bán hàng");
         }
     }
 

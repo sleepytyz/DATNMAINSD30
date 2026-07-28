@@ -196,4 +196,168 @@ public class EmailService {
             ex.printStackTrace();
         }
     }
+
+    // =====================================================================
+    // EMAIL CHO KHÁCH MUA HÀNG ONLINE
+    // Nguyên tắc chung: ghép chuỗi trực tiếp (KHÔNG dùng String.formatted vì nội
+    // dung có ký tự '%'), chạy nền @Async, và nuốt mọi lỗi để việc gửi thư không
+    // bao giờ ảnh hưởng tới nghiệp vụ đặt hàng.
+    // =====================================================================
+
+    /** Khung HTML dùng chung cho các thư gửi khách. */
+    private String khungThu(String tieuDe, String mauTieuDe, String noiDung) {
+        return "<div style=\"font-family:Segoe UI,Arial,sans-serif;max-width:600px;margin:0 auto;"
+                + "border:1px solid #eee;border-radius:12px;overflow:hidden\">"
+                + "<div style=\"background:" + mauTieuDe + ";color:#fff;padding:18px 22px\">"
+                + "<h2 style=\"margin:0;font-size:19px\">" + tieuDe + "</h2></div>"
+                + "<div style=\"padding:22px;color:#222;line-height:1.65;font-size:14.5px\">"
+                + noiDung
+                + "<p style=\"margin-top:22px\">Trân trọng,<br><b>Đội ngũ FS Shoes</b></p></div>"
+                + "<div style=\"background:#fafafa;padding:13px 22px;color:#888;font-size:12px\">"
+                + "Email tự động — vui lòng không trả lời thư này.</div></div>";
+    }
+
+    private void guiHtml(String to, String tieuDe, String html, String nhan, String maHoaDon) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            helper.setTo(to);
+            helper.setSubject(tieuDe);
+            helper.setText(html, true);
+            mailSender.send(message);
+            System.out.println("[EMAIL] Đã gửi thư " + nhan + " tới " + to + " (đơn " + maHoaDon + ").");
+        } catch (Exception ex) {
+            System.err.println("[EMAIL] LỖI gửi thư " + nhan + " tới " + to
+                    + " (đơn " + maHoaDon + "): " + ex.getMessage());
+        }
+    }
+
+    /** Tiền kiểu Việt Nam: 1250000 -> "1.250.000₫". */
+    private static String tienVN(java.math.BigDecimal v) {
+        if (v == null) return "0\u20AB";
+        java.text.DecimalFormatSymbols k = new java.text.DecimalFormatSymbols(java.util.Locale.US);
+        k.setGroupingSeparator('.');
+        return new java.text.DecimalFormat("#,###", k).format(v) + "\u20AB";
+    }
+
+    /**
+     * THƯ XÁC NHẬN ĐẶT HÀNG THÀNH CÔNG — gửi ngay sau khi đơn được tạo.
+     */
+    @Async
+    public void guiEmailDatHangThanhCong(String to, String hoTen, String maHoaDon,
+                                         java.math.BigDecimal tongTien, String phuongThuc,
+                                         String trangThai, String diaChiGiao) {
+        if (to == null || to.isBlank()) return;
+        String ten = (hoTen == null || hoTen.isBlank()) ? "Quý khách" : hoTen;
+
+        String canLam;
+        String tt = trangThai == null ? "" : trangThai;
+        if ("Chờ thanh toán".equals(tt)) {
+            canLam = "<p style=\"background:#fff7ed;border-left:4px solid #f59e0b;padding:11px 14px;"
+                    + "border-radius:6px;margin:14px 0\"><b>Cần thanh toán:</b> đơn của bạn đang chờ thanh toán. "
+                    + "Vui lòng hoàn tất thanh toán trong mục <b>Đơn hàng của tôi</b> trên website để cửa hàng "
+                    + "chuẩn bị giao hàng.</p>";
+        } else {
+            canLam = "<p style=\"background:#ecfdf3;border-left:4px solid #12b76a;padding:11px 14px;"
+                    + "border-radius:6px;margin:14px 0\">Cửa hàng sẽ <b>xác nhận và chuẩn bị hàng</b> trong thời "
+                    + "gian sớm nhất. Bạn sẽ nhận được email mỗi khi đơn chuyển trạng thái.</p>";
+        }
+
+        String noiDung =
+                "<p>Xin chào <b>" + ten + "</b>,</p>"
+                + "<p>FS Shoes đã nhận được đơn hàng <b>#" + maHoaDon + "</b> của bạn. Cảm ơn bạn đã tin tưởng mua sắm!</p>"
+                + "<table style=\"width:100%;border-collapse:collapse;margin:14px 0\">"
+                + hang("Mã đơn hàng", maHoaDon)
+                + hang("Tổng thanh toán", "<b style=\"color:#c92327\">" + tienVN(tongTien) + "</b>")
+                + hang("Phương thức thanh toán", phuongThuc == null ? "-" : phuongThuc)
+                + hang("Trạng thái", tt)
+                + hang("Giao đến", diaChiGiao == null ? "-" : diaChiGiao)
+                + "</table>"
+                + canLam;
+
+        guiHtml(to, "FS Shoes — Đã nhận đơn hàng #" + maHoaDon,
+                khungThu("FS Shoes — Đặt hàng thành công", "#12b76a", noiDung),
+                "xác nhận đặt hàng", maHoaDon);
+    }
+
+    /** Một dòng trong bảng thông tin đơn. */
+    private String hang(String nhan, String giaTri) {
+        return "<tr>"
+                + "<td style=\"padding:7px 0;color:#666;width:42%\">" + nhan + "</td>"
+                + "<td style=\"padding:7px 0\">" + giaTri + "</td></tr>";
+    }
+
+    /**
+     * THƯ BÁO ĐỔI TRẠNG THÁI ĐƠN HÀNG — gửi mỗi khi đơn chuyển trạng thái.
+     */
+    @Async
+    public void guiEmailDoiTrangThai(String to, String hoTen, String maHoaDon,
+                                     String trangThaiCu, String trangThaiMoi) {
+        if (to == null || to.isBlank()) return;
+        String ten = (hoTen == null || hoTen.isBlank()) ? "Quý khách" : hoTen;
+        String moi = trangThaiMoi == null ? "" : trangThaiMoi;
+
+        String mau = "#175cd3";
+        String moTa = "Đơn hàng của bạn vừa được cập nhật trạng thái.";
+        if ("Đã xác nhận".equals(moi)) {
+            mau = "#12b76a";
+            moTa = "Cửa hàng đã <b>xác nhận đơn hàng</b> và đang chuẩn bị hàng để giao cho bạn.";
+        } else if ("Đang giao".equals(moi)) {
+            mau = "#175cd3";
+            moTa = "Đơn hàng đã được <b>bàn giao cho đơn vị vận chuyển</b>. Bạn vui lòng để ý điện thoại nhé!";
+        } else if ("Đã giao".equals(moi)) {
+            mau = "#12b76a";
+            moTa = "Đơn hàng đã <b>giao thành công</b>. Cảm ơn bạn đã mua sắm tại FS Shoes — "
+                    + "đừng quên đánh giá sản phẩm để nhận ưu đãi cho lần mua sau!";
+        } else if ("Đã huỷ".equals(moi)) {
+            mau = "#c92327";
+            moTa = "Đơn hàng của bạn đã được <b>huỷ</b>. Nếu bạn đã thanh toán, cửa hàng sẽ hoàn tiền "
+                    + "theo phương thức bạn đã dùng.";
+        } else if ("Chờ xác nhận".equals(moi)) {
+            mau = "#b54708";
+            moTa = "Đơn hàng đang <b>chờ cửa hàng xác nhận</b>. Chúng tôi sẽ xử lý trong thời gian sớm nhất.";
+        }
+
+        String noiDung =
+                "<p>Xin chào <b>" + ten + "</b>,</p>"
+                + "<p>" + moTa + "</p>"
+                + "<table style=\"width:100%;border-collapse:collapse;margin:14px 0\">"
+                + hang("Mã đơn hàng", "<b>" + maHoaDon + "</b>")
+                + hang("Trạng thái trước", trangThaiCu == null ? "-" : trangThaiCu)
+                + hang("Trạng thái hiện tại", "<b style=\"color:" + mau + "\">" + moi + "</b>")
+                + "</table>"
+                + "<p>Bạn có thể xem chi tiết trong mục <b>Đơn hàng của tôi</b> trên website FS Shoes.</p>";
+
+        guiHtml(to, "FS Shoes — Đơn #" + maHoaDon + ": " + moi,
+                khungThu("FS Shoes — Cập nhật đơn hàng", mau, noiDung),
+                "đổi trạng thái", maHoaDon);
+    }
+
+    /**
+     * GỬI THƯ KIỂM TRA (đồng bộ, KHÔNG @Async) — dùng cho công cụ chẩn đoán.
+     * Trả về null nếu gửi thành công, hoặc mô tả lỗi nguyên văn nếu thất bại.
+     * Nhờ chạy đồng bộ, lỗi được trả thẳng ra màn hình thay vì chỉ nằm trong log.
+     */
+    public String guiThuKiemTra(String to) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            helper.setTo(to);
+            helper.setSubject("FS Shoes — Thư kiểm tra cấu hình email");
+            helper.setText(khungThu("FS Shoes — Kiểm tra email", "#12b76a",
+                    "<p>Nếu bạn đọc được thư này thì cấu hình gửi email của website "
+                    + "<b>đang hoạt động bình thường</b>.</p>"
+                    + "<p>Thời điểm gửi: <b>"
+                    + java.time.LocalDateTime.now().format(
+                        java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss dd/MM/yyyy"))
+                    + "</b></p>"), true);
+            mailSender.send(message);
+            return null;
+        } catch (Exception ex) {
+            Throwable goc = ex;
+            while (goc.getCause() != null) goc = goc.getCause();
+            return ex.getClass().getSimpleName() + ": " + ex.getMessage()
+                    + (goc != ex ? "  |  Nguyên nhân gốc: " + goc.getMessage() : "");
+        }
+    }
 }

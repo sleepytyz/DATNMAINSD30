@@ -217,9 +217,11 @@ public class GiaoHangNhanhService {
         if (!daCauHinh() || maQuanHuyenNhan == null || maPhuongXaNhan == null || maPhuongXaNhan.isBlank()) {
             return null;
         }
-        int soDoi = Math.max(1, soLuongSanPham);
-        int khoiLuong = Math.max(200, soDoi * gamMoiSanPham);
-        int cao = Math.max(1, caoMoiHopCm * soDoi);                  // xếp chồng các hộp
+        // CƯỚC KHÔNG TĂNG THEO SỐ LƯỢNG: khai một kiện hàng tiêu chuẩn cho mọi đơn.
+        // Cửa hàng chịu phần chênh khi khách mua nhiều đôi — khách thấy phí ship ổn định,
+        // không bị "nhân lên" khi tăng số lượng trong giỏ.
+        int khoiLuong = Math.max(200, gamMoiSanPham);
+        int cao = Math.max(1, caoMoiHopCm);
         long tienKhai = khaiGia ? Math.min(Math.max(giaTriHang, 0L), GIA_TRI_KHAI_TOI_DA) : 0L;
 
         // Lần 1: dùng loại dịch vụ mặc định (hàng nhẹ)
@@ -236,7 +238,7 @@ public class GiaoHangNhanhService {
 
     /** Khối lượng đơn = số sản phẩm × khối lượng quy ước mỗi đôi. */
     public int khoiLuongCho(int tongSoSanPham) {
-        return Math.max(1, tongSoSanPham) * gamMoiSanPham;
+        return gamMoiSanPham;   // kiện tiêu chuẩn — không nhân theo số lượng
     }
 
     /**

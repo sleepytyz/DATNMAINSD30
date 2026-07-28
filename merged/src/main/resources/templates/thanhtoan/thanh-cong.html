@@ -13,11 +13,11 @@
         <i class="bi bi-x-octagon-fill"></i><span th:text="${loiThanhToan}"></span></div>
 
     <div class="fs-panel" style="text-align:center; margin-top:22px">
-        <div th:switch="${hoaDon.trangThai}"
-             th:styleappend="${hoaDon.trangThai == 'Đã huỷ'} ? 'background:#fde8e8;color:#c92327' :
-                             (${hoaDon.trangThai == 'Chờ thanh toán' || hoaDon.trangThai == 'Chờ xác nhận'} ? 'background:#fff4e5;color:#b54708' :
-                             'background:var(--fs-green-soft);color:var(--fs-green)')"
-             style="width:74px;height:74px;border-radius:999px;display:grid;place-items:center;font-size:36px;margin:6px auto 12px">
+        <!-- Vòng tròn trạng thái: dùng CLASS thay vì th:styleappend, vì styleappend nối
+             chuỗi không kèm dấu ';' làm hỏng khai báo CSS cuối (mất căn giữa + mất nền). -->
+        <div th:switch="${hoaDon.trangThai}" class="fs-kq-icon"
+             th:classappend="${hoaDon.trangThai == 'Đã huỷ'} ? 'fs-kq-huy' :
+                             (${hoaDon.trangThai == 'Chờ thanh toán' or hoaDon.trangThai == 'Chờ xác nhận'} ? 'fs-kq-cho' : 'fs-kq-ok')">
             <i th:case="'Đã huỷ'" class="bi bi-x-lg"></i>
             <i th:case="'Chờ thanh toán'" class="bi bi-hourglass-split"></i>
             <i th:case="'Chờ xác nhận'" class="bi bi-hourglass-split"></i>

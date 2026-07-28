@@ -1,207 +1,165 @@
 <!DOCTYPE html>
-<html lang="vi" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/client-layout :: head(${sp.tenSanPham})}"></head>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Quản lý đánh giá - FS Shop</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <style>
+        .dg-card { background:#fff; border:1px solid #e9ecf2; border-radius:14px; }
+        .dg-row { padding:16px 18px; border-bottom:1px solid #f2f4f7; }
+        .dg-row:last-child { border-bottom:0; }
+        .dg-row.an { opacity:.55; background:#fcfcfd; }
+        .dg-ava { width:44px; height:44px; border-radius:999px; background:linear-gradient(135deg,#f59e0b,#fbbf24);
+            color:#fff; display:grid; place-items:center; font-weight:800; flex-shrink:0; }
+        .dg-noidung { background:#f8f9fb; border:1px solid #eef0f4; border-radius:11px; padding:11px 14px;
+            margin-top:9px; white-space:pre-wrap; font-size:14px; }
+        .dg-stat { background:#fff; border:1px solid #e9ecf2; border-radius:14px; padding:16px 18px; }
+        .dg-stat .so { font-size:26px; font-weight:800; line-height:1; }
+        .dg-stat .nhan { font-size:12.5px; color:#667085; margin-top:5px; }
+        .dg-sao { color:#f59e0b; letter-spacing:1px; }
+        .dg-sp { font-size:12.5px; color:#667085; }
+    </style>
+</head>
 <body>
-<header th:replace="~{fragments/client-layout :: header}"></header>
+<div class="wrapper">
+    <div sec:authorize="hasRole('ADMIN')"><div th:replace="~{fragments/sidebaradmin :: sidebar-admin}"></div></div>
+    <div sec:authorize="hasRole('STAFF')"><div th:replace="~{fragments/sidebarstaff :: sidebar-staff}"></div></div>
 
-<div class="fs-container">
-    <nav class="fs-breadcrumb">
-        <a th:href="@{/}">Trang chủ</a> <i class="bi bi-chevron-right"></i>
-        <a th:href="@{/cua-hang/san-pham}">Sản phẩm</a> <i class="bi bi-chevron-right"></i>
-        <a th:if="${sp.danhMucSanPham != null}"
-           th:href="@{/cua-hang/san-pham(danhMuc=${sp.danhMucSanPham.maDanhMuc})}"
-           th:text="${sp.danhMucSanPham.tenDanhMuc}">Danh mục</a>
-        <i th:if="${sp.danhMucSanPham != null}" class="bi bi-chevron-right"></i>
-        <b th:text="${sp.tenSanPham}">Tên sản phẩm</b>
-    </nav>
+    <div class="content-body px-3">
+        <div th:replace="~{fragments/header :: header('Quản lý đánh giá', 'Đánh giá')}"></div>
 
-    <!-- Thông báo sau khi gửi đánh giá -->
-    <div class="fs-alert fs-alert-success" th:if="${thongBaoDanhGia}">
-        <i class="bi bi-check-circle-fill"></i><span th:text="${thongBaoDanhGia}"></span></div>
-    <div class="fs-alert fs-alert-error" th:if="${loiDanhGia}">
-        <i class="bi bi-x-circle-fill"></i><span th:text="${loiDanhGia}"></span></div>
+        <div class="alert alert-success position-fixed shadow" th:if="${thongBao}"
+             style="top:20px;right:20px;z-index:9999" th:text="${thongBao}"></div>
 
-    <!-- ================= KHỐI CHÍNH ================= -->
-    <div class="fs-detail">
-        <!-- Gallery -->
-        <div>
-            <div class="fs-gallery-main">
-                <img id="fsMainImg" th:src="${card.anh}" th:alt="${sp.tenSanPham}"
-                     onerror="this.src='/storefront/img/no-image.svg'">
-            </div>
-            <div class="fs-gallery-thumbs" id="fsThumbs"></div>
+        <!-- ===== Thống kê nhanh ===== -->
+        <div class="row g-3 mt-1">
+            <div class="col-6 col-lg-3"><div class="dg-stat">
+                <div class="so" th:text="${tongTatCa}">0</div>
+                <div class="nhan"><i class="bi bi-chat-square-text me-1"></i>Tổng đánh giá</div>
+            </div></div>
+            <div class="col-6 col-lg-3"><div class="dg-stat">
+                <div class="so text-success" th:text="${tongHien}">0</div>
+                <div class="nhan"><i class="bi bi-eye me-1"></i>Đang hiển thị</div>
+            </div></div>
+            <div class="col-6 col-lg-3"><div class="dg-stat">
+                <div class="so text-secondary" th:text="${tongAn}">0</div>
+                <div class="nhan"><i class="bi bi-eye-slash me-1"></i>Đã ẩn</div>
+            </div></div>
+            <div class="col-6 col-lg-3"><div class="dg-stat">
+                <div class="so" style="color:#f59e0b" th:text="${diemTB}">0</div>
+                <div class="nhan"><i class="bi bi-star-fill me-1"></i>Điểm trung bình</div>
+            </div></div>
         </div>
 
-        <!-- Thông tin -->
-        <div>
-            <div class="fs-detail-brand" th:text="${card.tenThuongHieu}">NIKE</div>
-            <h1 th:text="${sp.tenSanPham}">Tên sản phẩm</h1>
-            <div class="fs-detail-meta">
-                <span th:replace="~{fragments/client-layout :: sao(${thongKeDanhGia.diemTrungBinh})}"></span>
-                <span th:if="${thongKeDanhGia.tongLuot > 0}"
-                      th:text="${#numbers.formatDecimal(thongKeDanhGia.diemTrungBinh,1,1)} + ' (' + ${thongKeDanhGia.tongLuot} + ' đánh giá)'">4.5 (12 đánh giá)</span>
-                <span th:if="${thongKeDanhGia.tongLuot == 0}">Chưa có đánh giá</span>
-                <span th:if="${card.daBan > 0}"><i class="bi bi-bag-check"></i> Đã bán <b th:text="${card.daBan}">30</b></span>
-                <span>Mã: <b th:text="${sp.maSanPham}">SP001</b></span>
-            </div>
-
-            <div class="fs-detail-price">
-                <span class="now" id="fsGiaNow"
-                      th:text="${#numbers.formatDecimal(card.giaSauGiam,0,'POINT',0,'COMMA')} + '₫'">1.200.000₫</span>
-                <span class="old" id="fsGiaOld"
-                      th:style="${card.phanTramGiam == null || card.phanTramGiam == 0} ? 'display:none'"
-                      th:text="${#numbers.formatDecimal(card.giaGoc,0,'POINT',0,'COMMA')} + '₫'">1.500.000₫</span>
-                <span class="off" id="fsOffBadge"
-                      th:style="${card.phanTramGiam == null || card.phanTramGiam == 0} ? 'display:none'"
-                      th:text="'-' + ${card.phanTramGiam} + '%'">-20%</span>
-            </div>
-
-            <div class="fs-opt">
-                <b>Màu sắc: <span id="fsTenMau">—</span></b>
-                <div class="fs-chips" id="fsMauChips"></div>
-            </div>
-            <div class="fs-opt">
-                <b>Kích thước: <span id="fsTenSize">—</span></b>
-                <div class="fs-chips" id="fsSizeChips"></div>
-            </div>
-            <div class="fs-stock-line" id="fsStockLine">Vui lòng chọn kích thước để xem tồn kho.</div>
-
-            <!-- ===== TẤT CẢ BIẾN THỂ ĐANG GIẢM GIÁ (JS bơm) ===== -->
-            <div id="fsSaleVariants" style="display:none">
-                <div class="fs-sv-title"><i class="bi bi-lightning-charge-fill"></i>
-                    Các biến thể đang giảm giá</div>
-                <div class="fs-sv-list" id="fsSaleVariantList"></div>
-            </div>
-
-            <div class="fs-buy-row">
-                <div class="fs-qty">
-                    <button type="button" id="fsQtyMinus" aria-label="Giảm">−</button>
-                    <input type="number" id="fsQty" value="1" min="1">
-                    <button type="button" id="fsQtyPlus" aria-label="Tăng">+</button>
+        <!-- ===== Bộ lọc ===== -->
+        <div class="dg-card mt-3 p-3">
+            <form method="get" th:action="@{/danhgia/index}" class="row g-2 align-items-end">
+                <div class="col-lg-4 col-md-6">
+                    <label class="form-label mb-1 small text-muted">Sản phẩm</label>
+                    <select name="sp" class="form-select form-select-sm">
+                        <option value="">— Tất cả sản phẩm —</option>
+                        <option th:each="s : ${dsSanPham}"
+                                th:value="${s.maSanPham}"
+                                th:text="${s.tenSanPham}"
+                                th:selected="${fSp != null and fSp == s.maSanPham}"></option>
+                    </select>
                 </div>
-                <button type="button" id="fsBtnThem" class="fs-btn fs-btn-outline" disabled>
-                    <i class="bi bi-bag-plus"></i> Thêm vào giỏ</button>
-                <button type="button" id="fsBtnMua" class="fs-btn fs-btn-primary" disabled>
-                    <i class="bi bi-lightning-charge-fill"></i> Mua ngay</button>
-                <button type="button" class="fs-card-heart js-yeu-thich" style="position:static"
-                        th:classappend="${daYeuThich} ? ' active'"
-                        th:attr="data-ma=${sp.maSanPham}" title="Yêu thích">
-                    <i class="bi" th:classappend="${daYeuThich} ? ' bi-heart-fill' : ' bi-heart'"></i>
-                </button>
-            </div>
-
-            <div class="fs-policy">
-                <span><i class="bi bi-shield-check"></i> Cam kết chính hãng 100%</span>
-                <span><i class="bi bi-truck"></i> Freeship đơn từ 500.000₫</span>
-                <span><i class="bi bi-broadcast"></i> Theo dõi đơn thời gian thực</span>
-                <span><i class="bi bi-qr-code-scan"></i> COD hoặc chuyển khoản VietQR</span>
-            </div>
-        </div>
-    </div>
-
-    <!-- ================= TABS: MÔ TẢ + ĐÁNH GIÁ ================= -->
-    <div class="fs-tabs" id="danh-gia">
-        <div class="fs-tab-head">
-            <button type="button" class="active" data-tab="tabMoTa">Mô tả sản phẩm</button>
-            <button type="button" data-tab="tabDanhGia"
-                    th:text="'Đánh giá (' + ${thongKeDanhGia.tongLuot} + ')'">Đánh giá (12)</button>
-        </div>
-
-        <div class="fs-tab-panel active" id="tabMoTa">
-            <p class="fs-mota" th:if="${sp.moTa != null && !#strings.isEmpty(sp.moTa)}" th:text="${sp.moTa}"></p>
-            <p class="fs-mota" th:if="${sp.moTa == null || #strings.isEmpty(sp.moTa)}">
-                Sản phẩm chính hãng thuộc bộ sưu tập của FS Shoes. Thiết kế hiện đại, chất liệu bền bỉ,
-                phù hợp cả tập luyện lẫn phối đồ hằng ngày.</p>
-        </div>
-
-        <div class="fs-tab-panel" id="tabDanhGia">
-            <!-- Tổng quan điểm -->
-            <div class="fs-review-sum" th:if="${thongKeDanhGia.tongLuot > 0}">
-                <div class="fs-review-score">
-                    <b th:text="${#numbers.formatDecimal(thongKeDanhGia.diemTrungBinh,1,1)}">4.5</b>
-                    <span th:replace="~{fragments/client-layout :: sao(${thongKeDanhGia.diemTrungBinh})}"></span>
-                    <small th:text="${thongKeDanhGia.tongLuot} + ' lượt đánh giá'">12 lượt đánh giá</small>
+                <div class="col-lg-2 col-md-3 col-6">
+                    <label class="form-label mb-1 small text-muted">Số sao</label>
+                    <select name="sao" class="form-select form-select-sm">
+                        <option value="">— Tất cả —</option>
+                        <option th:each="i : ${#numbers.sequence(5,1)}"
+                                th:value="${i}" th:text="${i} + ' sao'"
+                                th:selected="${fSao != null and fSao == i}"></option>
+                    </select>
                 </div>
-                <div class="fs-review-bars">
-                    <div class="fs-rbar"><span>5 sao</span><div class="track"><div class="fill" th:style="'width:' + ${thongKeDanhGia.pt5} + '%'"></div></div><span th:text="${thongKeDanhGia.sao5}">8</span></div>
-                    <div class="fs-rbar"><span>4 sao</span><div class="track"><div class="fill" th:style="'width:' + ${thongKeDanhGia.pt4} + '%'"></div></div><span th:text="${thongKeDanhGia.sao4}">3</span></div>
-                    <div class="fs-rbar"><span>3 sao</span><div class="track"><div class="fill" th:style="'width:' + ${thongKeDanhGia.pt3} + '%'"></div></div><span th:text="${thongKeDanhGia.sao3}">1</span></div>
-                    <div class="fs-rbar"><span>2 sao</span><div class="track"><div class="fill" th:style="'width:' + ${thongKeDanhGia.pt2} + '%'"></div></div><span th:text="${thongKeDanhGia.sao2}">0</span></div>
-                    <div class="fs-rbar"><span>1 sao</span><div class="track"><div class="fill" th:style="'width:' + ${thongKeDanhGia.pt1} + '%'"></div></div><span th:text="${thongKeDanhGia.sao1}">0</span></div>
+                <div class="col-lg-2 col-md-3 col-6">
+                    <label class="form-label mb-1 small text-muted">Trạng thái</label>
+                    <select name="tt" class="form-select form-select-sm">
+                        <option value="">— Tất cả —</option>
+                        <option value="hien" th:selected="${fTt == 'hien'}">Đang hiện</option>
+                        <option value="an" th:selected="${fTt == 'an'}">Đã ẩn</option>
+                    </select>
                 </div>
+                <div class="col-lg-3 col-md-8">
+                    <label class="form-label mb-1 small text-muted">Tìm nội dung / tên khách</label>
+                    <input type="text" name="q" class="form-control form-control-sm"
+                           th:value="${fQ}" placeholder="Nhập từ khoá...">
+                </div>
+                <div class="col-lg-1 col-md-4 d-grid">
+                    <button type="submit" class="btn btn-sm btn-primary">
+                        <i class="bi bi-search"></i> Lọc</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- ===== Danh sách đánh giá ===== -->
+        <div class="dg-card mt-3 mb-4">
+            <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+                <b><i class="bi bi-star-half me-1"></i> Danh sách đánh giá</b>
+                <span class="badge bg-light text-dark" th:text="${#lists.size(dsDanhGia)} + ' kết quả'">0</span>
             </div>
 
-            <!-- Form gửi đánh giá -->
-            <div class="fs-review-form" th:if="${coTheDanhGia}">
-                <b><i class="bi bi-pencil-square"></i> Bạn đã mua sản phẩm này — hãy chia sẻ cảm nhận!</b>
-                <form th:action="@{/danh-gia/gui}" method="post">
-                    <input type="hidden" name="maSanPham" th:value="${sp.maSanPham}">
-                    <input type="hidden" name="soSao" id="fsSoSao" value="5">
-                    <div class="fs-star-pick" id="fsStarPick">
-                        <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i>
-                    </div>
-                    <textarea name="noiDung" maxlength="1000"
-                              placeholder="Chất lượng giày thế nào? Form giày có chuẩn size không?..."></textarea>
-                    <div style="margin-top:12px">
-                        <button type="submit" class="fs-btn fs-btn-primary">
-                            <i class="bi bi-send"></i> Gửi đánh giá</button>
-                    </div>
-                </form>
-            </div>
-            <div class="fs-alert fs-alert-info" th:if="${!coTheDanhGia}">
-                <i class="bi bi-info-circle-fill"></i>
-                <span>Chỉ khách hàng đã mua và <b>nhận hàng thành công</b> mới có thể đánh giá sản phẩm này
-                (mỗi đơn đánh giá một lần).</span>
+            <div th:if="${#lists.isEmpty(dsDanhGia)}" class="p-5 text-center text-muted">
+                <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                Không có đánh giá nào khớp bộ lọc.
             </div>
 
-            <!-- Danh sách đánh giá -->
-            <div th:if="${danhGias != null && !danhGias.isEmpty()}">
-                <div class="fs-review-item" th:each="d : ${danhGias}">
-                    <div class="fs-review-ava"
-                         th:text="${d.khachHang != null && d.khachHang.hoTen != null ? #strings.substring(d.khachHang.hoTen,0,1) : '?'}">A</div>
-                    <div>
-                        <b th:text="${d.khachHang != null ? d.khachHang.hoTen : 'Khách hàng'}">Nguyễn Văn A</b>
-                        <span class="fs-review-verified"> <i class="bi bi-patch-check-fill"></i> Đã mua hàng</span>
+            <div th:each="d : ${dsDanhGia}" class="dg-row d-flex gap-3"
+                 th:classappend="${d.trangThai} ? '' : 'an'">
+                <div class="dg-ava"
+                     th:text="${d.khachHang != null and d.khachHang.hoTen != null and !#strings.isEmpty(d.khachHang.hoTen)}
+                              ? ${#strings.toUpperCase(#strings.substring(d.khachHang.hoTen,0,1))} : '?'">K</div>
+
+                <div class="flex-grow-1">
+                    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
                         <div>
-                            <span th:replace="~{fragments/client-layout :: sao(${d.soSao})}"></span>
-                            <span class="khi" th:if="${d.ngayDanhGia != null}"
-                                  th:text="' • ' + ${#temporals.format(d.ngayDanhGia, 'dd/MM/yyyy HH:mm')}"> • 01/01/2025</span>
+                            <b th:text="${d.khachHang != null} ? ${d.khachHang.hoTen} : 'Khách vãng lai'">Khách hàng</b>
+                            <span class="dg-sao ms-2">
+                                <span th:each="i : ${#numbers.sequence(1,5)}"
+                                      th:text="${d.soSao != null and i le d.soSao} ? '★' : '☆'">★</span>
+                            </span>
+                            <span class="badge bg-secondary ms-1" th:unless="${d.trangThai}">Đã ẩn</span>
+                            <div class="dg-sp mt-1">
+                                <i class="bi bi-box-seam me-1"></i>
+                                <span th:text="${d.sanPham != null} ? ${d.sanPham.tenSanPham} : '(sản phẩm đã xoá)'">Sản phẩm</span>
+                                <span class="ms-2" th:if="${d.ngayDanhGia != null}">
+                                    <i class="bi bi-clock ms-1 me-1"></i>
+                                    <span th:text="${#temporals.format(d.ngayDanhGia, 'HH:mm dd/MM/yyyy')}"></span>
+                                </span>
+                            </div>
                         </div>
-                        <p th:if="${d.noiDung != null && !#strings.isEmpty(d.noiDung)}" th:text="${d.noiDung}">Nội dung đánh giá</p>
+
+                        <div class="d-flex gap-2">
+                            <a th:if="${d.trangThai}"
+                               th:href="@{/danhgia/doi(id=${d.maDanhGia}, hien=false)}"
+                               class="btn btn-sm btn-outline-secondary"
+                               onclick="return confirm('Ẩn đánh giá này khỏi website?')">
+                                <i class="bi bi-eye-slash"></i> Ẩn</a>
+                            <a th:unless="${d.trangThai}"
+                               th:href="@{/danhgia/doi(id=${d.maDanhGia}, hien=true)}"
+                               class="btn btn-sm btn-outline-success">
+                                <i class="bi bi-eye"></i> Hiện lại</a>
+                        </div>
                     </div>
+
+                    <div class="dg-noidung" th:if="${d.noiDung != null and !#strings.isEmpty(d.noiDung)}"
+                         th:text="${d.noiDung}">Nội dung đánh giá</div>
                 </div>
-            </div>
-            <div class="fs-empty" th:if="${danhGias == null || danhGias.isEmpty()}" style="border:0">
-                <i class="bi bi-chat-square-heart"></i>
-                <h3>Chưa có đánh giá nào</h3>
-                <p>Hãy là người đầu tiên đánh giá sản phẩm này sau khi mua hàng nhé!</p>
             </div>
         </div>
     </div>
-
-    <!-- ================= SẢN PHẨM LIÊN QUAN ================= -->
-    <section class="fs-section" th:if="${lienQuan != null && !lienQuan.isEmpty()}" style="padding-top:0">
-        <div class="fs-section-head">
-            <div><h2><i class="bi bi-collection"></i> Sản phẩm liên quan</h2>
-                <p>Cùng danh mục, có thể bạn sẽ thích</p></div>
-        </div>
-        <div class="fs-grid">
-            <th:block th:each="c : ${lienQuan}">
-                <div th:replace="~{fragments/client-layout :: card(${c}, false)}"></div>
-            </th:block>
-        </div>
-    </section>
 </div>
 
-<footer th:replace="~{fragments/client-layout :: footer}"></footer>
-<div th:replace="~{fragments/client-layout :: toast}"></div>
-<th:block th:replace="~{fragments/client-layout :: scripts}"></th:block>
-<script th:inline="javascript">
-    /* Danh sách biến thể (màu/size/giá/tồn/ảnh) được bơm từ server */
-    window.FS_BIEN_THE = /*[[${bienThe}]]*/ [];
-    window.FS_BT_CHON = /*[[${btChon}]]*/ null;
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Tự ẩn thông báo sau 3 giây
+    setTimeout(function () {
+        document.querySelectorAll('.alert.position-fixed').forEach(function (e) { e.remove(); });
+    }, 3000);
 </script>
-<script th:src="@{/storefront/js/chi-tiet.js}"></script>
 </body>
 </html>
